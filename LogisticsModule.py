@@ -1,5 +1,5 @@
-
-class LogisticsModule:
+from Vehicle import VisitingVehicle
+class LogisticsModule(VisitingVehicle):
 
     def __init__(self, mass, height, radius):
 
@@ -17,12 +17,16 @@ class LogisticsModule:
 
         return
 
-    def add_thruster_config(self, n_thusters, thruster_thrust):
-        # Store provided data.
-        self.n_thusters = n_thusters
-        self.thruster_thrust = thruster_thrust
+    # def add_thruster_config(self, path_to_cfg):
+    #     # Store provided data.
+    #     # self.n_thusters = n_thusters
+    #     # self.thruster_thrust = thruster_thrust
+
+    #     self.
+
         return
 
-    def print_acceleration(self):
-        thrust_total = self.n_thusters * self.thruster_thrust
-        print(thrust_total / self.mass)
+
+    # def print_acceleration(self):
+    #     thrust_total = self.n_thusters * self.thruster_thrust
+    #     print(thrust_total / self.mass)
