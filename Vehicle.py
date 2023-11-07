@@ -105,3 +105,91 @@ class VisitingVehicle:
         print('center of gravity:', self.cog)
         print('grapple coordinate:', self.grapple)
         print('number of dual jet interactions:', self.jet_interactions)
+
+    def set_stl(self, path_to_stl):
+        self.mesh = mesh.Mesh.from_file(path_to_stl)
+
+    def check_thruster_configuration(self):
+        # Goal
+        # =====================================================================================
+        # || Load STL file of VV and turn on all thrusters to check locations + orientations ||
+        # =====================================================================================
+
+        # Set up nominal configuration for thruster
+        VVmesh = self.mesh
+
+        # Loop through each thruster, graphing normal vecotr and rotated plume cone.
+        i = 0
+        for thruster in self.thruster_data:
+            X = []
+            Y = []
+            Z = []
+
+            U = []
+            V = []
+            W = []
+            plumeMesh = mesh.Mesh.from_file('stl/mold_funnel.stl')
+            plumeMesh.translate([0, 0, -50])
+            # plumeMesh.rotate([0, 1, 0], math.radians(90))
+            # plumeMesh.translate([100, 0, 0])
+            plumeMesh.rotate([1, 0, 0], math.radians(180))
+            plumeMesh.points = 0.05 * plumeMesh.points
+            rot = np.matrix(self.thruster_data[thruster]['dcm'])
+            plumeMesh.rotate_using_matrix(np.matrix(rot).transpose())
+            plumeMesh.translate(self.thruster_data[thruster]['exit'][0])
+
+            # add position vectors to a list.
+            position = self.thruster_data[thruster]['exit'][0]
+            X.append(position[0])
+            Y.append(position[1])
+            Z.append(position[2])
+
+
+            # add normal vectors to a list
+            dcm = self.thruster_data[thruster]['dcm']
+            U.append(dcm[0][2])
+            V.append(dcm[1][2])
+            W.append(dcm[2][2])
+
+            # graph vehicle and vectors.
+            combined = mesh.Mesh(np.concatenate([VVmesh.data, plumeMesh.data]))
+
+            figure = plt.figure()
+            # axes = mplot3d.Axes3D(figure)
+            axes = figure.add_subplot(projection = '3d')
+            axes.add_collection3d(mplot3d.art3d.Poly3DCollection(VVmesh.vectors))
+            surface = mplot3d.art3d.Poly3DCollection(plumeMesh.vectors)
+            surface.set_facecolor('orange')
+            axes.add_collection3d(surface)
+            axes.quiver(X, Y, Z, U, V, W, color = (0,0,0), length=4, normalize=True)
+            lim = 7
+            axes.set_xlim([-1*lim - 3, lim - 3])
+            axes.set_ylim([-1*lim, lim])
+            axes.set_zlim([-1*lim, lim])
+            axes.set_xlabel('X')
+            axes.set_ylabel('Y')
+            axes.set_zlabel('Z')
+            figure.suptitle(self.thruster_data[thruster]['name'][0])
+
+            shift = 0
+
+            if i < 4:
+                axes.view_init(azim=0, elev=2*shift)
+            elif i < 8:
+                axes.view_init(azim=0, elev=2*shift)
+            elif i < 12:
+                axes.view_init(azim=0, elev=2*shift)
+            else:
+                axes.view_init(azim=0, elev=2*shift)
+
+            if i < 10:
+                index = '00' + str(i)
+            elif i < 100:
+                index = '0' + str(i)
+            else:
+                index = str(i)
+            # screen_shot = vpl.screenshot_fig()
+            # vpl.save_fig('img/frame' + str(index) + '.png')
+            plt.savefig('img/frame' + str(index) + '.png')
+            i = i + 1
+        return

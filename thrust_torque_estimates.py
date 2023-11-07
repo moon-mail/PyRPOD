@@ -19,7 +19,10 @@ lm.add_thruster_config('TCD.txt')
 
 lm.add_thruster_performance(500)
 
-lm.calc_thruster_performance()
+lm.set_stl('stl/cylinder.stl')
+lm.check_thruster_configuration()
+
+# lm.calc_thruster_performance()
 # Instantiate RPOD calcualtions
 rpod = RPOD(lm.thruster_data)
 
