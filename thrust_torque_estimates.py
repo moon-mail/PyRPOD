@@ -17,10 +17,14 @@ lm = LogisticsModule(m, h, r)
 # Load in thruster configuration data from text file
 lm.add_thruster_config('TCD.txt')
 
+print(lm.thruster_data)
+
 lm.add_thruster_performance(500)
 
 lm.set_stl('stl/cylinder.stl')
-lm.check_thruster_configuration()
+# lm.check_thruster_configuration()
+
+lm.assign_thrusters()
 
 # lm.calc_thruster_performance()
 # Instantiate RPOD calcualtions
