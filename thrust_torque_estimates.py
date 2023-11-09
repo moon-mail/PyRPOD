@@ -15,7 +15,7 @@ thruster_thrust = 500 # N
 lm = LogisticsModule(m, h, r)
 
 # Load in thruster configuration data from text file
-lm.add_thruster_config('TCD.txt')
+lm.add_thruster_config('TCD2.txt')
 
 print(lm.thruster_data)
 
@@ -24,7 +24,7 @@ lm.add_thruster_performance(500)
 lm.set_stl('stl/cylinder.stl')
 # lm.check_thruster_configuration()
 
-lm.assign_thrusters()
+lm.assign_thruster_groups()
 lm.check_thruster_groups()
 
 # lm.calc_thruster_performance()

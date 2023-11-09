@@ -4,6 +4,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 from mpl_toolkits import mplot3d
 import os
+import configparser
+
 class LogisticsModule(VisitingVehicle):
 
     def __init__(self, mass, height, radius):
@@ -22,6 +24,7 @@ class LogisticsModule(VisitingVehicle):
 
         return
 
+    # WIP. will assign thruster performance characteristics to respective thruster ID as specified in the TCD file.
     def add_thruster_performance(self, thrust_val):
         self.thrust = thrust_val
         return
@@ -59,134 +62,97 @@ class LogisticsModule(VisitingVehicle):
             T = np.array([T_x, T_y, T_z])
             print('resultant rotational acceleration', T/self.I_x)
 
-    def assign_x_thrusters(self):
+    def rcs_group_str_to_list(self, group):
+        # helper method needed convert confige data into a list.
+        # AKA: the config method I used is janky af but will work for the imediate future.
+        # TODO: Need to consider alternative data structures.
+        group_str = self.config['thruster_groups'][group]
+        group_str = group_str.strip('[')
+        group_str = group_str.strip(']')
 
-        self.rcs_groups['+x'] = []
-        self.rcs_groups['-x'] = []
+        group_list = group_str.split(',')
 
-        # Assign thrusters for +x and -x
-        for thruster in self.thruster_data:
-            if 'T1' in thruster:
-                print(thruster)
-                self.rcs_groups['+x'].append(thruster)
+        for i, string in enumerate(group_list):
 
-            if 'T2' in thruster:
-                self.rcs_groups['-x'].append(thruster)
+            group_list[i] = group_list[i].strip()
+            group_list[i] = group_list[i].strip("'")
 
-        return
+        return group_list
 
-    def assign_y_thrusters(self):
-        self.rcs_groups['+y'] = []
-        self.rcs_groups['-y'] = []
-
-
-        pos_y_id = ['P1T3', 'P2T3', 'P3T4', 'P4T3']
-        for thruster in pos_y_id:
-            self.rcs_groups['+y'].append(thruster)
-
-        neg_y_id = ['P1T4', 'P2T4', 'P3T3', 'P4T4']
-        for thruster in neg_y_id:
-            self.rcs_groups['-y'].append(thruster)
-
-    def assign_z_thrusters(self):
-        self.rcs_groups['+z'] = []
-        self.rcs_groups['-z'] = []
-
-
-        pos_z_id = ['P1T4', 'P2T3', 'P3T3', 'P4T3']
-        for thruster in pos_z_id:
-            self.rcs_groups['+z'].append(thruster)
-
-        neg_z_id = ['P1T3', 'P2T4', 'P3T4', 'P4T4']
-        for thruster in neg_z_id:
-            self.rcs_groups['-z'].append(thruster)
-
-    def assign_roll_thrusters(self):
-        self.rcs_groups['+roll'] = []
-        self.rcs_groups['-roll'] = []
-
-        pos_roll_id = ['P1T4', 'P2T4', 'P3T4', 'P4T3']
-        for thruster in pos_roll_id:
-            self.rcs_groups['+roll'].append(thruster)
-
-        neg_roll_id = ['P1T3', 'P2T3', 'P3T3', 'P4T4']
-        for thruster in neg_roll_id:
-            self.rcs_groups['-roll'].append(thruster)
-
-    def assign_pitch_thrusters(self):
-        self.rcs_groups['+pitch'] = []
-        self.rcs_groups['-pitch'] = []
-
-        pos_roll_id = ['P1T1', 'P2T1']
-        for thruster in pos_roll_id:
-            self.rcs_groups['+pitch'].append(thruster)
-
-        neg_roll_id = ['P3T1', 'P4T1']
-        for thruster in neg_roll_id:
-            self.rcs_groups['-pitch'].append(thruster)
-
-    def assign_yaw_thrusters(self):
-        self.rcs_groups['+yaw'] = []
-        self.rcs_groups['-yaw'] = []
-
-        pos_roll_id = ['P1T3', 'P4T1']
-        for thruster in pos_roll_id:
-            self.rcs_groups['+yaw'].append(thruster)
-
-        neg_roll_id = ['P2T3', 'P3T4']
-        for thruster in neg_roll_id:
-            self.rcs_groups['-yaw'].append(thruster)
-
+    # Simple method to format printing of RCS groups
     def print_rcs_groups(self):
         for group in self.rcs_groups:
             print(group, self.rcs_groups[group])
 
-    def assign_thrusters(self):
+    # Assigns RCS thrusters to a specific group
+    def assign_thrusters(self, group):
+        thruster_ids = self.rcs_group_str_to_list(group)
 
+        self.rcs_groups[group] = []
+
+        for thruster in thruster_ids:
+            self.rcs_groups[group].append(thruster)
+        print(self.rcs_groups)
+
+    # Wrapper method for grouping RCS thruster according to provided configuration data.
+    def assign_thruster_groups(self):
+
+        # Read in grouping configuration file.
+        config = configparser.ConfigParser()
+        config.read("example.ini")
+        self.config = config
+
+        #Instantiate dictionary to hold grouping info
         self.rcs_groups = {}
 
         # printer thruster data (for reference)
         for thruster in self.thruster_data:
             print(self.thruster_data[thruster])
 
-        # Assign translational motion
-        self.assign_x_thrusters()
-        self.assign_y_thrusters()
-        self.assign_z_thrusters()
 
-        self.assign_roll_thrusters()
-        self.assign_pitch_thrusters()
-        self.assign_yaw_thrusters()
+        # Collect labels for rcs groups (x/y/z and roll/pitch/yaw rates)
+        group_ids = []
+        for item in self.config.items('thruster_groups'):
+            group_ids.append(item[0])
 
-        # Print thrusters grouped according to 6DOF motion
+        # Assign thruster groups according provided grouping data.
+        for group in group_ids:
+            self.assign_thrusters(group)
+
 
     def plot_active_thrusters(self, active_thrusters, group, normals):
+
+        # Save STL for VV into a local variable. (readability)
         VVmesh = self.mesh
 
-        # Instantiate data str to hold visual plots.
+        # Instantiate object to hold visual plots.
         figure = plt.figure()
         axes = figure.add_subplot(projection = '3d')
+
+        # Add STL files for VV and active plumes to plot.
         axes.add_collection3d(mplot3d.art3d.Poly3DCollection(VVmesh.vectors))
 
+        # Change color of Plume STL first
         surface = mplot3d.art3d.Poly3DCollection(active_thrusters.vectors)
         surface.set_facecolor('orange')
-
         axes.add_collection3d(surface)
+
+        # Add normal vector for RCS plume centerlines.
         # axes.quiver(normal[0], normal[1], normal[2], normal[3], normal[4], normal[5], color = (0,0,0), length=4, normalize=True)
 
+        # Set view port limits
         lim = 7
         axes.set_xlim([-1*lim - 3, lim - 3])
         axes.set_ylim([-1*lim, lim])
         axes.set_zlim([-1*lim, lim])
 
+        # Set labels
         axes.set_xlabel('X')
         axes.set_ylabel('Y')
         axes.set_zlabel('Z')
-
         figure.suptitle(group)
 
-        shift = 0
-
+        # Save to file
         plt.savefig('img/frame' + str(group) + '.png')
 
     def plot_thruster_group(self, group):

@@ -5,7 +5,7 @@ from mpl_toolkits import mplot3d
 from matplotlib import pyplot as plt
 import numpy as np
 import math
-
+import os
 # import dcm_calc
 
 # Adapted from
@@ -113,7 +113,7 @@ class VisitingVehicle:
         plumeMesh = mesh.Mesh.from_file('stl/mold_funnel.stl')
         plumeMesh.translate([0, 0, -50])
         plumeMesh.rotate([1, 0, 0], math.radians(180))
-        plumeMesh.points = 0.05 * plumeMesh.points
+        plumeMesh.points = 0.035 * plumeMesh.points
         return plumeMesh
 
     def transform_plume_mesh(self, thruster, plumeMesh):
@@ -214,6 +214,11 @@ class VisitingVehicle:
 
             # transform plume mesh according to dcm data of current thruster.
             plumeMesh = self.transform_plume_mesh(thruster, plumeMesh)
+
+            if not os.path.isdir('stl/tcd/'):
+                os.system('mkdir stl/tcd')
+
+            plumeMesh.save('stl/tcd/' + str(i) + '.stl')
 
             normal = self.initiate_plume_normal(thruster)
 
