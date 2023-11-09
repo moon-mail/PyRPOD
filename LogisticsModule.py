@@ -3,6 +3,7 @@ from stl import mesh
 import numpy as np
 from matplotlib import pyplot as plt
 from mpl_toolkits import mplot3d
+import os
 class LogisticsModule(VisitingVehicle):
 
     def __init__(self, mass, height, radius):
@@ -205,8 +206,10 @@ class LogisticsModule(VisitingVehicle):
             else:
                 active_thrusters = mesh.Mesh(np.concatenate([active_thrusters.data, plumeMesh.data]))
 
-        # # Concatenate STL data for active thrusters and visiting vehcile.
-        # combined = mesh.Mesh(np.concatenate([active_thrusters.data, self.mesh.data]))
+        if not os.path.isdir('stl/groups/'):
+            os.system('mkdir stl/groups')
+
+        active_thrusters.save('stl/groups/' + group + '.stl')
 
         self.plot_active_thrusters(active_thrusters, group, normals)
 
