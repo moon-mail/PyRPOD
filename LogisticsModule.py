@@ -1,5 +1,8 @@
 from Vehicle import VisitingVehicle
+from stl import mesh
 import numpy as np
+from matplotlib import pyplot as plt
+from mpl_toolkits import mplot3d
 class LogisticsModule(VisitingVehicle):
 
     def __init__(self, mass, height, radius):
@@ -133,6 +136,10 @@ class LogisticsModule(VisitingVehicle):
         for thruster in neg_roll_id:
             self.rcs_groups['-yaw'].append(thruster)
 
+    def print_rcs_groups(self):
+        for group in self.rcs_groups:
+            print(group, self.rcs_groups[group])
+
     def assign_thrusters(self):
 
         self.rcs_groups = {}
@@ -150,5 +157,65 @@ class LogisticsModule(VisitingVehicle):
         self.assign_pitch_thrusters()
         self.assign_yaw_thrusters()
 
+        # Print thrusters grouped according to 6DOF motion
+
+    def plot_active_thrusters(self, active_thrusters, group, normals):
+        VVmesh = self.mesh
+
+        # Instantiate data str to hold visual plots.
+        figure = plt.figure()
+        axes = figure.add_subplot(projection = '3d')
+        axes.add_collection3d(mplot3d.art3d.Poly3DCollection(VVmesh.vectors))
+
+        surface = mplot3d.art3d.Poly3DCollection(active_thrusters.vectors)
+        surface.set_facecolor('orange')
+
+        axes.add_collection3d(surface)
+        # axes.quiver(normal[0], normal[1], normal[2], normal[3], normal[4], normal[5], color = (0,0,0), length=4, normalize=True)
+
+        lim = 7
+        axes.set_xlim([-1*lim - 3, lim - 3])
+        axes.set_ylim([-1*lim, lim])
+        axes.set_zlim([-1*lim, lim])
+
+        axes.set_xlabel('X')
+        axes.set_ylabel('Y')
+        axes.set_zlabel('Z')
+
+        figure.suptitle(group)
+
+        shift = 0
+
+        plt.savefig('img/frame' + str(group) + '.png')
+
+    def plot_thruster_group(self, group):
+
+        active_thrusters = None
+        normals = []
+
+        # Initiate and plot all active thrusters in the group
+        for thruster in self.rcs_groups[group]:
+
+            plumeMesh = self.initiate_plume_mesh()
+            plumeMesh = self.transform_plume_mesh(thruster, plumeMesh)
+            normals.append(self.initiate_plume_normal(thruster))
+
+            if active_thrusters == None:
+                active_thrusters = plumeMesh
+            else:
+                active_thrusters = mesh.Mesh(np.concatenate([active_thrusters.data, plumeMesh.data]))
+
+        # # Concatenate STL data for active thrusters and visiting vehcile.
+        # combined = mesh.Mesh(np.concatenate([active_thrusters.data, self.mesh.data]))
+
+        self.plot_active_thrusters(active_thrusters, group, normals)
+
+    def check_thruster_groups(self):
+
+        self.print_rcs_groups()
+
         for group in self.rcs_groups:
-            print(group, self.rcs_groups[group])
+            print(group)
+            self.plot_thruster_group(group)
+            print()
+        return

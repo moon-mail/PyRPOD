@@ -25,6 +25,7 @@ lm.set_stl('stl/cylinder.stl')
 # lm.check_thruster_configuration()
 
 lm.assign_thrusters()
+lm.check_thruster_groups()
 
 # lm.calc_thruster_performance()
 # Instantiate RPOD calcualtions

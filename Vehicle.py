@@ -109,18 +109,20 @@ class VisitingVehicle:
     def set_stl(self, path_to_stl):
         self.mesh = mesh.Mesh.from_file(path_to_stl)
 
-    def check_thruster_configuration(self):
-        # Goal
-        # =====================================================================================
-        # || Load STL file of VV and turn on all thrusters to check locations + orientations ||
-        # =====================================================================================
+    def initiate_plume_mesh(self):
+        plumeMesh = mesh.Mesh.from_file('stl/mold_funnel.stl')
+        plumeMesh.translate([0, 0, -50])
+        plumeMesh.rotate([1, 0, 0], math.radians(180))
+        plumeMesh.points = 0.05 * plumeMesh.points
+        return plumeMesh
 
-        # Set up nominal configuration for thruster
-        VVmesh = self.mesh
+    def transform_plume_mesh(self, thruster, plumeMesh):
+        rot = np.matrix(self.thruster_data[thruster]['dcm'])
+        plumeMesh.rotate_using_matrix(np.matrix(rot).transpose())
+        plumeMesh.translate(self.thruster_data[thruster]['exit'][0])
+        return plumeMesh
 
-        # Loop through each thruster, graphing normal vecotr and rotated plume cone.
-        i = 0
-        for thruster in self.thruster_data:
+    def initiate_plume_normal(self, thruster):
             X = []
             Y = []
             Z = []
@@ -128,15 +130,6 @@ class VisitingVehicle:
             U = []
             V = []
             W = []
-            plumeMesh = mesh.Mesh.from_file('stl/mold_funnel.stl')
-            plumeMesh.translate([0, 0, -50])
-            # plumeMesh.rotate([0, 1, 0], math.radians(90))
-            # plumeMesh.translate([100, 0, 0])
-            plumeMesh.rotate([1, 0, 0], math.radians(180))
-            plumeMesh.points = 0.05 * plumeMesh.points
-            rot = np.matrix(self.thruster_data[thruster]['dcm'])
-            plumeMesh.rotate_using_matrix(np.matrix(rot).transpose())
-            plumeMesh.translate(self.thruster_data[thruster]['exit'][0])
 
             # add position vectors to a list.
             position = self.thruster_data[thruster]['exit'][0]
@@ -151,24 +144,37 @@ class VisitingVehicle:
             V.append(dcm[1][2])
             W.append(dcm[2][2])
 
+
+
+            return [X,Y,Z,U,V,W]
+
+    def plot_vv_and_thruster(self, plumeMesh, thruster, normal, i):
+            # Set up nominal configuration for thruster
+            VVmesh = self.mesh
+
             # graph vehicle and vectors.
             combined = mesh.Mesh(np.concatenate([VVmesh.data, plumeMesh.data]))
 
+            # Instantiate data str to hold visual plots.
             figure = plt.figure()
-            # axes = mplot3d.Axes3D(figure)
             axes = figure.add_subplot(projection = '3d')
             axes.add_collection3d(mplot3d.art3d.Poly3DCollection(VVmesh.vectors))
+
             surface = mplot3d.art3d.Poly3DCollection(plumeMesh.vectors)
             surface.set_facecolor('orange')
+
             axes.add_collection3d(surface)
-            axes.quiver(X, Y, Z, U, V, W, color = (0,0,0), length=4, normalize=True)
+            axes.quiver(normal[0], normal[1], normal[2], normal[3], normal[4], normal[5], color = (0,0,0), length=4, normalize=True)
+
             lim = 7
             axes.set_xlim([-1*lim - 3, lim - 3])
             axes.set_ylim([-1*lim, lim])
             axes.set_zlim([-1*lim, lim])
+
             axes.set_xlabel('X')
             axes.set_ylabel('Y')
             axes.set_zlabel('Z')
+
             figure.suptitle(self.thruster_data[thruster]['name'][0])
 
             shift = 0
@@ -191,5 +197,26 @@ class VisitingVehicle:
             # screen_shot = vpl.screenshot_fig()
             # vpl.save_fig('img/frame' + str(index) + '.png')
             plt.savefig('img/frame' + str(index) + '.png')
-            i = i + 1
+            return i + 1
+
+    def check_thruster_configuration(self):
+        # Goal
+        # =====================================================================================
+        # || Load STL file of VV and turn on all thrusters to check locations + orientations ||
+        # =====================================================================================
+
+        # Loop through each thruster, graphing normal vecotr and rotated plume cone.
+        i = 0
+        for thruster in self.thruster_data:
+
+            # transform plume mesh to notional position.
+            plumeMesh = self.initiate_plume_mesh()
+
+            # transform plume mesh according to dcm data of current thruster.
+            plumeMesh = self.transform_plume_mesh(thruster, plumeMesh)
+
+            normal = self.initiate_plume_normal(thruster)
+
+            i = self.plot_vv_and_thruster(plumeMesh, thruster, normal, i)
+
         return
