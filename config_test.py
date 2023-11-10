@@ -14,7 +14,7 @@ config['thruster_groups'] = {
                   '+pitch': ['P1T1', 'P2T1', 'P7T2', 'P8T2'],
                   '-pitch': ['P3T1', 'P4T1', 'P5T2', 'P6T2'], 
                   '+yaw':  ['P1T4', 'P4T4', 'P6T3', 'P7T4'],
-                  '-yaw': ['P2T3', 'P3T4']
+                  '-yaw': ['P2T3', 'P3T4', 'P5T4', 'P8T4']
                      }
 
 with open('example.ini', 'w') as configfile:
