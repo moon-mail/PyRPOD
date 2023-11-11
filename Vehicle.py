@@ -110,6 +110,7 @@ class VisitingVehicle:
         self.mesh = mesh.Mesh.from_file(path_to_stl)
 
     def initiate_plume_mesh(self):
+        # TODO: use STL that is already oriented correctly.
         plumeMesh = mesh.Mesh.from_file('stl/mold_funnel.stl')
         plumeMesh.translate([0, 0, -50])
         plumeMesh.rotate([1, 0, 0], math.radians(180))
@@ -143,7 +144,6 @@ class VisitingVehicle:
             U.append(dcm[0][2])
             V.append(dcm[1][2])
             W.append(dcm[2][2])
-
 
 
             return [X,Y,Z,U,V,W]

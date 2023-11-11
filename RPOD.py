@@ -4,6 +4,7 @@ import pandas as pd
 
 class RPOD:
     def __init__(self, LogisticModule):
+        # TODO: add varialbes for trade study analysis
         self.vv = LogisticModule
 
     def set_current_6dof_state(self, v = [0, 0, 0], w = [0,0,0]):
@@ -105,7 +106,6 @@ class RPOD:
 
             self.calc_6dof_performance()
             print('======================================')
-
 
         return
 

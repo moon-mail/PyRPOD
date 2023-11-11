@@ -7,8 +7,12 @@ import os
 import configparser
 
 class LogisticsModule(VisitingVehicle):
+# TODO: write a custom COM of calculator for comapring RCS configs (method)
 
     def __init__(self, mass, height, radius):
+        # TODO: add custom values for momments of intertia.
+        # TODO: Add center of mass information.
+        # TODO: Integrate data collection with Solid Works.
 
         # Store provided data.
         self.mass = mass
@@ -26,12 +30,16 @@ class LogisticsModule(VisitingVehicle):
 
     # WIP. will assign thruster performance characteristics to respective thruster ID as specified in the TCD file.
     def add_thruster_performance(self, thrust_val, isp):
+    # TODO: re-write method to read in data from a CSV file
+    # 1. mass, 2. chamber temp, 3. chamber pressure 4. velocity 5. impulse bit
+    # 6. thruster id, 7. gas composition,
         self.thrust = thrust_val
         self.isp = isp
         return
 
     def calc_thruster_performance(self):
-        
+    # Calculate simple performance for each inidividual.
+    # TODO: add similar methods that include fuel usage, self impingement, cant angle sweep + vector analysis.
         for thruster in self.thruster_data:
             print('thruster id', thruster)
             print(self.thruster_data[thruster])
@@ -53,7 +61,6 @@ class LogisticsModule(VisitingVehicle):
             a_z = round(F_truster[2] / self.mass, 3)
             a = np.array([a_x, a_y, a_z])
             print('resultant translational acceleration', a)
-            
             
             # Calculate torque vector
             r = cur_thruster['exit'][0] # thruster position vector 
@@ -122,6 +129,7 @@ class LogisticsModule(VisitingVehicle):
 
 
     def plot_active_thrusters(self, active_thrusters, group, normals):
+        # plots thrusters for a given maneuver.
 
         # Save STL for VV into a local variable. (readability)
         VVmesh = self.mesh

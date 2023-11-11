@@ -2,14 +2,18 @@ from LogisticsModule import LogisticsModule
 from RPOD import RPOD
 import math
 
+# TODO: Converted into a test suite.
+# 1. Initial tests of notional maneuvers (impulse bit) (M3).
+# 2. Notional approach (1DOF) (M3)
+# 3. Notiolnal approach (1DOF + rotations) (M3)
+# 4. Given a delta V and W requirment, graph thrust vs time required (M3). (Dyanmics)
+# 5. Given a delta V and W requirement, comparison of thrust. isp, and mass flow rate. (M3) (Fuel Usage)
+# 6. Determination of self impingement and KOZ (M3 Maybe M5?)
+
 # Define mass distrubtion properties.
 m = 0.45*30000 # lb converted to kg
 h = 14 # m
 r = 4.0/2.0 # m
-
-# Thruster configuration data (Use previous work).
-n_thusters = 4 # num
-thruster_thrust = 500 # N
 
 # Instantiate LogisticModule object.
 lm = LogisticsModule(m, h, r)
