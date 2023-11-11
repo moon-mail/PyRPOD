@@ -25,8 +25,9 @@ class LogisticsModule(VisitingVehicle):
         return
 
     # WIP. will assign thruster performance characteristics to respective thruster ID as specified in the TCD file.
-    def add_thruster_performance(self, thrust_val):
+    def add_thruster_performance(self, thrust_val, isp):
         self.thrust = thrust_val
+        self.isp = isp
         return
 
     def calc_thruster_performance(self):
