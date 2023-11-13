@@ -1,4 +1,4 @@
-from LogisticsModule import LogisticsModule
+from pyrpod.LogisticsModule import LogisticsModule
 import numpy as np
 import pandas as pd
 
@@ -20,6 +20,8 @@ class RPOD:
     def calc_trans_performance(self, motion, dv):
         # Calculate RCS performance according to thrusters grouped to be in the direction.
         # WIP: Initial code executes simple 1DOF calculations
+        print(type(self.vv))
+        print(self.vv)
         n_thrusters = len(self.vv.rcs_groups[motion])
         total_thrust = n_thrusters * self.vv.thrust
         acceleration = total_thrust / self.vv.mass
