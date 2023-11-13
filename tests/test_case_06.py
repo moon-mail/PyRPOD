@@ -45,6 +45,8 @@ class ThrusterGroupingChecks(unittest.TestCase):
         rpod = RPOD.RPOD(lm)
         rpod.read_flight_plan('../data/flight_plan/flight_plan.csv')
         
+        rpod.plot_thrust_envelope()
+        
 
 if __name__ == '__main__':
     unittest.main()
