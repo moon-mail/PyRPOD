@@ -1,6 +1,7 @@
-from LogisticsModule import LogisticsModule
+from pyrpod.LogisticsModule import LogisticsModule
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 class RPOD:
     def __init__(self, LogisticModule):
@@ -20,11 +21,13 @@ class RPOD:
     def calc_trans_performance(self, motion, dv):
         # Calculate RCS performance according to thrusters grouped to be in the direction.
         # WIP: Initial code executes simple 1DOF calculations
+        print(type(self.vv))
+        print(self.vv)
         n_thrusters = len(self.vv.rcs_groups[motion])
         total_thrust = n_thrusters * self.vv.thrust
         acceleration = total_thrust / self.vv.mass
-        time = abs(dv) / acceleration
-        distance = 0.5 * abs(dv) * time
+        time = abs(dv[0]) / acceleration
+        distance = 0.5 * abs(dv[0]) * time
         m_dot = total_thrust / self.vv.isp
         propellant_used = m_dot * time
 
@@ -78,36 +81,79 @@ class RPOD:
 
     def read_flight_plan(self, path_to_file):
         # Reads and parses through flight plan CSV file.
-        flight_plan = pd.read_csv(path_to_file)
-        print(flight_plan)
+        self.flight_plan = pd.read_csv(path_to_file)
+        print(self.flight_plan)
 
-        for firing in flight_plan.iterrows():
+        return
 
-            # Convert firing data to numpy arra for easier data manipulation.
+    def calc_flight_performance(self):
+        for firing in self.flight_plan.iterrows():
+
+                    # Convert firing data to numpy arra for easier data manipulation.
+                    firing_array = np.array(firing[1])
+
+                    # save firing ID
+                    nth_firing = np.array(firing[1][0])
+                    print('Firing number', nth_firing)
+
+                    # calculate required change in translational velcoity
+                    v1 = firing_array[4:7]
+                    v0 = firing_array[1:4]
+                    dv = v1 - v0
+
+                    # calculate required change in translational velcoity
+                    w1 = firing_array[10:]
+                    w0 = firing_array[7:10]
+                    dw = w1 - w0
+                    # print(nth_firing, dv, dw)
+
+                    self.calc_6dof_performance('x', dv)
+                    print('======================================')
+        return
+
+    def plot_thrust_envelope(self):
+        print(self.vv)
+        print(self.flight_plan)
+
+        for firing in self.flight_plan.iterrows():
+            # Parse flight plan data.
+            # print(firing)
             firing_array = np.array(firing[1])
-
-            # save firing ID
-            nth_firing = np.array(firing[1][0])
-            print('Firing number', nth_firing)
+            # print(firing_array)
 
             # calculate required change in translational velcoity
             v1 = firing_array[4:7]
             v0 = firing_array[1:4]
             dv = v1 - v0
 
-            # calculate required change in translational velcoity
-            w1 = firing_array[10:]
-            w0 = firing_array[7:10]
-            dw = w1 - w0
-            # print(nth_firing, dv, dw)
+            # Create lists to hold data for plotting
+            time_req = []
+            distance_req = []
 
-            self.set_desired_6dof_state(v1, w1)
-            self.set_current_6dof_state(v0, w0)
+            # Create range of thrust values to claculate.
+            thrust_vals = np.linspace(0, 1000, 100)
 
-            self.calc_6dof_performance()
-            print('======================================')
+            for thrust in thrust_vals:
 
-        return
+                self.vv.add_thruster_performance(thrust, 100)
+                time, distance, propellant_used = self.calc_trans_performance('+x', dv)
+                
+                time_req.append(time)
+                distance_req.append(distance)
 
-    def calc_flight_performance(self):
+            fig, ax = plt.subplots()
+            ax.plot(time_req, thrust_vals)
+
+
+
+            ax.set(xlabel='time (s)', ylabel='thrust (N)',
+                title='Thrust vs Time Required (' + str(abs(dv[0])) + ')')
+            
+            ax.grid()
+            plt.xscale("log")
+            # plt.yscale("log")
+
+
+            fig.savefig("test" + str(firing[0]) + ".png")
+            plt.show()
         return
