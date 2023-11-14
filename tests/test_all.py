@@ -2,7 +2,7 @@ import test_header
 import unittest, os, sys
 def run_tests():
     test_loader = unittest.TestLoader()
-    test_suite = test_loader.discover(os.getcwd(), pattern='test_case_0*.py')
+    test_suite = test_loader.discover(os.getcwd(), pattern='test_case_*.py')
     test_runner = unittest.TextTestRunner(verbosity = 2)
     result = test_runner.run(test_suite)
     return result
