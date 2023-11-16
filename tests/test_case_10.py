@@ -7,7 +7,7 @@ class IsentropicExpansionCheck(unittest.TestCase):
 
         #define flow and sonic properties
         M1 = 1
-        M2 = 25
+        M2 = 11
         gamma = 1.4
         T_star = 500
         r_star = 1
