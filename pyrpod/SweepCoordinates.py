@@ -2,6 +2,8 @@ import os
 
 class SweepCoordinates:
 
+    #save a dictionary with keys being the unique x-coors where thrusters are placed
+    #the values being the line number in the TCD where a thruster in that respective coord is
     def group_thruster_rows(self, thruster_config_file):
         try:
             #read TCD
@@ -57,8 +59,9 @@ class SweepCoordinates:
                         increment2 += del_x2
                         with open(thruster_config_file, 'w') as file:
                             file.writelines(lines)
-                coord1 -= increment1
                 increment1 += del_x1
+                coord1 -= increment1
+                
 
         except FileNotFoundError:
             print("File " + thruster_config_file + " not found.")
