@@ -26,8 +26,8 @@ class RPOD:
         n_thrusters = len(self.vv.rcs_groups[motion])
         total_thrust = n_thrusters * self.vv.thrust
         acceleration = total_thrust / self.vv.mass
-        time = abs(dv[0]) / acceleration
-        distance = 0.5 * abs(dv[0]) * time
+        time = abs(dv) / acceleration
+        distance = 0.5 * abs(dv) * time
         m_dot = total_thrust / self.vv.isp
         propellant_used = m_dot * time
 
@@ -102,12 +102,15 @@ class RPOD:
                     dv = v1 - v0
 
                     # calculate required change in translational velcoity
-                    w1 = firing_array[10:]
+                    w1 = firing_array[10:13]
                     w0 = firing_array[7:10]
                     dw = w1 - w0
                     # print(nth_firing, dv, dw)
 
-                    self.calc_6dof_performance('x', dv)
+                    self.set_current_6dof_state(v0, w0)
+                    self.set_desired_6dof_state(v1, w1)
+
+                    self.calc_6dof_performance()
                     print('======================================')
         return
 
