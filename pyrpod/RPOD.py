@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 class RPOD:
     def __init__(self, LogisticModule):
         # TODO: add varialbes for trade study analysis
@@ -17,6 +18,82 @@ class RPOD:
         self.v_desired = np.array(v)
         self.w_desired = np.array(w)
         return
+
+    def calc_burn_time(self, dv, isp, T):
+        g_0=9.81
+        m_f=self.vv.mass
+        a = (dv)/(isp*g_0)
+        K=(isp*g_0*m_f*(1 - np.exp(a)))
+        return K / T
+
+    def plot_burn_time(self, dv):
+
+        isp_vals = [50, 200, 300, 400, 500]
+        thrust_range = np.linspace(50, 600, 5000)
+        burn_time = []
+
+        isp = 200
+        for thrust in thrust_range:
+            burn_time.append(abs(self.calc_burn_time(dv, isp, thrust)))
+        burn_time = np.array(burn_time)
+
+        fig, ax = plt.subplots()
+
+
+        ax.plot(thrust_range, burn_time)
+        ax.set(xlabel='Thrust (s)', ylabel='Burn Time (s)',
+            title='Thrust vs Burn time Required (' + str(abs(dv)) + ')')
+        ax.grid()
+        ax.legend()
+        # plt.xscale("log")
+        # plt.yscale("log")
+        fig.savefig("test.png")
+
+    def calc_delta_m(self, dv, isp):
+        # calculates propellant requirements using expressions derived from the
+        # ideal rocket equation.
+        g_0 = 9.81
+        a = (dv/(isp*g_0))
+        m_f = self.vv.mass
+        return m_f * (1 - np.exp(a))
+
+    def plot_delta_m(self, dv):
+
+        isp_range = np.linspace(100, 600, 5000)
+        delta_m = []
+
+        for isp in isp_range:
+            delta_m.append(abs(self.calc_delta_m(dv, isp)))
+        delta_m = np.array(delta_m)
+        for i, isp, in enumerate(isp_range):
+            print(isp_range[i], delta_m[i])
+
+        thrust_tech = {
+            'electro thermal': [50, 185],
+            # 'hall-effect': [800, 1950],
+            'cold-warm-gas': [30, 110],
+            'mono-bi-propellants': [160, 310]
+        }
+
+        fig, ax = plt.subplots()
+        for tech in thrust_tech:
+            print(tech)
+
+            y_vals = np.array([delta_m.max(), delta_m.mean(), delta_m.min()])
+            isp_val = thrust_tech[tech][1]
+            isp_line = np.array([isp_val, isp_val, isp_val])
+
+            ax.plot(isp_line, y_vals, label=tech)
+
+        ax.plot(isp_range, delta_m)
+        ax.set(xlabel='ISP (s)', ylabel='mass (kg)',
+            title='Max ISP vs Propellant Mass Required (' + str(abs(dv)) + ' m/s)')
+        ax.grid()
+        ax.legend()
+        # plt.xscale("log")
+        # plt.yscale("log")
+        fig.savefig("test.png")
+
 
     def calc_trans_performance(self, motion, dv):
         # Calculate RCS performance according to thrusters grouped to be in the direction.

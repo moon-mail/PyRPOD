@@ -31,7 +31,7 @@ class ThrusterGroupingChecks(unittest.TestCase):
     def test_performance_per_thruster(self):
 
         # Define LM mass distrubtion properties.
-        m = 0.45*30000 # lb converted to kg
+        m = 14000 # lb converted to kg
         h = 14 # m
         r = 4.0/2.0 # m
 
@@ -47,6 +47,8 @@ class ThrusterGroupingChecks(unittest.TestCase):
 
         rpod = RPOD.RPOD(lm)
         rpod.read_flight_plan('../data/flight_plan/flight_plan.csv')
+
+        rpod.plot_delta_m(1885)
         
 
 if __name__ == '__main__':
