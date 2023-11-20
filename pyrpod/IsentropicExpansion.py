@@ -22,6 +22,14 @@ class IsentropicExpansion:
         x = ((2 + (gamma - 1) * M**2) / (gamma + 1))**((gamma + 1) / (gamma - 1))
         r_ratio = sqrt((1/M) * sqrt(x))
         return r_ratio
+    
+    def calculate_number_density(self, M, gamma, n_star):
+        n = n_star * ((gamma + 1) / (2 + (gamma - 1)* M**2)) ** (1 / (gamma - 1))
+        return n
+    
+    def calculate_number_density_ratio(self, M, gamma):
+        n_ratio = ((gamma + 1) / (2 + (gamma - 1)* M**2)) ** (1 / (gamma - 1))
+        return n_ratio
 
     def plot_temp_vs_radius(self, M1, M2, gamma, T_star, r_star):
         temps = []
@@ -45,7 +53,7 @@ class IsentropicExpansion:
         plt.grid(True)
         plt.show()
 
-    def plot_temp_vs_radius_ratios(self, M1, M2, gamma):
+    def plot_temp_ratios_vs_radius(self, M1, M2, gamma, r_star):
         
         temp_ratios = []
         radius_ratios = []
@@ -60,10 +68,33 @@ class IsentropicExpansion:
 
             M += 0.5
 
-        plt.plot(radius_ratios, temp_ratios, marker='o')
+        plt.plot(radius_ratios * r_star, temp_ratios, marker='o')
         plt.yscale('log')
         plt.title("Temperature vs Radius")
-        plt.xlabel("r/r*")
+        plt.xlabel("Radial distance, r (m)")
         plt.ylabel("T/T*")
+        plt.grid(True)
+        plt.show()
+
+    def plot_number_density_ratios_vs_radius(self, M1, M2, gamma, r_star):
+        
+        n_ratios = []
+        radius_ratios = []
+        
+        M = M1
+        while M <= M2:
+            n_ratio = self.calculate_number_density_ratio(M, gamma)
+            r_ratio = self.calculate_radius_ratio(M, gamma)
+
+            n_ratios.append(n_ratio)
+            radius_ratios.append(r_ratio)
+
+            M += 0.5
+
+        plt.plot(radius_ratios * r_star, n_ratios, marker='o')
+        plt.yscale('log')
+        plt.title("Number Density vs Radius")
+        plt.xlabel("Radial distance, r (m)")
+        plt.ylabel("n/n*")
         plt.grid(True)
         plt.show()
