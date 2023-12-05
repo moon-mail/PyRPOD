@@ -41,13 +41,66 @@ class RPOD:
 
 
         ax.plot(thrust_range, burn_time)
-        ax.set(xlabel='Thrust (s)', ylabel='Burn Time (s)',
-            title='Thrust vs Burn time Required (' + str(abs(dv)) + ')')
+        ax.set(xlabel='Thrust (s)', ylabel='Burn-time (s)',
+            title='Thrust vs Burn-time Required (' + str(abs(dv)) + ')')
         ax.grid()
         ax.legend()
         # plt.xscale("log")
         # plt.yscale("log")
         fig.savefig("test.png")
+
+    def plot_burn_time_contour(self, dv):
+
+        isp_vals = [300]
+        thrust_range = np.linspace(1, 1000, 5000)
+
+        fig, ax = plt.subplots()
+
+        for isp in isp_vals:
+            burn_time = []
+            for thrust in thrust_range:
+                burn_time.append(abs(self.calc_burn_time(dv, isp, thrust)))
+            burn_time = np.array(burn_time) / (3600*24)
+            ax.plot(thrust_range, burn_time, label = 'ISP = (' + str(abs(isp)) + ' s)')
+
+        ax.set(xlabel='Thrust (N)', ylabel='Burn-time (days)',
+            title='Thrust vs Burn-time Required (Δv = ' + str(abs(dv)) + ' m/s)')
+        ax.grid()
+        ax.legend()
+        plt.xscale("log")
+        # plt.yscale("log")
+        fig.savefig("test.png")
+
+        return
+
+    def plot_burn_time_flight_plan(self):
+
+        isp = 300
+        thrust_range = np.linspace(10, 100, 5000)
+
+        fig, ax = plt.subplots()
+
+        dv = self.flight_plan.iterrows()
+
+        for v in dv:
+            # print(type(v[1]))
+            dv = v[1][1]
+            print()
+            burn_time = []
+            for thrust in thrust_range:
+                burn_time.append(abs(self.calc_burn_time(dv, isp, thrust)))
+            burn_time = np.array(burn_time) / (3600*24)
+            ax.plot(thrust_range, burn_time, label = 'Δv = (' + str(abs(dv)) + ' m/s)')
+
+        ax.set(xlabel='Thrust (N)', ylabel='Burn-time (days)',
+            title='Burn-time Required vs Thrust (ISP = ' + str(abs(300)) + ' s)')
+        ax.grid()
+        ax.legend()
+        # plt.xscale("log")
+        # plt.yscale("log")
+        fig.savefig("test.png")
+
+        return
 
     def calc_delta_m(self, dv, isp):
         # calculates propellant requirements using expressions derived from the
@@ -93,6 +146,66 @@ class RPOD:
         # plt.xscale("log")
         # plt.yscale("log")
         fig.savefig("test.png")
+
+    def plot_delta_m_contour(self):
+        print('__func__')
+        #creat plotting object.
+        fig, ax = plt.subplots()
+
+        delta_m_min = 10e9
+        delta_m_max = 0
+
+        # Step through all planned firings in the flight plan
+        for firing in self.flight_plan.iterrows():
+            # save delta v requirement to a local variable.
+            dv = firing[1][1]
+
+            # Calculate change in mass for a given range of ISP values.
+            isp_range = np.linspace(50, 400, 5000)
+            delta_m = []
+
+            for isp in isp_range:
+                delta_m.append(abs(self.calc_delta_m(dv, isp)))
+            delta_m = np.array(delta_m)
+
+            # Save absolute min and max data for plotting.
+            if delta_m.max() > delta_m_max:
+                delta_m_max = delta_m.max()
+
+            if delta_m.min() < delta_m_min:
+                delta_m_min = delta_m.min()
+
+            # Plot data.
+            ax.plot(isp_range, delta_m, label='( Δv =' + str(abs(dv)) + ' m/s)')
+
+        # thrust_tech = {
+        #     # 'electro thermal': [50, 185],
+        #     # 'hall-effect': [800, 1950],
+        #     'cold-warm-gas': [30, 110],
+        #     'mono-bi-propellants': [160, 310]
+        # }
+
+        # for tech in thrust_tech:
+        #     print(tech)
+
+        #     y_vals = np.array([delta_m_max, 0.5*(delta_m_max + delta_m_min), delta_m_min])
+        #     isp_val = thrust_tech[tech][1]
+        #     isp_line = np.array([isp_val, isp_val, isp_val])
+
+        #     ax.plot(isp_line, y_vals, label=tech, linestyle='dotted')
+
+        # Set plot display parameters.
+        ax.set(xlabel='Specific Impulse (s)', ylabel='Propellant Mass Required (kg)',
+            title='Propellant Mass Required vs Specific Impulse')
+        ax.grid()
+        ax.legend()
+        # plt.xscale("log")
+        # plt.yscale("log")
+        fig.tight_layout(pad=1.8)
+
+        # Save to file
+        fig.savefig("test.png")
+        return
 
 
     def calc_trans_performance(self, motion, dv):
@@ -159,7 +272,7 @@ class RPOD:
     def read_flight_plan(self, path_to_file):
         # Reads and parses through flight plan CSV file.
         self.flight_plan = pd.read_csv(path_to_file)
-        print(self.flight_plan)
+        # print(self.flight_plan)
 
         return
 
