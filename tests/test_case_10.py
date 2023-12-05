@@ -7,14 +7,14 @@ class IsentropicExpansionCheck(unittest.TestCase):
 
         #define flow and sonic properties
         M1 = 1
-        M2 = 11
-        gamma = 1.4
+        M2 = 25
+        gamma = 5/3
         T_star = 500
         r_star = 1
 
         isen_plume = IsentropicExpansion.IsentropicExpansion()
-        isen_plume.plot_temp_vs_radius(M1, M2, gamma, T_star, r_star)
-        isen_plume.plot_temp_vs_radius_ratios(M1, M2, gamma)
+        isen_plume.plot_number_density_ratios_vs_radius(M1, M2, gamma, r_star)
+        isen_plume.plot_temp_ratios_vs_radius(M1, M2, gamma, r_star)
 
 if __name__ == '__main__':
     unittest.main()
