@@ -1,10 +1,10 @@
 # Andy Torres
-# O-STEM Intern
-# Last Changed: 06-02-23
-# NASA (KSC-DSL)
+# University of Central Florida
+# Department of Mechanical and Aerospace Engineering
+# Last Changed: 12-05-23
 
 # ========================
-# PyRPOD: test_case_02.py
+# PyRPOD: test/test_case_02.py
 # ========================
 # A brief test case to calculate the 6DOF performance of thruster working groups
 
@@ -30,6 +30,7 @@ class ThrusterGroupingChecks(unittest.TestCase):
         # lm.add_thruster_performance(400, 300)
         
         # # Assign thruster groups and calculate their performance.
+        # # (creates unwanted files of data so test is not run for now.)
         # lm.assign_thruster_groups()
         # lm.check_thruster_groups()
 

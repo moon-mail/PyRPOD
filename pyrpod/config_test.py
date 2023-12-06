@@ -1,3 +1,6 @@
+# This is simply to get a minumum functionality going.
+# Developing a better soltuion for handling RCS working groups is a top priority for PyRPOD.
+
 import configparser
 config = configparser.ConfigParser()
 

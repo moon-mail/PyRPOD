@@ -1,10 +1,11 @@
 # Andy Torres
-# O-STEM Intern
-# Last Changed: 06-02-23
-# NASA (KSC-DSL)
+# University of Central Florida
+# Department of Mechanical and Aerospace Engineering
+# Last Changed: 12-05-23
+
 
 # ========================
-# PyRPOD: test_case_01.py
+# PyRPOD: test/test_case_01.py
 # ========================
 # A brief test case to calculate the 6DOF performance of each individual thruster in the LM
 

@@ -118,8 +118,8 @@ class RPOD:
         for isp in isp_range:
             delta_m.append(abs(self.calc_delta_m(dv, isp)))
         delta_m = np.array(delta_m)
-        for i, isp, in enumerate(isp_range):
-            print(isp_range[i], delta_m[i])
+        # for i, isp, in enumerate(isp_range):
+        #     print(isp_range[i], delta_m[i])
 
         thrust_tech = {
             'electro thermal': [50, 185],
@@ -130,7 +130,7 @@ class RPOD:
 
         fig, ax = plt.subplots()
         for tech in thrust_tech:
-            print(tech)
+            # print(tech)
 
             y_vals = np.array([delta_m.max(), delta_m.mean(), delta_m.min()])
             isp_val = thrust_tech[tech][1]
@@ -148,7 +148,6 @@ class RPOD:
         fig.savefig("test.png")
 
     def plot_delta_m_contour(self):
-        print('__func__')
         #creat plotting object.
         fig, ax = plt.subplots()
 
@@ -207,15 +206,15 @@ class RPOD:
         fig.savefig("test.png")
         return
 
-
     def calc_trans_performance(self, motion, dv):
         # Calculate RCS performance according to thrusters grouped to be in the direction.
         # WIP: Initial code executes simple 1DOF calculations
-        print(type(self.vv))
-        print(self.vv)
+        # print(type(self.vv))
+        # print(self.vv)
         n_thrusters = len(self.vv.rcs_groups[motion])
         total_thrust = n_thrusters * self.vv.thrust
         acceleration = total_thrust / self.vv.mass
+        # print(acceleration)
         time = abs(dv) / acceleration
         distance = 0.5 * abs(dv) * time
         m_dot = total_thrust / self.vv.isp
@@ -223,23 +222,22 @@ class RPOD:
 
         # Print info to screen (TODO: write this to a data structure)
         p = 2 # how many decimals places to print
-        print('Total thrust produced', round(total_thrust, p), 'N')
-        print('Resulting accelration', round(acceleration, p), 'm / s ^ 2')
-        print('Time required', round(time, p), 's')
-        print('Distance Covered', round(distance, p), 'm')
-        print('Total propellant used', round(propellant_used, p), 'kg')
+        # print('Total thrust produced', round(total_thrust, p), 'N')
+        # print('Resulting accelration', round(acceleration, p), 'm / s ^ 2')
+        # print('Time required', round(time, p), 's')
+        # print('Distance Covered', round(distance, p), 'm')
+        # print('Total propellant used', round(propellant_used, p), 'kg')
 
         return time, distance, propellant_used
-
 
     def calc_6dof_performance(self):
         # Wrapper function that sets up data for 6DOF performance
         dv = self.v_desired - self.v_current
         dw = self.w_desired - self.w_current
 
-        print('Required changes in 6DOF state')
-        print('dv', dv, 'm/s, dw', dw, 'm/s')
-        print()
+        # print('Required changes in 6DOF state')
+        # print('dv', dv, 'm/s, dw', dw, 'm/s')
+        # print()
 
         # Calculate performance for translation maneuvers
         # and assess directionality as needed
@@ -253,7 +251,7 @@ class RPOD:
             else:
                 motion = '-' + translations[i]
                 self.calc_trans_performance(motion, v)
-        print()
+        # print()
 
         # # Calculate performance for rotational maneuvers
         # # and assess directionality as needed
@@ -284,7 +282,7 @@ class RPOD:
 
                     # save firing ID
                     nth_firing = np.array(firing[1][0])
-                    print('Firing number', nth_firing)
+                    # print('Firing number', nth_firing)
 
                     # calculate required change in translational velcoity
                     v1 = firing_array[4:7]
@@ -301,12 +299,12 @@ class RPOD:
                     self.set_desired_6dof_state(v1, w1)
 
                     self.calc_6dof_performance()
-                    print('======================================')
+                    # print('======================================')
         return
 
     def plot_thrust_envelope(self):
-        print(self.vv)
-        print(self.flight_plan)
+        # print(self.vv)
+        # print(self.flight_plan)
 
         for firing in self.flight_plan.iterrows():
             # Parse flight plan data.
@@ -324,7 +322,7 @@ class RPOD:
             distance_req = []
 
             # Create range of thrust values to claculate.
-            thrust_vals = np.linspace(0, 1000, 100)
+            thrust_vals = np.linspace(10, 1000, 100)
 
             for thrust in thrust_vals:
 
@@ -336,7 +334,6 @@ class RPOD:
 
             fig, ax = plt.subplots()
             ax.plot(time_req, thrust_vals)
-
 
 
             ax.set(xlabel='time (s)', ylabel='thrust (N)',

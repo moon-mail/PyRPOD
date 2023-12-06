@@ -1,20 +1,20 @@
 # Andy Torres
-# O-STEM Intern
-# Last Changed: 06-02-23
-# NASA (KSC-DSL)
+# University of Central Florida
+# Department of Mechanical and Aerospace Engineering
+# Last Changed: 12-05-23
 
 # ========================
-# PyRPOD: test_case_05.py
+# PyRPOD: test/test_case_08.py
 # ========================
-# Test case to analyze LM self impingement
+# Test case to analyze LM self impingement (WIP).
 
 
 import test_header
 import unittest, os, sys
 from pyrpod import LogisticsModule, RPOD
 
-class ThrusterGroupingChecks(unittest.TestCase):
-    def test_performance_per_thruster(self):
+class SelfImpingementChecks(unittest.TestCase):
+    def test_LM_self_impingement(self):
 
         # Define LM mass distrubtion properties.
         m = 0.45*30000 # lb converted to kg
@@ -26,8 +26,8 @@ class ThrusterGroupingChecks(unittest.TestCase):
 
         # Load in thruster configuration data from text file
         lm.add_thruster_config('../data/tcd/TCD2.txt')
-        print(lm.thruster_data)
-        print(type(lm.thruster_data))
+        # print(lm.thruster_data)
+        # print(type(lm.thruster_data))
         # # Draco/Hypergolic thrusters
         # lm.add_thruster_performance(400, 300)
         # lm.assign_thruster_groups()

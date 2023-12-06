@@ -1,19 +1,19 @@
 # Andy Torres
-# O-STEM Intern
-# Last Changed: 06-02-23
-# NASA (KSC-DSL)
+# University of Central Florida
+# Department of Mechanical and Aerospace Engineering
+# Last Changed: 12-05-23
 
 # ========================
-# PyRPOD: test_case_05.py
+# PyRPOD: test/test_case_05.py
 # ========================
-# Test case to analyze notional (1DOF + Rotation) approach.
+# Test case to analyze notional (1D transation + rotation) approach. (NEEDS TLC)
 
 import test_header
 import unittest, os, sys
 from pyrpod import LogisticsModule, RPOD
 
-class ThrusterGroupingChecks(unittest.TestCase):
-    def test_performance_per_thruster(self):
+class OneDimRotApproach(unittest.TestCase):
+    def test_1d_rot_approach_performance(self):
 
         # Define LM mass distrubtion properties.
         m = 0.45*30000 # lb converted to kg
