@@ -62,7 +62,7 @@ class RarefiedPlumeGasKinetics:
        return theta_max
 
     def get_plume_angular_density_decay_function(self, theta):
-        kappa = 2 / (self.gamma - 1) #Boyton 1967/68 from Cai2012 [22][23]
+        kappa = np.floor(2 / (self.gamma - 1)) #Boyton 1967/68 from Cai2012 [22][23]
         f = (np.cos((np.pi / 2) * (theta / self.theta_max))) ** kappa
         return f
 
@@ -71,7 +71,7 @@ class RarefiedPlumeGasKinetics:
         f = (sp.cos((sp.pi / 2) * (theta / self.theta_max))) ** (2 / (self.gamma - 1))
         integrand = sp.sin(theta) * f
         integral = sp.integrate(integrand, (theta, 0, self.theta_max)) #integrate from 0 to max turning angle
-        A = 0.5 * np.sqrt((self.gamma - 1) / (self.gamma + 1)) / (integral)
+        A = 0.5 * np.sqrt((self.gamma - 1) / (self.gamma + 1)) / (integral.evalf())
         return A
     
     def get_sonic_velocity(self):
@@ -101,29 +101,34 @@ class RarefiedPlumeGasKinetics:
 T_c = 500 #K
 P_c = 745000 #N/m^2
 R = 208.13 #J / (kg * K)
-gamma = 1.4 #1.67 gives type error
-plume_obj = RarefiedPlumeGasKinetics(gamma, R, T_c, P_c)
-
-R_0 = 0.15
-r = 1.5
-n_ratios = []
-P_static_vals = []
-theta_max = plume_obj.theta_max
-theta_range = np.arange(0, theta_max, 0.1) #grabbed theta_max from gamma = 1.4
-for theta in theta_range:
-    n_ratio, P_static = plume_obj.simons_model(R_0, r, theta)
-    n_ratios.append(n_ratio)
-    P_static_vals.append(P_static)
+gammas = [1.66, 2, 2.33] #1.67 gives type error
 
 plt.figure()
-plt.plot(theta_range * (180 / np.pi), n_ratios)
-plt.title("Density profiles along r/D = 10")
+
+for gamma in gammas:
+    plume_obj = RarefiedPlumeGasKinetics(gamma, R, T_c, P_c)
+
+    R_0 = .075
+    r = 1.5
+    n_ratios = []
+    P_static_vals = []
+    theta_max = plume_obj.theta_max
+    theta_range = np.arange(0, theta_max, 0.1) #grabbed theta_max from gamma = 1.4
+
+    for theta in theta_range:
+        n_ratio, P_static = plume_obj.simons_model(R_0, r, theta)
+        n_ratios.append(n_ratio)
+        P_static_vals.append(P_static)
+
+    plt.plot(theta_range * (180 / np.pi), n_ratios) #n/n_s / n_0/n_s = n/n_0
+plt.title("Density Profiles Along r/D = 10")
 plt.xlabel('theta (deg)')
 plt.ylabel('n/n_s')
+plt.legend(labels=["kappa = 3", "kappa = 2", "kappa = 1.5"])
 
 plt.figure()
 plt.plot(theta_range * (180 / np.pi), P_static_vals)
-plt.title("Static Pressure along r/D = 10")
+plt.title("Static Pressure Along r/D = 10")
 plt.xlabel('theta (deg)')
 plt.ylabel('P (N/m^2)')
 
