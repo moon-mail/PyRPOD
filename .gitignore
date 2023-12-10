@@ -4,4 +4,5 @@ example.ini
 data/stl/groups/
 data/stl/tcd/
 
+*.pyc
 *.png
