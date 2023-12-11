@@ -248,29 +248,29 @@ class VisitingVehicle:
 
         """
 
-            X = []
-            Y = []
-            Z = []
+        X = []
+        Y = []
+        Z = []
 
-            U = []
-            V = []
-            W = []
+        U = []
+        V = []
+        W = []
 
-            # add position vectors to a list.
-            position = self.thruster_data[thruster]['exit'][0]
-            X.append(position[0])
-            Y.append(position[1])
-            Z.append(position[2])
-
-
-            # add normal vectors to a list
-            dcm = self.thruster_data[thruster]['dcm']
-            U.append(dcm[0][2])
-            V.append(dcm[1][2])
-            W.append(dcm[2][2])
+        # add position vectors to a list.
+        position = self.thruster_data[thruster]['exit'][0]
+        X.append(position[0])
+        Y.append(position[1])
+        Z.append(position[2])
 
 
-            return [X,Y,Z,U,V,W]
+        # add normal vectors to a list
+        dcm = self.thruster_data[thruster]['dcm']
+        U.append(dcm[0][2])
+        V.append(dcm[1][2])
+        W.append(dcm[2][2])
+
+
+        return [X,Y,Z,U,V,W]
 
     def plot_vv_and_thruster(self, plumeMesh, thruster, normal, i):
         """
@@ -296,55 +296,55 @@ class VisitingVehicle:
 
         """
 
-            # Set up nominal configuration for thruster
-            VVmesh = self.mesh
+        # Set up nominal configuration for thruster
+        VVmesh = self.mesh
 
-            # graph vehicle and vectors.
-            combined = mesh.Mesh(np.concatenate([VVmesh.data, plumeMesh.data]))
+        # graph vehicle and vectors.
+        combined = mesh.Mesh(np.concatenate([VVmesh.data, plumeMesh.data]))
 
-            # Instantiate data str to hold visual plots.
-            figure = plt.figure()
-            axes = figure.add_subplot(projection = '3d')
-            axes.add_collection3d(mplot3d.art3d.Poly3DCollection(VVmesh.vectors))
+        # Instantiate data str to hold visual plots.
+        figure = plt.figure()
+        axes = figure.add_subplot(projection = '3d')
+        axes.add_collection3d(mplot3d.art3d.Poly3DCollection(VVmesh.vectors))
 
-            surface = mplot3d.art3d.Poly3DCollection(plumeMesh.vectors)
-            surface.set_facecolor('orange')
+        surface = mplot3d.art3d.Poly3DCollection(plumeMesh.vectors)
+        surface.set_facecolor('orange')
 
-            axes.add_collection3d(surface)
-            axes.quiver(normal[0], normal[1], normal[2], normal[3], normal[4], normal[5], color = (0,0,0), length=4, normalize=True)
+        axes.add_collection3d(surface)
+        axes.quiver(normal[0], normal[1], normal[2], normal[3], normal[4], normal[5], color = (0,0,0), length=4, normalize=True)
 
-            lim = 7
-            axes.set_xlim([-1*lim - 3, lim - 3])
-            axes.set_ylim([-1*lim, lim])
-            axes.set_zlim([-1*lim, lim])
+        lim = 7
+        axes.set_xlim([-1*lim - 3, lim - 3])
+        axes.set_ylim([-1*lim, lim])
+        axes.set_zlim([-1*lim, lim])
 
-            axes.set_xlabel('X')
-            axes.set_ylabel('Y')
-            axes.set_zlabel('Z')
+        axes.set_xlabel('X')
+        axes.set_ylabel('Y')
+        axes.set_zlabel('Z')
 
-            figure.suptitle(self.thruster_data[thruster]['name'][0])
+        figure.suptitle(self.thruster_data[thruster]['name'][0])
 
-            shift = 0
+        shift = 0
 
-            if i < 4:
-                axes.view_init(azim=0, elev=2*shift)
-            elif i < 8:
-                axes.view_init(azim=0, elev=2*shift)
-            elif i < 12:
-                axes.view_init(azim=0, elev=2*shift)
-            else:
-                axes.view_init(azim=0, elev=2*shift)
+        if i < 4:
+            axes.view_init(azim=0, elev=2*shift)
+        elif i < 8:
+            axes.view_init(azim=0, elev=2*shift)
+        elif i < 12:
+            axes.view_init(azim=0, elev=2*shift)
+        else:
+            axes.view_init(azim=0, elev=2*shift)
 
-            if i < 10:
-                index = '00' + str(i)
-            elif i < 100:
-                index = '0' + str(i)
-            else:
-                index = str(i)
-            # screen_shot = vpl.screenshot_fig()
-            # vpl.save_fig('img/frame' + str(index) + '.png')
-            plt.savefig('img/frame' + str(index) + '.png')
-            return i + 1
+        if i < 10:
+            index = '00' + str(i)
+        elif i < 100:
+            index = '0' + str(i)
+        else:
+            index = str(i)
+        # screen_shot = vpl.screenshot_fig()
+        # vpl.save_fig('img/frame' + str(index) + '.png')
+        plt.savefig('img/frame' + str(index) + '.png')
+        return i + 1
 
     def check_thruster_configuration(self):
         """
