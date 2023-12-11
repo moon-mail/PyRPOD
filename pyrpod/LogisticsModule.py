@@ -7,18 +7,75 @@ import os
 import configparser
 
 class LogisticsModule(VisitingVehicle):
-# TODO: write a custom COM of calculator for comapring RCS configs (method)
+    """
+        Extends the Visiting Vehicle object to consider RCS working groups.
+        (Is this class necessary? Can this functionality be kept in the VV object?)
+
+        Attributes
+        ----------
+        mass : float
+            Docking (target) mass for LM
+
+        height : float
+            LM height (cylinder form factor)
+
+        radius : float
+            LM radius (cylinder form factor)
+
+        volume : float
+            LM volume (cylinder form factor)
+
+        I_x : float
+            x-axis (roll) moment of intertia (cylinder form factor)
+
+        I_y : float
+            y-axis (pitch) moment of intertia (cylinder form factor)
+
+        I_z : float
+            z-axis (yaw) moment of intertia (cylinder form factor)
+
+        Methods
+        -------
+        add_thruster_performance(thrust_val, isp)
+            Assigns thruster performance using thruster ID specified in TCD file
+
+        calc_thruster_performance()
+            Calculates performance of each thruster fired inidividually.
+
+        rcs_group_str_to_list(group)
+            Helper method needed convert confige data into a list. WIP
+
+        print_rcs_groups()
+            Simple method to format printing of RCS groups
+
+        assign_thrusters(group)
+            Assigns RCS thrusters to working groups.
+
+        assign_thruster_groups()
+            Wrapper method for grouping RCS thruster according to provided configuration data.
+
+        plot_active_thrusters(active_thrusters, group, normals)
+            Plots active thrusters for a specified working group.
+
+        plot_thruster_group(group)
+            Wrapper method to plot active thrusters in a given working group.
+
+        check_thruster_groups()
+            Plots all thruster working groups in the RCS configuration.
+
+    """
+    # TODO: write a custom COM of calculator for comparing RCS configurations (method)
 
     def __init__(self, mass, height, radius):
-        # TODO: add custom values for momments of intertia.
+        """Simple constructor used to establish inertial properties."""
         # TODO: Add center of mass information.
-        # TODO: Integrate data collection with Solid Works.
 
         # Store provided data.
         self.mass = mass
         self.height = height
         self.radius = radius
 
+        # Calculate volume for a cylinder.
         self.volume = height * 3.14 * radius **2
 
         # Calculate moments of inertia.
@@ -28,18 +85,22 @@ class LogisticsModule(VisitingVehicle):
 
         return
 
-    # WIP. will assign thruster performance characteristics to respective thruster ID as specified in the TCD file.
     def add_thruster_performance(self, thrust_val, isp):
-    # TODO: re-write method to read in data from a CSV file
-    # 1. mass, 2. chamber temp, 3. chamber pressure 4. velocity 5. impulse bit
-    # 6. thruster id, 7. gas composition,
+        """ WIP. Assigns thruster performance characteristics using thruster ID specified in TCD file."""
+        # TODO: re-write method to read in data from CSV file. Do docstring after.
+        # 1. mass, 2. chamber temp, 3. chamber pressure 4. velocity 5. impulse bit
+        # 6. thruster id, 7. gas composition,
         self.thrust = thrust_val
         self.isp = isp
         return
 
     def calc_thruster_performance(self):
-    # Calculate simple performance for each inidividual.
-    # TODO: add similar methods that include fuel usage, self impingement, cant angle sweep + vector analysis.
+        """
+            Calculates performance of each thruster fired inidividually.
+
+            Simple method ignores changes in propellant mass. This must be addressed.
+        """
+        # TODO: add similar methods that include fuel usage, self impingement, cant angle sweep + vector analysis.
         for thruster in self.thruster_data:
             # print('thruster id', thruster)
             # print(self.thruster_data[thruster])
@@ -71,9 +132,25 @@ class LogisticsModule(VisitingVehicle):
             # print('resultant rotational acceleration', T/self.I_x)
 
     def rcs_group_str_to_list(self, group):
-        # helper method needed convert confige data into a list.
-        # AKA: the config method I used is janky af but will work for the imediate future.
-        # TODO: Need to consider alternative data structures.
+        """
+            Helper method needed convert configuration data into a list.
+
+
+            Parameters
+            ----------
+            group : str
+                RCS working group. Needs better name?
+
+            Returns
+            -------
+            group_list : list
+                contains thruster_ids for the specified RCS working group.
+
+        """
+
+        # AKA: the config method I used is janky af but will work for the immediate future.
+        # TODO: Need to consider alternative data structures. This function might be deleted in that process.
+
         group_str = self.config['thruster_groups'][group]
         group_str = group_str.strip('[')
         group_str = group_str.strip(']')
@@ -87,13 +164,28 @@ class LogisticsModule(VisitingVehicle):
 
         return group_list
 
-    # Simple method to format printing of RCS groups
     def print_rcs_groups(self):
+        """Simple method to format printing of RCS groups"""
         for group in self.rcs_groups:
             print(group, self.rcs_groups[group])
 
-    # Assigns RCS thrusters to a specific group
     def assign_thrusters(self, group):
+        """
+            Assigns RCS thrusters to a specificed working group
+
+            Parameters
+            ----------
+            group : str
+                RCS working group. Needs better name?
+
+            normals: 2d list
+                Normal vectors for plume cone center line. WIP not being used as of now.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply assigns class members as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
         thruster_ids = self.rcs_group_str_to_list(group)
 
         self.rcs_groups[group] = []
@@ -102,8 +194,8 @@ class LogisticsModule(VisitingVehicle):
             self.rcs_groups[group].append(thruster)
         # print(self.rcs_groups)
 
-    # Wrapper method for grouping RCS thruster according to provided configuration data.
     def assign_thruster_groups(self):
+        """Wrapper method for grouping RCS thrusters according to provided configuration data."""
 
         # Read in grouping configuration file.
         config = configparser.ConfigParser()
@@ -127,9 +219,26 @@ class LogisticsModule(VisitingVehicle):
         for group in group_ids:
             self.assign_thrusters(group)
 
-
     def plot_active_thrusters(self, active_thrusters, group, normals):
-        # plots thrusters for a given maneuver.
+        """
+            Plots active thrusters for a specified working group.
+
+            Parameters
+            ----------
+            active_thrusters : mesh.Mesh
+                STL mesh containing tranformed cones of all active thrusters.
+
+            group : str
+                RCS working group. Needs better name?
+
+            normals: 2d list
+                Normal vectors for plume cone center line. WIP not being used as of now.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply saves plots as image.
+            Does the method need to return a status message? or pass similar data?
+        """
 
         # Save STL for VV into a local variable. (readability)
         VVmesh = self.mesh
@@ -165,7 +274,19 @@ class LogisticsModule(VisitingVehicle):
         plt.savefig('img/frame' + str(group) + '.png')
 
     def plot_thruster_group(self, group):
+        """
+            Wrapper method to plot active thrusters in a given working group. Name is confusing need to revise.
 
+            Parameters
+            ----------
+            group : str
+                RCS working group. Needs better name?
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply saves stl files as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
         active_thrusters = None
         normals = []
 
@@ -189,7 +310,11 @@ class LogisticsModule(VisitingVehicle):
         self.plot_active_thrusters(active_thrusters, group, normals)
 
     def check_thruster_groups(self):
+        """
+            Plots all thruster working groups in the RCS configuration.
 
+            Is essentially a wrapper method for the wrapper method. Yikes.
+        """
         self.print_rcs_groups()
 
         for group in self.rcs_groups:

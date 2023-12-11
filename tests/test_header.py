@@ -1,6 +1,6 @@
 # Andy Torres
 # University of Central Florida
-# Department of Mechanical and Aerospace Engineerin
+# Department of Mechanical and Aerospace Engineering
 # Last Changed: 12-06-23
 
 # ========================
