@@ -90,14 +90,14 @@ class VisitingVehicle:
             Grappling coordinate for the Visiting Vehicle.
 
         thruster_data : dictionary
-            Distonary holding the main thruster configuration data.
+            Dictionary holding the main thruster configuration data.
 
         jet_interactions : float
             Can be ignored for now.
 
         Methods
         -------
-        add_thruster_config(path_to_cfg)
+        add_thruster_config(path_to_tcd)
             Read in thruster configuration data from the provided file path.
 
         print_info()
@@ -122,7 +122,7 @@ class VisitingVehicle:
             Plots visiting vehicle and all thrusters in RCS configuration.
     """
 
-    def add_thruster_config(self, path_to_cfg):
+    def add_thruster_config(self, path_to_tcd):
         """
             Read in thruster configuration data from the provided file path.
 
@@ -131,8 +131,8 @@ class VisitingVehicle:
 
             Parameters
             ----------
-            path_to_cfg : str
-                file location for thruster configuration data file. (change to path_to_tcd?)
+            path_to_tcd : str
+                file location for thruster configuration data file.
 
             Returns
             -------
@@ -141,7 +141,7 @@ class VisitingVehicle:
         """
 
         # Simple program, reading text from a file.
-        with open(path_to_cfg, 'r') as f:
+        with open(path_to_tcd, 'r') as f:
             lines = f.readlines()
 
             # Parse through first few lines, save relevant information. 
@@ -158,8 +158,7 @@ class VisitingVehicle:
             # Parse thrugh strings and save data in a dictionary
             self.thruster_data = process_str_thrusters(str_thusters)
             self.jet_interactions = lines.pop(0)
-
-            # self.mesh = mesh.Mesh.from_file(path_to_stl)
+        return
 
     def print_info(self):
         """Simple method to format printing of vehicle info."""
@@ -169,6 +168,7 @@ class VisitingVehicle:
         print('center of gravity:', self.cog)
         print('grapple coordinate:', self.grapple)
         print('number of dual jet interactions:', self.jet_interactions)
+        return
 
     def set_stl(self, path_to_stl):
         """
@@ -185,6 +185,7 @@ class VisitingVehicle:
             Does the method need to return a status message? or pass similar data?
         """
         self.mesh = mesh.Mesh.from_file(path_to_stl)
+        return
 
     def initiate_plume_mesh(self):
         """
@@ -208,14 +209,14 @@ class VisitingVehicle:
         plumeMesh.points = 0.035 * plumeMesh.points
         return plumeMesh
 
-    def transform_plume_mesh(self, thruster, plumeMesh):
+    def transform_plume_mesh(self, thruster_id, plumeMesh):
         """
             Transform provided plume mesh according to specified thruster's DCM and exit coordinate.
 
             Parameters
             ----------
-            thruster : str
-                Should this be thruster id?
+            thruster_id : str
+                String to access thruster via a unique ID.
 
             plumeMesh : mesh.Mesh
                 Surface mesh constructed from STL file in initial orientation.
@@ -226,20 +227,19 @@ class VisitingVehicle:
                 Surface mesh constructed from STL file in transformed orientation.
 
         """
-        rot = np.matrix(self.thruster_data[thruster]['dcm'])
+        rot = np.matrix(self.thruster_data[thruster_id]['dcm'])
         plumeMesh.rotate_using_matrix(np.matrix(rot).transpose())
-        plumeMesh.translate(self.thruster_data[thruster]['exit'][0])
+        plumeMesh.translate(self.thruster_data[thruster_id]['exit'][0])
         return plumeMesh
 
-    def initiate_plume_normal(self, thruster):
+    def initiate_plume_normal(self, thruster_id):
         """
                 Collects plume normal vectors data for visualization.
 
             Parameters
             ----------
-            thruster : str
-                Should this be thruster id?
-
+            thruster_id : str
+                String to access thruster via a unique ID.
 
             Returns
             -------
@@ -257,14 +257,14 @@ class VisitingVehicle:
         W = []
 
         # add position vectors to a list.
-        position = self.thruster_data[thruster]['exit'][0]
+        position = self.thruster_data[thruster_id]['exit'][0]
         X.append(position[0])
         Y.append(position[1])
         Z.append(position[2])
 
 
         # add normal vectors to a list
-        dcm = self.thruster_data[thruster]['dcm']
+        dcm = self.thruster_data[thruster_id]['dcm']
         U.append(dcm[0][2])
         V.append(dcm[1][2])
         W.append(dcm[2][2])
@@ -272,7 +272,7 @@ class VisitingVehicle:
 
         return [X,Y,Z,U,V,W]
 
-    def plot_vv_and_thruster(self, plumeMesh, thruster, normal, i):
+    def plot_vv_and_thruster(self, plumeMesh, thruster_id, normal, i):
         """
             Plots Visiting Vehicle and plume cone for provided thruster id.
 
@@ -283,8 +283,8 @@ class VisitingVehicle:
             plumeMesh : mesh.Mesh
                 Surface mesh constructed from STL file in transformed orientation.
 
-            thruster : str
-                Should this be thruster id?
+            thruster_id : str
+                String to access thruster via a unique ID.
 
             normal : 2D List
                 2D list contains vector data for plume normal. This is janky but convenient for plotting.
@@ -322,7 +322,7 @@ class VisitingVehicle:
         axes.set_ylabel('Y')
         axes.set_zlabel('Z')
 
-        figure.suptitle(self.thruster_data[thruster]['name'][0])
+        figure.suptitle(self.thruster_data[thruster_id]['name'][0])
 
         shift = 0
 
@@ -353,26 +353,25 @@ class VisitingVehicle:
             Methods loads STL file of VV and turn on all thrusters to check locations + orientations.
 
             Useful for a quick sanity check of the RCS configuration.
-
         """
 
         # Loop through each thruster, graphing normal vecotr and rotated plume cone.
         i = 0
-        for thruster in self.thruster_data:
+        for thruster_id in self.thruster_data:
 
             # transform plume mesh to notional position.
             plumeMesh = self.initiate_plume_mesh()
 
             # transform plume mesh according to dcm data of current thruster.
-            plumeMesh = self.transform_plume_mesh(thruster, plumeMesh)
+            plumeMesh = self.transform_plume_mesh(thruster_id, plumeMesh)
 
             if not os.path.isdir('stl/tcd/'):
                 os.system('mkdir stl/tcd')
 
             plumeMesh.save('stl/tcd/' + str(i) + '.stl')
 
-            normal = self.initiate_plume_normal(thruster)
+            normal = self.initiate_plume_normal(thruster_id)
 
-            i = self.plot_vv_and_thruster(plumeMesh, thruster, normal, i)
+            i = self.plot_vv_and_thruster(plumeMesh, thruster_id, normal, i)
 
         return

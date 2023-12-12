@@ -131,15 +131,15 @@ class LogisticsModule(VisitingVehicle):
             T = np.array([T_x, T_y, T_z])
             # print('resultant rotational acceleration', T/self.I_x)
 
-    def rcs_group_str_to_list(self, group):
+    def rcs_group_str_to_list(self, working_group):
         """
             Helper method needed convert configuration data into a list.
 
 
             Parameters
             ----------
-            group : str
-                RCS working group. Needs better name?
+            working_group : str
+                String to ID RCS working group according to directionality of motion.
 
             Returns
             -------
@@ -151,7 +151,7 @@ class LogisticsModule(VisitingVehicle):
         # AKA: the config method I used is janky af but will work for the immediate future.
         # TODO: Need to consider alternative data structures. This function might be deleted in that process.
 
-        group_str = self.config['thruster_groups'][group]
+        group_str = self.config['thruster_groups'][working_group]
         group_str = group_str.strip('[')
         group_str = group_str.strip(']')
 
@@ -219,7 +219,7 @@ class LogisticsModule(VisitingVehicle):
         for group in group_ids:
             self.assign_thrusters(group)
 
-    def plot_active_thrusters(self, active_thrusters, group, normals):
+    def plot_active_thrusters(self, active_thrusters, working_group, normals):
         """
             Plots active thrusters for a specified working group.
 
@@ -228,8 +228,8 @@ class LogisticsModule(VisitingVehicle):
             active_thrusters : mesh.Mesh
                 STL mesh containing tranformed cones of all active thrusters.
 
-            group : str
-                RCS working group. Needs better name?
+            working_group : str
+                String to ID RCS working group according to directionality of motion.
 
             normals: 2d list
                 Normal vectors for plume cone center line. WIP not being used as of now.
@@ -268,19 +268,19 @@ class LogisticsModule(VisitingVehicle):
         axes.set_xlabel('X')
         axes.set_ylabel('Y')
         axes.set_zlabel('Z')
-        figure.suptitle(group)
+        figure.suptitle(working_group)
 
         # Save to file
-        plt.savefig('img/frame' + str(group) + '.png')
+        plt.savefig('img/frame' + str(working_group) + '.png')
 
-    def plot_thruster_group(self, group):
+    def plot_thruster_group(self, working_group):
         """
             Wrapper method to plot active thrusters in a given working group. Name is confusing need to revise.
 
             Parameters
             ----------
-            group : str
-                RCS working group. Needs better name?
+            working_group : str
+                String to ID RCS working group according to directionality of motion.
 
             Returns
             -------
@@ -291,7 +291,7 @@ class LogisticsModule(VisitingVehicle):
         normals = []
 
         # Initiate and plot all active thrusters in the group
-        for thruster in self.rcs_groups[group]:
+        for thruster in self.rcs_groups[working_group]:
 
             plumeMesh = self.initiate_plume_mesh()
             plumeMesh = self.transform_plume_mesh(thruster, plumeMesh)
@@ -305,9 +305,9 @@ class LogisticsModule(VisitingVehicle):
         if not os.path.isdir('stl/groups/'):
             os.system('mkdir stl/groups')
 
-        active_thrusters.save('stl/groups/' + group + '.stl')
+        active_thrusters.save('stl/groups/' + working_group + '.stl')
 
-        self.plot_active_thrusters(active_thrusters, group, normals)
+        self.plot_active_thrusters(active_thrusters, working_group, normals)
 
     def check_thruster_groups(self):
         """

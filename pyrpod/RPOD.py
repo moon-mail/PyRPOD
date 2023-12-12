@@ -59,7 +59,7 @@ class RPOD:
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
         calc_trans_performance(motion, dv)
-            Calculates RCS performance according to thruster working groups for a direction of motion.
+            Calculates RCS performance according to thruster working groups for a direction of 3DOF motion .
 
         calc_6dof_performance()
             Calculates performance for translation and rotational maneuvers.
