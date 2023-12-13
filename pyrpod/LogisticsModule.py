@@ -1,4 +1,4 @@
-from pyrpod.Vehicle import VisitingVehicle
+from pyrpod.VisitingVehicle import VisitingVehicle
 from stl import mesh
 import numpy as np
 from matplotlib import pyplot as plt
