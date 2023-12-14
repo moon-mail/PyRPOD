@@ -81,7 +81,7 @@ class Vehicle:
         self.path_to_stl = path_to_stl
         return
 
-    def convert_stl_to_vtk(self):
+    def convert_stl_to_vtk(self, path_to_vtk):
         if self.mesh == None:
             print("mesh is not set. Please load using self.set_stl() method")
             return
@@ -94,6 +94,7 @@ class Vehicle:
 
         FILE_PATH = self.path_to_stl.split('/')[-1]
         FILE_PATH = FILE_PATH.split('.')[0]
+        FILE_PATH = path_to_vtk + FILE_PATH
         print(FILE_PATH)
 
         print(len(surface.vectors))

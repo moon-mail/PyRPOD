@@ -43,7 +43,7 @@ class LogisticsModule(VisitingVehicle):
             Calculates performance of each thruster fired inidividually.
 
         rcs_group_str_to_list(group)
-            Helper method needed convert confige data into a list. WIP
+            Helper method needed convert configuration data into a list. WIP
 
         print_rcs_groups()
             Simple method to format printing of RCS groups

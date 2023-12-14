@@ -2,7 +2,7 @@ from pyrpod.LogisticsModule import LogisticsModule
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
+import configparser
 
 class RPOD:
     """
@@ -73,7 +73,7 @@ class RPOD:
         plot_thrust_envelope()
             Plots operational envelope relating burn time to thrust required for all firings in the flight plan.
     """
-    def __init__(self, LogisticModule):
+    def __init__(self, case_dir):
         """
             Designates assets for RPOD analysis.
 
@@ -88,7 +88,14 @@ class RPOD:
             Does the method need to return a status message? or pass similar data?
         """
         # TODO: add variables for trade study analysis
-        self.vv = LogisticModule
+        self.case_dir = case_dir
+        config = configparser.ConfigParser()
+        config.read(self.case_dir + "config.ini")
+        self.config = config
+        print(self.config)
+
+    def set_lm(LogisticsModule):
+        self.vv = LogisticsModule
 
     def set_current_6dof_state(self, v = [0, 0, 0], w = [0,0,0]):
         """
