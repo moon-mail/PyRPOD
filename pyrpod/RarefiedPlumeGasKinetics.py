@@ -36,7 +36,7 @@ import numpy as np
 import sympy as sp
 import matplotlib.pyplot as plt
 
-class RarefiedPlumeGasKinetics:
+class Simons:
     
     def __init__(self, gamma, R, T_c, P_c):
         self.gamma = gamma
@@ -98,6 +98,178 @@ class RarefiedPlumeGasKinetics:
         n_ratio = rho_ratio #number density ratio = number denisty / ??nozle throat?? number density aka n/n_s
         return n_ratio, P_static
 
+    
+class SimplifiedGasKinetics:
+
+    #maybe group the special factors into one method and return an array of them
+    def __init__(self):
+        return
+
+    def get_speed_ratio(self, U_0, R, T_0):
+        S_0 = U_0 / np.sqrt(2 * R * T_0)
+        return S_0
+
+    def get_Q_simple(self, X, Z):
+        Q_simple = X ** 2 / (X ** 2 + Z ** 2)
+        return Q_simple
+    
+    def get_K_simple(self, S_0, Q_simple):
+        #K_simple = Q_simple * ((Q_simple * S_0) + ((0.5 + (Q_simple * S_0 ** 2)) * np.sqrt(np.pi * Q_simple) * 
+                               #(1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple * S_0 ** 2)))
+        term1 = Q_simple * S_0
+        term2 = 0.5 + Q_simple * S_0 ** 2
+        term3 = np.sqrt(np.pi * Q_simple)
+        term4 = (1 + sp.erf(S_0 * np.sqrt(Q_simple))) * np.exp(Q_simple * S_0 ** 2)
+        K_simple = Q_simple * (term1 + term2 * term3 * term4)
+        return K_simple
+    
+    def get_M_simple(self, S_0, Q_simple):
+        #M_simple = (Q_simple ** 2) * ((Q_simple * S_0 ** 2) + 1 + (S_0 * (1.5 + (Q_simple * S_0 ** 2)) * 
+                                #np.sqrt(np.pi * Q_simple)) * (1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple *S_0 ** 2))
+        term1 = Q_simple * S_0 ** 2
+        term2 = 1 + S_0 * (1.5 + Q_simple * S_0 ** 2)
+        term3 = np.sqrt(np.pi * Q_simple)
+        term4 = (1 + sp.erf(S_0 * np.sqrt(Q_simple))) * np.exp(Q_simple * S_0 ** 2)
+        M_simple = Q_simple ** 2 * (term1 + term2 * term3 * term4)
+        return M_simple
+    
+    def get_N_simple(self, S_0, Q_simple):
+        #N_simple = S_0 * (Q_simple ** 2) * (1.25 + (Q_simple * S_0 ** 2) / 2)
+        #N_simple += (0.5 * np.sqrt(np.pi * Q_simple ** 3)) * (0.75 + 3 * Q_simple * S_0 **2 + Q_simple ** 2 * S_0 ** 4) * (1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple * S_0 ** 2)
+        term1 = S_0 * Q_simple ** 2 * (1.25 + Q_simple * S_0 ** 2 / 2)
+        term2 = 0.5 * np.sqrt(np.pi * Q_simple ** 3)
+        term3 = 0.75 + 3 * Q_simple * S_0 ** 2 + Q_simple ** 2 * S_0 ** 4
+        term4 = (1 + sp.erf(S_0 * np.sqrt(Q_simple))) * np.exp(Q_simple * S_0 ** 2)
+        N_simple = term1 + term2 * term3 * term4
+        return N_simple
+    
+    def get_num_density_ratio(self, X, Z, R_0, S_0):       #replace with self?
+        #num_density_ratio = n_1s(X, 0, Z) / n_0
+        Q_simple = self.get_Q_simple(X, Z)
+        K_simple = self.get_K_simple(S_0, Q_simple)
+        num_density_ratio = (K_simple / (2 * np.sqrt(np.pi)) * (R_0 / X) ** 2) * np.exp(-(S_0 ** 2))
+        return num_density_ratio
+    
+    def get_U_normalized(self, X, Z, S_0):
+        #U_normalized = U_1s (X, 0, Z) * sqrt(beta)
+        Q_simple = self.get_Q_simple(X, Z)
+        K_simple = self.get_K_simple(S_0, Q_simple)
+        M_simple = self.get_M_simple(S_0, Q_simple)
+        U_normalized = M_simple / K_simple
+        return U_normalized
+    
+    def get_W_normalized(self, X, Z, S_0):
+        #W_normalized = W_1s (X, 0, Z) * sqrt(beta)
+        Q_simple = self.get_Q_simple(X, Z)
+        K_simple = self.get_K_simple(S_0, Q_simple)
+        M_simple = self.get_M_simple(S_0, Q_simple)
+        W_normalized = (M_simple / K_simple) * (Z / X)
+        return W_normalized
+
+    def get_temp_ratio(self, X, Z, S_0):
+        #T_ratio = T_1s / T_0
+        Q_simple = self.get_Q_simple(X, Z)
+        K_simple = self.get_K_simple(S_0, Q_simple)
+        M_simple = self.get_M_simple(S_0, Q_simple)
+        N_simple = self.get_N_simple(S_0, Q_simple)
+        T_ratio = ((-2 * M_simple ** 2) / (3 * Q_simple * K_simple ** 2)) + (4 * N_simple / (3 * K_simple))
+        return T_ratio
+    
+    def get_num_density_centerline(self, X, S_0, R_0):
+        p1 = X / np.sqrt(X ** 2 + R_0 ** 2) 
+        p2 = R_0 / np.sqrt(X ** 2 + R_0 ** 2)
+        n_ratio = 0.5 + 0.5 * sp.erf(S_0) - (p1 * np.exp(-S_0 ** 2 * p2 ** 2) / 2) * (1 + sp.erf(p1 * S_0))
+        return n_ratio
+    
+    def get_velocity_centerline(self, X, S_0, R_0):
+        p1 = X / np.sqrt(X ** 2 + R_0 ** 2) 
+        p2 = R_0 / np.sqrt(X ** 2 + R_0 ** 2)
+        n_ratio = self.get_num_density_centerline(X, S_0, R_0)
+        U_ratio = 1 / (2 * n_ratio) * ((p2 ** 2 * np.exp(- S_0 ** 2) / np.sqrt(np.pi)) + (S_0 * (1 + sp.erf(S_0))) - (np.exp(- p2 ** 2 * S_0 ** 2) * p1 ** 3 * S_0 * (1 + sp.erf(p1 * S_0))))
+        return U_ratio
+    
+    def get_temp_centerline(self, X, S_0, R_0):
+        R = 287
+        T_0 = 500
+        n_ratio = self.get_num_density_centerline(X, S_0, R_0)
+        beta_0 = 1 / (2 * R * T_0)
+        U1 = self.get_velocity_centerline(X, S_0, R_0) * np.sqrt(beta_0)
+        Q_simple = self.get_Q_simple(X, 0)
+        N = self.get_N_simple(S_0, Q_simple)
+        r = sp.symbols("r")
+        f = N * r
+        integral = sp.integrate(f, (r, 0, R_0))
+        temp_ratio = U1 ** 2 / (3 * R * T_0) + (4 * np.exp(- S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * X ** 2) * integral.evalf()
+        return temp_ratio
+
+    def plot_num_density_ratio(self, X_max, speed_ratios, R_0):
+
+        D = 2 * R_0
+
+        for S_0 in speed_ratios:
+
+            num_densities = []
+            x_range = np.arange(0, X_max, 0.05)
+            for x in x_range:
+                num_densities.append(self.get_num_density_centerline(x, S_0, R_0))
+
+            plt.plot(x_range / D, num_densities, label=f"S_0 = {S_0}")
+        plt.title("Normalized Analytical Number Density Along Centerline")
+        plt.xlabel('X/D')
+        plt.ylabel('n_1/n_0')
+        plt.ylim(0,1.2)
+        plt.legend()
+        plt.show()
+
+    def plot_normalized_U(self, X_max, speed_ratios, R_0):
+
+        D = 2 * R_0
+
+        for S_0 in speed_ratios:
+
+            norm_Us = []
+            x_range = np.arange(0, X_max, 0.05)
+            for x in x_range:
+                norm_Us.append(self.get_velocity_centerline(x, S_0, R_0))
+
+            plt.plot(x_range / D, norm_Us, label=f"S_0 = {S_0}")
+        plt.title("Normalized Analytical U-velocity Distribution Along Centerline")
+        plt.xlabel('X/D')
+        plt.ylabel('U1*sqrt(beta0)')
+        plt.legend()
+        plt.show()
+
+    def plot_normalized_temp(self, X_max, speed_ratios, R_0):
+
+        D = 2 * R_0
+
+        for S_0 in speed_ratios:
+
+            norm_temps = []
+            x_range = np.arange(0.05, X_max, 0.05)
+            for x in x_range:
+                norm_temps.append(self.get_temp_centerline(x, S_0, R_0))
+
+            plt.plot(x_range / D, norm_temps, label=f"S_0 = {S_0}")
+        plt.title("Normalized Analytical Temperature Distribution Along Centerline")
+        plt.xlabel('X/D')
+        plt.ylabel('T1/T0')
+        plt.legend()
+        plt.show()
+
+speed_ratios = [1, 2, 3]
+plume_obj = SimplifiedGasKinetics()
+plume_obj.plot_num_density_ratio(1.5, speed_ratios, 0.075)
+plume_obj.plot_normalized_U(1.5, speed_ratios, 0.075)
+plume_obj.plot_normalized_temp(1.5, speed_ratios, 0.075)
+
+
+
+
+
+
+
+'''
 T_c = 500 #K
 P_c = 745000 #N/m^2
 R = 208.13 #J / (kg * K)
@@ -133,3 +305,4 @@ plt.xlabel('theta (deg)')
 plt.ylabel('P (N/m^2)')
 
 plt.show()
+'''
