@@ -7,6 +7,9 @@ import numpy as np
 import math
 import os
 
+from pyevtk.hl import unstructuredGridToVTK
+from pyevtk.vtk import VtkTriangle, VtkQuad
+
 class Vehicle:
     """
         Class responsible for handling visiting vehicle data.
@@ -75,4 +78,75 @@ class Vehicle:
             Does the method need to return a status message? or pass similar data?
         """
         self.mesh = mesh.Mesh.from_file(path_to_stl)
+        self.path_to_stl = path_to_stl
+        return
+
+    def convert_stl_to_vtk(self):
+        if self.mesh == None:
+            print("mesh is not set. Please load using self.set_stl() method")
+            return
+
+        print("printing STL surface", self.mesh)
+
+        surface = self.mesh 
+
+        print(self.path_to_stl)
+
+        FILE_PATH = self.path_to_stl.split('/')[-1]
+        FILE_PATH = FILE_PATH.split('.')[0]
+        print(FILE_PATH)
+
+        print(len(surface.vectors))
+
+        # Create lists to store coordinate and connectivity data.
+        faces = surface.vectors
+        n_faces = len(faces)
+        print("number of faces in the STL mesh", n_faces)
+        x = []
+        y = []
+        z = []
+
+        # Define connectivity for each vertice
+        conn = []
+
+        # Loop through every face in the STL geometry.
+        # Append coordinate data and necessary connectivity.
+        i = 0
+        for face in faces:
+            for vertice in face:
+                x.append(vertice[0])
+                y.append(vertice[1])
+                z.append(vertice[2])
+                conn.append(i)
+                i+=1
+        
+        print("number of vertices in the mesh", i+1)
+
+        # Convert to numpy arrays.
+        x = np.array(x)
+        y = np.array(y)
+        z = np.array(z)
+        conn = np.array(conn)
+        # print(conn, len(conn))
+
+        # Define offset of last vertex of each element
+        offset = []
+        offset_val = 3
+        for face in range(int(n_faces)):
+            offset.append(offset_val)
+            offset_val = offset_val + 3
+        offset = np.array(offset)
+        # print(offset, len(offset))
+
+        # Define cell types
+        ctype = np.zeros(n_faces)
+        ctype.fill(VtkTriangle.tid)
+
+        # Create dummy surface data.
+        cellData = {"strikes" : np.zeros(len(surface.vectors))
+                    # "v:1" : np.array(surface_data["v:1"]),
+                    # "v:2" : np.array(surface_data["v:2"])
+                    }
+
+        unstructuredGridToVTK(FILE_PATH, x, y, z, connectivity = conn, offsets = offset, cell_types = ctype, cellData = cellData)
         return
