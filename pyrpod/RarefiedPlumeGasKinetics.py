@@ -199,7 +199,7 @@ class SimplifiedGasKinetics:
         r = sp.symbols("r")
         f = N * r
         integral = sp.integrate(f, (r, 0, R_0))
-        temp_ratio = U1 ** 2 / (3 * R * T_0) + (4 * np.exp(- S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * X ** 2) * integral.evalf()
+        temp_ratio = (4 * np.exp(- S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * X ** 2) * integral.evalf() - U1 ** 2 / (3 * R * T_0) 
         return temp_ratio
 
     def plot_num_density_ratio(self, X_max, speed_ratios, R_0):
@@ -256,6 +256,7 @@ class SimplifiedGasKinetics:
         plt.ylabel('T1/T0')
         plt.legend()
         plt.show()
+
 
 speed_ratios = [1, 2, 3]
 plume_obj = SimplifiedGasKinetics()
