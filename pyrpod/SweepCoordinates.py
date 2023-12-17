@@ -41,9 +41,10 @@ class SweepCoordinates:
 
             increment1 = 0
             increment2 = 0
-            coord_dict = sorted(coord_dict.keys(), reverse=True)
-            coord1 = next(iter(coord_dict))
-            coord2 = next(iter(coord_dict), None)
+            
+            coord2, trash = coord_dict.popitem()
+            coord1, trash = coord_dict.popitem()
+            print(coord_dict)
 
             while 0 > coord1 > -height_LM:
                 if coord2 is not None:
@@ -51,7 +52,7 @@ class SweepCoordinates:
                     while 0 > new_coord2 > -height_LM:
                         new_coord2 -= increment2
                         formatted_coord2 = "{:.6e}".format(new_coord2)
-                        line_numbers_to_edit = coord_dict[coord2]
+                        line_numbers_to_edit = coord_dict.get(str(coord2), [])
                         for line_number in line_numbers_to_edit:
                             cols = lines[line_number - 1].split()
                             cols[2] = formatted_coord2
@@ -67,4 +68,4 @@ class SweepCoordinates:
             print("File " + thruster_config_file + " not found.")
 
 obj = SweepCoordinates()
-obj.x_coord_sweep('symTCD.txt', 2, -2, 14)
+obj.x_coord_sweep('../data/tcd/TCD2.txt', 2, -2, 14)
