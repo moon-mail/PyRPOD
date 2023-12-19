@@ -189,17 +189,14 @@ class SimplifiedGasKinetics:
         return U_ratio
     
     def get_temp_centerline(self, X, S_0, R_0):
-        R = 287
-        T_0 = 500
         n_ratio = self.get_num_density_centerline(X, S_0, R_0)
-        beta_0 = 1 / (2 * R * T_0)
-        U1 = self.get_velocity_centerline(X, S_0, R_0) * np.sqrt(beta_0)
+        U1 = self.get_velocity_centerline(X, S_0, R_0)
         Q_simple = self.get_Q_simple(X, 0)
         N = self.get_N_simple(S_0, Q_simple)
         r = sp.symbols("r")
         f = N * r
         integral = sp.integrate(f, (r, 0, R_0))
-        temp_ratio = (4 * np.exp(- S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * X ** 2) * integral.evalf() - U1 ** 2 / (3 * R * T_0) 
+        temp_ratio = (4 * np.exp(- S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * X ** 2) * integral.evalf() - (U1 ** 2 / (3/2)) 
         return temp_ratio
 
     def plot_num_density_ratio(self, X_max, speed_ratios, R_0):
