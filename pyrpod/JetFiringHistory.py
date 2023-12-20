@@ -13,10 +13,10 @@ class JetFiringHistory:
 
             for i in range(self.nt):
                 
-                print(i)
+                # print(i)
                 # Split current into a list row at every space character.
                 curr_row = lines.pop(0).split(' ')
-                print(curr_row)
+                # print(curr_row)
 
                 
                 # Remove empty strings from list. 
@@ -25,7 +25,7 @@ class JetFiringHistory:
 
                 # Remove new line character. 
                 curr_row[-1] = curr_row[-1].split('\n')[0]
-                print(curr_row)
+                # print(curr_row)
                 # Save all information in current row to a dictionary.
                 time_step = {}
                 
