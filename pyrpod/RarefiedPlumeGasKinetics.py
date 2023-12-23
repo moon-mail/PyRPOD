@@ -36,18 +36,22 @@ import numpy as np
 import sympy as sp
 import matplotlib.pyplot as plt
 
+#TODO fix broken plots and addplotting for pressures, test case takes 120s to run, rip
+#broken when gamma = 2?
 class Simons:
     
-    def __init__(self, gamma, R, T_c, P_c):
-        self.gamma = gamma
+    def __init__(self, gammas, R, T_c, P_c, R_0, r):
+        self.gammas = gammas
         self.R = R
         #???should i also include throat temp and throat pressure for consistency???
         self.T_c = T_c
         self.P_c = P_c
-        self.rho_throat = self.get_nozzle_throat_density()
-        self.theta_max = self.get_limiting_turn_angle()
-        self.A = self.get_normalization_constant()
-        self.U_t = self.get_limiting_velocity()
+        self.r = r
+        self.R_0 = R_0
+        #self.rho_throat = self.get_nozzle_throat_density()
+        #self.theta_max = self.get_limiting_turn_angle()
+        #self.A = self.get_normalization_constant()
+        #self.U_t = self.get_limiting_velocity()
 
     def get_nozzle_throat_density(self):
         #ideal gas law P_throat = rho_throat * R * T_throat
@@ -57,47 +61,72 @@ class Simons:
         rho_throat = P_throat / (self.R * T_throat)
         return rho_throat
 
-    def get_limiting_turn_angle(self): #Lumpkin1999
-       theta_max = (np.pi / 2) * (np.sqrt((self.gamma + 1) / (self.gamma - 1)) - 1)
+    def get_limiting_turn_angle(self, gamma): #Lumpkin1999
+       theta_max = (np.pi / 2) * (np.sqrt((gamma + 1) / (gamma - 1)) - 1)
        return theta_max
 
-    def get_plume_angular_density_decay_function(self, theta):
-        kappa = np.floor(2 / (self.gamma - 1)) #Boyton 1967/68 from Cai2012 [22][23]
-        f = (np.cos((np.pi / 2) * (theta / self.theta_max))) ** kappa
+    def get_plume_angular_density_decay_function(self, gamma, theta):
+        kappa = np.floor(2 / (gamma - 1)) #Boyton 1967/68 from Cai2012 [22][23]
+        theta_max = self.get_limiting_turn_angle(gamma)
+        f = (np.cos((np.pi / 2) * (theta / theta_max))) ** kappa
         return f
 
-    def get_normalization_constant(self): #Lumpkin1999
+    def get_normalization_constant(self, gamma): #Lumpkin1999
+        theta_max = self.get_limiting_turn_angle(gamma)
         theta = sp.symbols('theta')
-        f = (sp.cos((sp.pi / 2) * (theta / self.theta_max))) ** (2 / (self.gamma - 1))
+        f = (sp.cos((sp.pi / 2) * (theta / theta_max))) ** (2 / (gamma - 1))
         integrand = sp.sin(theta) * f
-        integral = sp.integrate(integrand, (theta, 0, self.theta_max)) #integrate from 0 to max turning angle
-        A = 0.5 * np.sqrt((self.gamma - 1) / (self.gamma + 1)) / (integral.evalf())
+        integral = sp.integrate(integrand, (theta, 0, theta_max)) #integrate from 0 to max turning angle
+        A = 0.5 * np.sqrt((gamma - 1) / (gamma + 1)) / (integral.evalf())
         return A
     
-    def get_sonic_velocity(self):
+    def get_sonic_velocity(self, gamma):
         T_throat = self.T_c * 0.8333 #from Isentropic Flow Tables @ Mach = 1
-        sonic_velocity = np.sqrt(self.gamma * self.R * T_throat)
+        sonic_velocity = np.sqrt(gamma * self.R * T_throat)
         return sonic_velocity
 
-    def get_limiting_velocity(self):
-        sonic_velocity = self.get_sonic_velocity()
-        U_t = np.sqrt((self.gamma + 1) / (self.gamma - 1)) * sonic_velocity
+    def get_limiting_velocity(self, gamma):
+        sonic_velocity = self.get_sonic_velocity(gamma)
+        U_t = np.sqrt((gamma + 1) / (gamma - 1)) * sonic_velocity
         return U_t
 
-    def get_static_pressure(self, rho_ratio):
-        rho = rho_ratio * self.rho_throat
-        P_static = 1/3 * rho * self.U_t
+    def get_static_pressure(self, gamma, rho_ratio):
+        rho = rho_ratio * self.get_nozzle_throat_density()
+        P_static = 1/3 * rho * self.get_limiting_velocity(gamma)
         return P_static
 
     #number density from continuity equation with constasnt mass flux across different spherical surfaces
-    def simons_model(self, R_0, r, theta): #cosine law
-        f = self.get_plume_angular_density_decay_function(theta)
+    def get_num_density_ratio(self, gamma, theta): #cosine law
+        f = self.get_plume_angular_density_decay_function(gamma, theta)
         #??? make own function for rho_ratio???
-        rho_ratio = self.A * ((R_0/r) ** 2) * f #rho_ratio = density / nozzle throat denisty aka rho / rho_s
-        P_static = self.get_static_pressure(rho_ratio)
+        A = self.get_normalization_constant(gamma)
+        rho_ratio = A * ((self.R_0/self.r) ** 2) * f #rho_ratio = density / nozzle throat denisty aka rho / rho_s
         n_ratio = rho_ratio #number density ratio = number denisty / ??nozle throat?? number density aka n/n_s
-        return n_ratio, P_static
+        return n_ratio
 
+    def plot_density_profiles(self):
+
+        plt.figure()
+        kappas = []
+        for gamma in self.gammas:
+            #plume_obj = Simons(gamma, R, T_c, P_c, R_0, r)
+            kappa = np.floor(2 / (gamma - 1))
+            kappas.append(kappa)
+            n_ratios = []
+            theta_max = self.get_limiting_turn_angle(gamma)
+            theta_range = np.arange(0, theta_max, 0.1) #grabbed theta_max from gamma = 1.4
+
+            for theta in theta_range:
+                n_ratio = self.get_num_density_ratio(gamma, theta)
+                n_ratios.append(n_ratio)
+
+            plt.plot(theta_range * (180 / np.pi), n_ratios) #n/n_s / n_0/n_s = n/n_0
+        plt.title("Density Profiles Along r/D = 10")
+        plt.xlabel('theta (deg)')
+        plt.ylabel('n/n_s')
+        plt.legend(labels=[f"kappa = {kappa}" for kappa in kappas])
+        #plt.legend(labels=["kappa = 3", "kappa = 2", "kappa = 1.5"])
+        plt.show()
     
 class SimplifiedGasKinetics:
 
@@ -254,32 +283,22 @@ class SimplifiedGasKinetics:
         plt.legend()
         plt.show()
 
-
-speed_ratios = [1, 2, 3]
-plume_obj = SimplifiedGasKinetics()
-plume_obj.plot_num_density_ratio(1.5, speed_ratios, 0.075)
-plume_obj.plot_normalized_U(1.5, speed_ratios, 0.075)
-plume_obj.plot_normalized_temp(1.5, speed_ratios, 0.075)
-
-
-
-
-
-
-
 '''
 T_c = 500 #K
 P_c = 745000 #N/m^2
 R = 208.13 #J / (kg * K)
+r = 1.5
+R_0 = 0.075
+
 gammas = [1.66, 2, 2.33] #1.67 gives type error
 
-plt.figure()
+def plot_density_profiles(self, gammas):
 
-for gamma in gammas:
-    plume_obj = RarefiedPlumeGasKinetics(gamma, R, T_c, P_c)
+    plt.figure()
 
-    R_0 = .075
-    r = 1.5
+    for gamma in gammas:
+        plume_obj = Simons(gamma, R, T_c, P_c, R_0, r)
+
     n_ratios = []
     P_static_vals = []
     theta_max = plume_obj.theta_max
