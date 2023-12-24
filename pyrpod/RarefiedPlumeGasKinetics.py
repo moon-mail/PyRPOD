@@ -288,37 +288,74 @@ import math
 class CollisionlessPlume:
 
     #solves a summation series of legengre polynomials of the first kind
-    #from degree i to degree n or until the convergance tolerance, tol is met
-    #i: int, n: int, x: float (value to evaluate function over), tol: float
-    def legendre_polynomial_solver(i, n, x, tol):
+    #from degree 0 to degree n or until the convergance tolerance, tol is met
+    #n: int, x: float (value to evaluate function over), tol: float
+    def sum_series_legendre_polynomial_recurrence(n, x, tol):
         
         prev_sum = float('-inf')
         sum = 0
-        for degree in range (i, n+1, 1):
+    
+        P_n_minus_2 = 1 #P_0 = 1
+        P_n_minus_1 = x #P_1 = x
+        sum += P_n_minus_1 + P_n_minus_2
+
+        for degree in range (2, n+1, 1):
         
             #solve for polynomial of degree of current iter
-            P_n = 0
-            m = int(np.floor(degree / 2))
-            if degree == 0:
-                P_n += 1
-                print(P_n)
-                continue
-            for j in range (0, m+1, 1):
-                term = ((-1) ** j) * math.factorial(2 * degree - 2 * j) * (x ** (degree - 2 * j))
-                term /= (2 ** degree) * math.factorial(j)
-                term /= math.factorial(degree - 2 * j) * (degree - j)
-                P_n += term
+            P_n = (2 * (degree - 1) + 1) * x * (P_n_minus_1)
+            P_n -= (degree - 1) * P_n_minus_2
+            P_n /= degree
 
-            print(P_n)
             sum += P_n
+            print(f'{degree}: {sum}')
+            P_n_minus_2 = P_n_minus_1
+            P_n_minus_1 = P_n
 
             if abs(sum - prev_sum) < tol:
                 return sum
             prev_sum = sum
 
         return sum
+    
+    #solves a summation series of legengre polynomials of the first kind
+    #from degree i to degree n or until the convergance tolerance, tol is met
+    #i: int, n: int, x: float (value to evaluate function over), tol: float
+    def sum_series_legendre_polynomial(self, i, n, x, tol):
+        
+        prev_sum = float('-inf')
+        sum = 0
 
-test = CollisionlessPlume.legendre_polynomial_solver(0, 5, 0.5, 0.0001)
+        for degree in range (i, n+1, 1):
+        
+            #solve for polynomial of degree of current iter
+            P_n = self.legendre_polynomial_solver(degree, x)
+            sum += P_n
+
+            if abs(sum - prev_sum) < tol:
+                return sum
+            
+            prev_sum = sum
+
+        return sum
+    
+    def legendre_polynomial_solver(self, degree, x):
+
+        P_n = 0
+        m = int(np.floor(degree / 2))
+        if degree == 0:
+            P_n += 1
+            return P_n
+
+        #this summation representation is not returning the correct values?
+        for j in range (0, m+1, 1):
+            term = ((-1) ** j) * math.factorial(2 * degree - 2 * j) * (x ** (degree - 2 * j))
+            term /= (2 ** degree) * math.factorial(j)
+            term /= math.factorial(degree - 2 * j) * (degree - j)
+            P_n += term
+        
+        return P_n
+
+test = CollisionlessPlume.sum_series_legendre_polynomial_recurrence(9999, 0.1, 0.00001)
 
 '''
 T_c = 500 #K
