@@ -283,6 +283,43 @@ class SimplifiedGasKinetics:
         plt.legend()
         plt.show()
 
+import math
+
+class CollisionlessPlume:
+
+    #solves a summation series of legengre polynomials of the first kind
+    #from degree i to degree n or until the convergance tolerance, tol is met
+    #i: int, n: int, x: float (value to evaluate function over), tol: float
+    def legendre_polynomial_solver(i, n, x, tol):
+        
+        prev_sum = float('-inf')
+        sum = 0
+        for degree in range (i, n+1, 1):
+        
+            #solve for polynomial of degree of current iter
+            P_n = 0
+            m = int(np.floor(degree / 2))
+            if degree == 0:
+                P_n += 1
+                print(P_n)
+                continue
+            for j in range (0, m+1, 1):
+                term = ((-1) ** j) * math.factorial(2 * degree - 2 * j) * (x ** (degree - 2 * j))
+                term /= (2 ** degree) * math.factorial(j)
+                term /= math.factorial(degree - 2 * j) * (degree - j)
+                P_n += term
+
+            print(P_n)
+            sum += P_n
+
+            if abs(sum - prev_sum) < tol:
+                return sum
+            prev_sum = sum
+
+        return sum
+
+test = CollisionlessPlume.legendre_polynomial_solver(0, 5, 0.5, 0.0001)
+
 '''
 T_c = 500 #K
 P_c = 745000 #N/m^2
