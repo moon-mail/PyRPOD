@@ -1,16 +1,61 @@
 import numpy as np
 
+#TODO in actual sweep method, pass a tolerance parameter
+#this is to narrow sweep limits and account for cone angles
 class SweepAngles:
 
-    #TODO need to add the actual loop to grab all the dcms, maybe pitches/yaws array 
+    def __init__(self, config, thruster_groups):
+        
+        self.init_yaws = []
+        self.init_pitches = []
+        self.thruster_groups = thruster_groups
 
-    #TODO dont use instance variables. EACH thruster has its own init_pitch and init_yaw
-    #or maybe use a lise of init_pitches abd init_yaws
-    def __init__(self, DCM):
+        for thruster in config:
+            standardized_thruster = self.standardize_thruster_normal(config[thruster], thruster_groups)
+            config[thruster] = standardized_thruster
+            init_pitch, init_yaw = self.calculate_init_angles(config[thruster]['dcm'])
+            self.init_yaws.append(init_yaw)
+            self.init_pitches.append(init_pitch)
 
-        self.init_pitch, self.init_yaw = self.calculate_init_angles(DCM)
-
-    def standardize_thruster_normal():
+    def standardize_thruster_normal(self, thruster, thruster_groups):
+            
+            if thruster['name'] in thruster_groups['+x']:
+                dcm = thruster['dcm']
+                dcm[0][2], dcm[1][2], dcm[2][2] = -1, 0, 0
+                thruster['dcm'] = dcm
+                return thruster
+            
+            if thruster['name'] in thruster_groups['-x']:
+                dcm = thruster['dcm']
+                dcm[0][2], dcm[1][2], dcm[2][2] = 1, 0, 0
+                thruster['dcm'] = dcm
+                return thruster
+            
+            if thruster['name'] in thruster_groups['+y']:
+                dcm = thruster['dcm']
+                dcm[0][2], dcm[1][2], dcm[2][2] = 0, -1, 0
+                thruster['dcm'] = dcm
+                return thruster
+            
+            if thruster['name'] in thruster_groups['-y']:
+                dcm = thruster['dcm']
+                dcm[0][2], dcm[1][2], dcm[2][2] = 0, 1, 0
+                thruster['dcm'] = dcm
+                return thruster
+            
+            if thruster['name'] in thruster_groups['+z']:
+                dcm = thruster['dcm']
+                dcm[0][2], dcm[1][2], dcm[2][2] = 0, 0, -1
+                thruster['dcm'] = dcm
+                return thruster
+            
+            if thruster['name'] in thruster_groups['-z']:
+                dcm = thruster['dcm']
+                dcm[0][2], dcm[1][2], dcm[2][2] = 0, 0, 1
+                thruster['dcm'] = dcm
+                return thruster
+            
+            return thruster
 
     def calculate_init_angles(self, DCM):
 
