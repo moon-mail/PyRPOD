@@ -81,14 +81,18 @@ class Vehicle:
         self.path_to_stl = path_to_stl
         return
 
-    def convert_stl_to_vtk(self, path_to_vtk):
-        if self.mesh == None:
+    def convert_stl_to_vtk(self, path_to_vtk, cellData, mesh = None):
+        if self.mesh == None and mesh == None:
             print("mesh is not set. Please load using self.set_stl() method")
             return
 
-        print("printing STL surface", self.mesh)
+        if mesh == None:
+            surface = self.mesh
+        else:
+            surface = mesh
 
-        surface = self.mesh 
+        print("printing STL surface", surface)
+
 
         print(self.path_to_stl)
 
@@ -143,11 +147,6 @@ class Vehicle:
         ctype = np.zeros(n_faces)
         ctype.fill(VtkTriangle.tid)
 
-        # Create dummy surface data.
-        cellData = {"strikes" : np.zeros(len(surface.vectors))
-                    # "v:1" : np.array(surface_data["v:1"]),
-                    # "v:2" : np.array(surface_data["v:2"])
-                    }
 
         unstructuredGridToVTK(FILE_PATH, x, y, z, connectivity = conn, offsets = offset, cell_types = ctype, cellData = cellData)
         return

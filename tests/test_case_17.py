@@ -1,0 +1,40 @@
+# Andy Torres
+# University of Central Florida
+# Department of Mechanical and Aerospace Engineering
+# Last Changed: 12-14-23
+
+# ========================
+# PyRPOD: test/test_case_13.py
+# ========================
+# Test case for converting STL data to VTK data.
+# This is accomplished by checking for the proper data format of VTK files.
+
+import test_header
+import unittest, os, sys
+from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
+
+class LoadJFHChecks(unittest.TestCase):
+    def test_jfh_reader(self):
+
+        # Path to directory holding data assets and results for a specific RPOD study.
+        case_dir = '../case/base_case/'
+
+        # Load JFH data.
+        jfh = JetFiringHistory.JetFiringHistory(case_dir + 'jfh/JFH05.A')
+
+        tv = TargetVehicle.TargetVehicle()
+        tv.set_stl(case_dir + 'stl/flat_plate.stl')
+
+        vv = VisitingVehicle.VisitingVehicle()
+        vv.set_stl(case_dir + 'stl/cylinder.stl')
+        vv.add_thruster_config(case_dir + 'tcd/TCD.txt')
+
+        rpod = RPOD.RPOD(case_dir)
+        rpod.study_init(jfh, tv, vv)
+        # rpod = RPOD.RPOD(jfh, tv, vv)
+
+        # rpod.graph_jfh()
+        rpod.jfh_plume_strikes()
+
+if __name__ == '__main__':
+    unittest.main()
