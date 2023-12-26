@@ -25,7 +25,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, RPOD
+from pyrpod import LogisticsModule, MissionPlanner
 
 class DeltaMassChecks(unittest.TestCase):
     def test_delta_m_plots(self):
@@ -45,10 +45,12 @@ class DeltaMassChecks(unittest.TestCase):
         lm.add_thruster_performance(400, 300)
         lm.assign_thruster_groups()
 
-        rpod = RPOD.RPOD(lm)
-        rpod.read_flight_plan('../data/flight_plan/flight_plan.csv')
+        case_dir = '../case/flight_envelopes/'
+        mp = MissionPlanner.MissionPlanner(case_dir)
+        mp.set_lm(lm)
+        mp.read_flight_plan('../data/flight_plan/flight_plan.csv')
 
-        rpod.plot_delta_m(1885)
+        mp.plot_delta_m(1885)
         
 
 if __name__ == '__main__':

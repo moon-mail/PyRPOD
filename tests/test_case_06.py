@@ -22,7 +22,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, RPOD
+from pyrpod import LogisticsModule, MissionPlanner
 
 class ThrustEnvelopeChecks(unittest.TestCase):
     def test_thrust_envelope_plot(self):
@@ -43,9 +43,11 @@ class ThrustEnvelopeChecks(unittest.TestCase):
         lm.assign_thruster_groups()
 
         # Read in flight data and plot delta mass contoured for various Δv requirements.
-        rpod = RPOD.RPOD(lm)
-        rpod.read_flight_plan('../data/flight_plan/flight_plan.csv')
-        rpod.plot_thrust_envelope()
+        case_dir = '../case/flight_envelopes/'
+        mp = MissionPlanner.MissionPlanner(case_dir)
+        mp.set_lm(lm)
+        mp.read_flight_plan('../data/flight_plan/flight_plan.csv')
+        mp.plot_thrust_envelope()
         
 
 if __name__ == '__main__':

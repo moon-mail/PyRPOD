@@ -10,7 +10,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, RPOD
+from pyrpod import LogisticsModule, MissionPlanner
 
 class OneDimRotApproach(unittest.TestCase):
     def test_1d_rot_approach_performance(self):
@@ -30,8 +30,10 @@ class OneDimRotApproach(unittest.TestCase):
         lm.add_thruster_performance(400, 300)
         lm.assign_thruster_groups()
 
-        rpod = RPOD.RPOD(lm)
-        rpod.read_flight_plan('../data/flight_plan/flight_plan.csv')
+        case_dir = '../case/flight_envelopes/'
+        mp = MissionPlanner.MissionPlanner(case_dir)
+        mp.set_lm(lm)
+        mp.read_flight_plan('../data/flight_plan/flight_plan.csv')
         
 
 if __name__ == '__main__':

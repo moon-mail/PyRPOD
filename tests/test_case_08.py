@@ -11,7 +11,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, RPOD
+from pyrpod import LogisticsModule
 
 class SelfImpingementChecks(unittest.TestCase):
     def test_LM_self_impingement(self):

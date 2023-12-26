@@ -10,7 +10,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, RPOD
+from pyrpod import LogisticsModule, MissionPlanner
 
 class BurnTimeContourChecks(unittest.TestCase):
     def test_burn_time_contour_plots(self):
@@ -32,9 +32,11 @@ class BurnTimeContourChecks(unittest.TestCase):
 
         # Read in flight data and plot burntime for a given Δv requirement.
         # Graph is contoured according to various ISP values.
-        rpod = RPOD.RPOD(lm)
-        rpod.read_flight_plan('../data/flight_plan/flight_plan_m3.csv')
-        rpod.plot_burn_time_contour(1194)
+        case_dir = '../case/flight_envelopes/'
+        mp = MissionPlanner.MissionPlanner(case_dir)
+        mp.set_lm(lm)
+        mp.read_flight_plan('../data/flight_plan/flight_plan_m3.csv')
+        mp.plot_burn_time_contour(1194)
 
 if __name__ == '__main__':
     unittest.main()

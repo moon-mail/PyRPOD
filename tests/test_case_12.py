@@ -10,7 +10,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, RPOD
+from pyrpod import LogisticsModule, MissionPlanner
 
 class DeltaMassContourChecks(unittest.TestCase):
     def test_delta_m_plots(self):
@@ -31,9 +31,11 @@ class DeltaMassContourChecks(unittest.TestCase):
         lm.assign_thruster_groups()
 
         # Read in flight data and plot delta mass contoured for various Δv requirements.
-        rpod = RPOD.RPOD(lm)
-        rpod.read_flight_plan('../data/flight_plan/flight_plan_m3.csv')
-        rpod.plot_delta_m_contour()
+        case_dir = '../case/flight_envelopes/'
+        mp = MissionPlanner.MissionPlanner(case_dir)
+        mp.set_lm(lm)
+        mp.read_flight_plan('../data/flight_plan/flight_plan_m3.csv')
+        mp.plot_delta_m_contour()
 
 if __name__ == '__main__':
     unittest.main()

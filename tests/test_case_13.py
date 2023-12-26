@@ -12,7 +12,7 @@
 import test_header
 import unittest, os, sys
 from pyrpod import Vehicle
-from pyrpod import RPOD
+from pyrpod import MissionPlanner
 
 class STLtoVTKChecks(unittest.TestCase):
     def test_delta_m_plots(self):
@@ -21,11 +21,11 @@ class STLtoVTKChecks(unittest.TestCase):
         case_dir = '../case/stl_to_vtk/'
 
         # Load configuration data for RPOD analysis.
-        rpod = RPOD.RPOD(case_dir)
+        mp = MissionPlanner.MissionPlanner(case_dir)
 
         # Use Vehicle Object to read STL surface data.
         v = Vehicle.Vehicle()
-        v.set_stl(case_dir + 'stl/' +rpod.config['stl']['vv'])
+        v.set_stl(case_dir + 'stl/' + mp.config['stl']['vv'])
 
         # Convert to VTK and save in case directory.
         v.convert_stl_to_vtk(case_dir + 'results/')

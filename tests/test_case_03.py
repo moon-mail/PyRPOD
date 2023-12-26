@@ -10,7 +10,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, RPOD
+from pyrpod import LogisticsModule, MissionPlanner
 
 class FlightPlanChecks(unittest.TestCase):
     def test_rcs_flight_performance(self):
@@ -31,9 +31,11 @@ class FlightPlanChecks(unittest.TestCase):
         lm.assign_thruster_groups()
 
         # Calculate simple 1D flight performance
-        rpod = RPOD.RPOD(lm)
-        rpod.read_flight_plan('../data/flight_plan/flight_plan.csv')
-        rpod.calc_flight_performance()
+        case_dir = '../case/flight_envelopes/'
+        mp = MissionPlanner.MissionPlanner(case_dir)
+        mp.set_lm(lm)
+        mp.read_flight_plan('../data/flight_plan/flight_plan.csv')
+        mp.calc_flight_performance()
 
 if __name__ == '__main__':
     unittest.main()
