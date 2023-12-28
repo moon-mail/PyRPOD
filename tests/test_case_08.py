@@ -22,10 +22,10 @@ class SelfImpingementChecks(unittest.TestCase):
         r = 4.0/2.0 # m
 
         # Instantiate LogisticModule object.
-        lm = LogisticsModule.LogisticsModule(m, h, r)
+        # lm = LogisticsModule.LogisticsModule(m, h, r)
 
         # Load in thruster configuration data from text file
-        lm.add_thruster_config('../data/tcd/TCD2.txt')
+        # lm.add_thruster_config('../data/tcd/TCD2.txt')
         # print(lm.thruster_data)
         # print(type(lm.thruster_data))
         # # Draco/Hypergolic thrusters

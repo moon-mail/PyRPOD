@@ -64,6 +64,26 @@ class TargetVehicle(Vehicle):
         check_thruster_configuration()
             Plots visiting vehicle and all thrusters in RCS configuration.
     """
+
+    def set_stl(self):
+        """
+            Reads in Vehicle surface mesh from STL file.
+
+            Parameters
+            ----------
+            path_to_stl : str
+                file location for Vehicle's surface mesh using an STL file.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+        path_to_stl = self.case_dir + 'stl/' + self.config['stl']['tv']
+        self.mesh = mesh.Mesh.from_file(path_to_stl)
+        self.path_to_stl = path_to_stl
+        return
+
     def set_stl_elements(self):
         """
             place holder method now. A strech goal could be to 

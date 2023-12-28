@@ -65,8 +65,18 @@ class LogisticsModule(VisitingVehicle):
 
     """
     # TODO: write a custom COM of calculator for comparing RCS configurations (method)
+    def __init__(self, case_dir):
 
-    def __init__(self, mass, height, radius):
+        # Set internal reference to directory for case data.
+        self.case_dir = case_dir
+
+        # Set configuration data for study.
+        config = configparser.ConfigParser()
+        config.read(self.case_dir + "config.ini")
+        self.config = config
+        print(self.config)
+
+    def set_intertial_props(self, mass, height, radius):
         """Simple constructor used to establish inertial properties."""
         # TODO: Add center of mass information.
 

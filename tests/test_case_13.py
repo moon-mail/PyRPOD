@@ -24,11 +24,11 @@ class STLtoVTKChecks(unittest.TestCase):
         mp = MissionPlanner.MissionPlanner(case_dir)
 
         # Use Vehicle Object to read STL surface data.
-        v = Vehicle.Vehicle()
-        v.set_stl(case_dir + 'stl/' + mp.config['stl']['vv'])
+        v = Vehicle.Vehicle(case_dir)
+        v.set_stl()
 
         # Convert to VTK and save in case directory.
-        v.convert_stl_to_vtk(case_dir + 'results/')
+        v.convert_stl_to_vtk()
 
 if __name__ == '__main__':
     unittest.main()

@@ -489,7 +489,7 @@ class MissionPlanner:
         #         self.calc_rot_performance(motion)
         return
 
-    def read_flight_plan(self, path_to_file):
+    def read_flight_plan(self):
         """
             Reads in VV flight as specified using CSV format.
 
@@ -504,6 +504,7 @@ class MissionPlanner:
             Does the method need to return a status message? or pass similar data?
         """
         # Reads and parses through flight plan CSV file.
+        path_to_file = self.case_dir + 'jfh/' + self.config['jfh']['flight_plan']
         self.flight_plan = pd.read_csv(path_to_file)
         # print(self.flight_plan)
 

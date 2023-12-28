@@ -20,21 +20,22 @@ class LoadJFHChecks(unittest.TestCase):
         case_dir = '../case/base_case/'
 
         # Load JFH data.
-        jfh = JetFiringHistory.JetFiringHistory(case_dir + 'jfh/JFH05.A')
+        jfh = JetFiringHistory.JetFiringHistory(case_dir)
+        jfh.read_jfh()
 
-        tv = TargetVehicle.TargetVehicle()
-        tv.set_stl(case_dir + 'stl/flat_plate.stl')
+        tv = TargetVehicle.TargetVehicle(case_dir)
+        tv.set_stl()
 
-        vv = VisitingVehicle.VisitingVehicle()
-        vv.set_stl(case_dir + 'stl/cylinder.stl')
-        vv.add_thruster_config(case_dir + 'tcd/TCD.txt')
+        # vv = VisitingVehicle.VisitingVehicle()
+        # vv.set_stl(case_dir + 'stl/cylinder.stl')
+        # vv.add_thruster_config(case_dir + 'tcd/TCD.txt')
 
-        rpod = RPOD.RPOD(case_dir)
-        rpod.study_init(jfh, tv, vv)
-        # rpod = RPOD.RPOD(jfh, tv, vv)
+        # rpod = RPOD.RPOD(case_dir)
+        # rpod.study_init(jfh, tv, vv)
+        # # rpod = RPOD.RPOD(jfh, tv, vv)
 
-        # rpod.graph_jfh()
-        rpod.jfh_plume_strikes()
+        # # rpod.graph_jfh()
+        # rpod.jfh_plume_strikes()
 
 if __name__ == '__main__':
     unittest.main()

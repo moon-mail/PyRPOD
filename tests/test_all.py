@@ -25,6 +25,6 @@ def run_tests():
 
 if __name__ == '__main__':
     result = run_tests()
-    print(result)
+    # print(result)
     if not result.wasSuccessful():
         sys.exit(1)

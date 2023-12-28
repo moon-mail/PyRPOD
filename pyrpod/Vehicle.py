@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 import math
 import os
+import configparser
 
 from pyevtk.hl import unstructuredGridToVTK
 from pyevtk.vtk import VtkTriangle, VtkQuad
@@ -62,8 +63,13 @@ class Vehicle:
         check_thruster_configuration()
             Plots visiting vehicle and all thrusters in RCS configuration.
     """
+    def __init__(self, case_dir):
+        self.case_dir = case_dir
+        config = configparser.ConfigParser()
+        config.read(self.case_dir + "config.ini")
+        self.config = config
 
-    def set_stl(self, path_to_stl):
+    def set_stl(self):
         """
             Reads in Vehicle surface mesh from STL file.
 
@@ -77,11 +83,12 @@ class Vehicle:
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
+        path_to_stl = self.case_dir + 'stl/' + self.config['stl']['vv']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
         self.path_to_stl = path_to_stl
         return
 
-    def convert_stl_to_vtk(self, path_to_vtk, cellData, mesh = None):
+    def convert_stl_to_vtk(self, cellData = None, mesh = None):
         if self.mesh == None and mesh == None:
             print("mesh is not set. Please load using self.set_stl() method")
             return
@@ -93,6 +100,7 @@ class Vehicle:
 
         print("printing STL surface", surface)
 
+        path_to_vtk = self.case_dir + 'results/'
 
         print(self.path_to_stl)
 
@@ -147,6 +155,9 @@ class Vehicle:
         ctype = np.zeros(n_faces)
         ctype.fill(VtkTriangle.tid)
 
+        if cellData == None:
+            # Create dummy surface data.
+            cellData = {"strikes" : np.zeros(len(surface.vectors))}
 
         unstructuredGridToVTK(FILE_PATH, x, y, z, connectivity = conn, offsets = offset, cell_types = ctype, cellData = cellData)
         return

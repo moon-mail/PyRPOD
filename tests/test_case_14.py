@@ -20,7 +20,8 @@ class LoadJFHChecks(unittest.TestCase):
         case_dir = '../case/base_case/'
 
         # Load JFH data.
-        jfh = JetFiringHistory.JetFiringHistory(case_dir + 'jfh/JFH00.A')
+        jfh = JetFiringHistory.JetFiringHistory(case_dir)
+        jfh.read_jfh()
 
         for firing in range(len(jfh.JFH)):
             print(jfh.JFH[firing])

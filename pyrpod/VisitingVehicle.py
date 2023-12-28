@@ -123,8 +123,26 @@ class VisitingVehicle(Vehicle):
         check_thruster_configuration()
             Plots visiting vehicle and all thrusters in RCS configuration.
     """
+    def set_stl(self):
+        """
+            Reads in Vehicle surface mesh from STL file.
 
-    def add_thruster_config(self, path_to_tcd):
+            Parameters
+            ----------
+            path_to_stl : str
+                file location for Vehicle's surface mesh using an STL file.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+        path_to_stl = self.case_dir + 'stl/' + self.config['stl']['vv']
+        self.mesh = mesh.Mesh.from_file(path_to_stl)
+        self.path_to_stl = path_to_stl
+        return
+
+    def set_thruster_config(self):
         """
             Read in thruster configuration data from the provided file path.
 
@@ -141,6 +159,8 @@ class VisitingVehicle(Vehicle):
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
+
+        path_to_tcd = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
 
         # Simple program, reading text from a file.
         with open(path_to_tcd, 'r') as f:

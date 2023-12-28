@@ -1,6 +1,15 @@
+import configparser
+
 class JetFiringHistory:
-    def __init__(self, path_to_cfg):
-        with open(path_to_cfg, 'r') as f:
+    def __init__(self, case_dir):
+        self.case_dir = case_dir
+        config = configparser.ConfigParser()
+        config.read(self.case_dir + "config.ini")
+        self.config = config
+
+    def read_jfh(self):
+        path_to_jfh = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        with open(path_to_jfh, 'r') as f:
             lines = f.readlines()
 
             # print(lines.pop(0).split(' '))
