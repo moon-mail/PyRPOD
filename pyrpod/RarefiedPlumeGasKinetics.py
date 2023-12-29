@@ -287,36 +287,100 @@ import math
 
 class CollisionlessPlume:
 
+    def __init__(self, U_0, R, T_0, n_iters, conv_tol):
+        self.n_iters = n_iters
+        self.conv_tol = conv_tol
+        self.U_0 = U_0
+        self.R = R
+        self.T_0 = T_0
+        self.S_0 = self.get_speed_ratio()
+        return
+
+    def get_speed_ratio(self):
+        S_0 = self.U_0 / np.sqrt(2 * self.R * self.T_0)
+        return S_0
+
     #solves a summation series of legengre polynomials of the first kind
     #from degree 0 to degree n or until the convergance tolerance, tol is met
     #n: int, x: float (value to evaluate function over), tol: float
-    def sum_series_legendre_polynomial_recurrence(n, x, tol):
+    def get_Q(self, X, Z, r, epsilon):
         
+        psi = np.arctan(Z/X)
+        leg_x = np.sin(psi) * np.sin(epsilon)
+
         prev_sum = float('-inf')
         sum = 0
-    
-        P_n_minus_2 = 1 #P_0 = 1
-        P_n_minus_1 = x #P_1 = x
-        sum += P_n_minus_1 + P_n_minus_2
 
-        for degree in range (2, n+1, 1):
+        P_n_minus_2 = 1 #P_0 = 1
+        P_n_minus_1 = leg_x #P_1 = x
+        sum += P_n_minus_2 + (P_n_minus_1 * r / np.sqrt(X ** 2 + Z ** 2))
+
+        for degree in range (2, self.n + 1, 1):
         
             #solve for polynomial of degree of current iter
-            P_n = (2 * (degree - 1) + 1) * x * (P_n_minus_1)
+            P_n = (2 * (degree - 1) + 1) * leg_x * (P_n_minus_1)
             P_n -= (degree - 1) * P_n_minus_2
             P_n /= degree
 
-            sum += P_n
-            print(f'{degree}: {sum}')
+            sum += P_n * (r / np.sqrt(X ** 2 + Z ** 2)) ** degree
+
             P_n_minus_2 = P_n_minus_1
             P_n_minus_1 = P_n
 
-            if abs(sum - prev_sum) < tol:
-                return sum
+            if abs(sum - prev_sum) < self.tol:
+                break
             prev_sum = sum
 
-        return sum
+        Q = (np.cos(psi) ** 2) * (sum ** 2)
+
+        return Q
     
+    def get_K(self, X, Z, r, epsilon):
+        #K = Q * ((Q * S_0) + ((0.5 + (Q * S_0 ** 2)) * sqrt(pi * Q) * 
+                        #(1 + erf(S_0 * sqrt(Q))) ** (Q * S_0 ** 2)))
+        Q = self.get_Q(X, Z, r, epsilon)
+        term1 = Q * self.S_0
+        term2 = 0.5 + Q * self.S_0 ** 2
+        term3 = np.sqrt(np.pi * Q)
+        term4 = (1 + sp.erf(self.S_0 * np.sqrt(Q))) * np.exp(Q * self.S_0 ** 2)
+        K = Q * (term1 + term2 * term3 * term4)
+        return K
+    
+    def get_M(self, X, Z, r, epsilon):
+        #M = (Q ** 2) * ((Q * S_0 ** 2) + 1 + (S_0 * (1.5 + (Q * S_0 ** 2)) * 
+                        #sqrt(pi * Q_simple)) * (1 + erf(S_0 * sqrt(Q))) ** (Q *S_0 ** 2))
+        Q = self.get_Q(X, Z, r, epsilon)
+        term1 = Q * self.S_0 ** 2
+        term2 = 1 + self.S_0 * (1.5 + Q * self.S_0 ** 2)
+        term3 = np.sqrt(np.pi * Q)
+        term4 = (1 + sp.erf(self.S_0 * np.sqrt(Q))) * np.exp(Q * self.S_0 ** 2)
+        M = Q ** 2 * (term1 + term2 * term3 * term4)
+        return M
+    
+    def get_N(self, X, Z, r, epsilon):
+        #N = S_0 * (Q ** 2) * (1.25 + (Q * S_0 ** 2) / 2) + 
+        #(0.5 * sqrt(pi * Q ** 3)) * (0.75 + 3 * Q * S_0 **2 + Q ** 2 * S_0 ** 4) * 
+        #(1 + erf(S_0 * sqrt(Q))) ** (Q * S_0 ** 2)
+        Q = self.get_Q(X, Z, r, epsilon)
+        term1 = self.S_0 * Q ** 2 * (1.25 + Q * self.S_0 ** 2 / 2)
+        term2 = 0.5 * np.sqrt(np.pi * Q ** 3)
+        term3 = 0.75 + 3 * Q * self.S_0 ** 2 + Q ** 2 * self.S_0 ** 4
+        term4 = (1 + sp.erf(self.S_0 * np.sqrt(Q))) * np.exp(Q * self.S_0 ** 2)
+        N = term1 + term2 * term3 * term4
+        return N
+
+#probably need a numerical integrator
+    def get_num_density_ratio(self, X, Z):
+        n_ratio = np.exp(-self.S_0 ** 2) / (X ** 2 * np.pi ** (3/2))
+
+        r, epsilon = sp.symbols('r epsilon')
+
+test = CollisionlessPlume.get_num_density_ratio()
+    #def get_U_normalized():
+    #def get_W_normalized():
+    #def get_temp_ratio():
+
+'''
     #solves a summation series of legengre polynomials of the first kind
     #from degree i to degree n or until the convergance tolerance, tol is met
     #i: int, n: int, x: float (value to evaluate function over), tol: float
@@ -354,8 +418,7 @@ class CollisionlessPlume:
             P_n += term
         
         return P_n
-
-test = CollisionlessPlume.sum_series_legendre_polynomial_recurrence(9999, 0.1, 0.00001)
+'''
 
 '''
 T_c = 500 #K
