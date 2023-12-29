@@ -369,6 +369,8 @@ class CollisionlessPlume:
         N = term1 + term2 * term3 * term4
         return N
 
+# TODO find a way to solve for Q at a given point, use it to solve for K, N, and M
+    #and find way to integrate the factors given these solved values, aka not analytically
 #probably need a numerical integrator
     def get_num_density_ratio(self, X, Z):
         n_ratio = np.exp(-self.S_0 ** 2) / (X ** 2 * np.pi ** (3/2))
