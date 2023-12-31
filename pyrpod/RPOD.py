@@ -30,6 +30,7 @@ def rotation_matrix_from_vectors(vec1, vec2):
     return rotation_matrix
 
 def make_norm(vector_value_function):
+    """Calculate vector norm/magnitude using the Pythagoream Theorem."""
     return sp.sqrt(sp.Pow(vector_value_function[0],2) + sp.Pow(vector_value_function[1],2))
 
 class RPOD (MissionPlanner):
@@ -104,11 +105,44 @@ class RPOD (MissionPlanner):
     # def __init__(self):
     #     print("Initialized Approach Visualizer")
     def study_init(self, JetFiringHistory, Target, Vehicle):
+        """
+            Designates assets for RPOD analysis.
+
+            Parameters
+            ----------
+            JetFiringHistory : JetFiringHistory
+                Object thruster firing history. It includes VV position, orientation, and IDs for active thrusters.
+
+            Target : TargetVehicle
+                Object containing surface mesh and thruster configurations for the Visiting Vehicle.
+
+            Vehicle : VisitingVehicle
+                Object containing surface mesh and surfave properties for the Target Vehicle.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
         self.jfh = JetFiringHistory
         self.target = Target
         self.vv = Vehicle
 
     def graph_init_config(self):
+        """
+            Creates visualization data for initiial configuration of RPOD analysis.
+
+            NOTE: Method does not take any parameters. It assumes that self.case_dir
+            and self.config are instatiated correctly. Potential defensive programming statements?
+
+            TODO: Needs to be re-factored to save VTK data in proper case directory.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply produces data as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+
         #TODO: Re-factor using 
         # Save first coordinate in the JFH
         vv_initial_firing = self.jfh.JFH[0]
@@ -138,7 +172,21 @@ class RPOD (MissionPlanner):
         plt.show()
 
 
-    def graph_jfh_thruster_check(self): 
+    def graph_jfh_thruster_check(self):
+        """
+            Creates visualization data for initiial configuration of RPOD analysis.
+
+            NOTE: Method does not take any parameters. It assumes that self.case_dir
+            and self.config are instatiated correctly. Potential defensive programming statements?
+
+            TODO: Needs to be re-factored to save VTK data in proper case directory.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply produces data as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+
         # Link JFH numbering of thrusters to thruster names.  
         link = {}
         i = 1
@@ -209,7 +257,19 @@ class RPOD (MissionPlanner):
 
 
     def graph_jfh(self): 
+        """
+            Creates visualization data for the trajectory of the proposed RPOD analysis.
 
+            This method does NOT calculate plume strikes.
+
+            This utilities allows engineers to visualize the trajectory in the JFH before running
+            the full simulation and wasting computation time.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply produces data as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
         # Link JFH numbering of thrusters to thruster names.  
         link = {}
         i = 1
@@ -301,7 +361,20 @@ class RPOD (MissionPlanner):
             print()
 
 
-    def jfh_plume_strikes(self): 
+    def jfh_plume_strikes(self):
+        """
+            Calculates number of plume strikes according to data provided for RPOD analysis.
+            Method does not take any parameters but assumes that study assets are correctly configured.
+            These assets include one JetFiringHistory, one TargetVehicle, and one VisitingVehicle.
+            A Simple plume model is used. It does not calculate plume physics, only strikes. which
+            are determined with a user defined "plume cone" geometry. Simple vector mathematics is
+            used to determine if an VTK surface elements is struck by the "plume cone".
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply produces data as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
         # Link JFH numbering of thrusters to thruster names.  
         link = {}
         i = 1
@@ -450,9 +523,25 @@ class RPOD (MissionPlanner):
 
 
     def graph_param_curve(self, t, r_of_t):
-        '''Used to quickly prototype and visualize a proposed approach path.
+        ''' Used to quickly prototype and visualize a proposed approach path.
             Calculates the unit tangent vector at a given timestep and 
-            rotates the STL file accordingly. 
+            rotates the STL file accordingly. Data is plotted using matlab
+
+            Current method is old and needs updating.
+
+            Parameters
+            ----------
+            t : sp.symbol
+                Time (t) is the independent variable used to evaulte the position vector equation.
+
+            r_of_t : list<expressions?>
+                List containing position vector expression for trajectory.
+                X/Y/Z positions are de-coupled and only dependent on time.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
         '''
 
         t_values = np.linspace(0,2*np.pi,50)
@@ -544,9 +633,30 @@ class RPOD (MissionPlanner):
             plt.close() 
 
     def print_JFH_param_curve(self, jfh_path, t, r_of_t, align = False):
-        '''Used to quickly prototype and visualize a proposed approach path.
-            Calculates the unit tangent vector at a given timestep and 
-            rotates the STL file accordingly. 
+        ''' Used to produce JFH data for a proposed approach path.
+            Calculates the unit tangent vector at a given timestep and DCMs for
+            STL file rotations. Data is then saved to a text file.
+
+
+            Parameters
+            ----------
+            jfh_path : str
+                Path to file for saving JFH data.
+
+            t : sp.symbol
+                Time (t) is the independent variable used to evaulte the position vector equation.
+
+            r_of_t : list<expressions?>
+                List containing position vector expression for trajectory.
+                X/Y/Z positions are de-coupled and only dependent on time.
+
+            aligh : Boolean
+                Determines whether or not STL surface is rotated according to unit tangent vector.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
         '''
 
         # t_values = np.linspace(0,2*np.pi,100)

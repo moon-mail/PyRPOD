@@ -66,7 +66,27 @@ class LogisticsModule(VisitingVehicle):
     """
     # TODO: write a custom COM of calculator for comparing RCS configurations (method)
     def __init__(self, case_dir):
+        """
+            Class responsible for handling visiting vehicle data.
 
+            Includes surface mesh and thruster configuration data.
+
+            NOTE: Is this redundant? Can we use the constructor specified in Vehicle.py?
+            Answer is proably yes, but we need to test this.
+
+            Attributes
+            ----------
+            config : ConfigParser
+                Object responsible for reading data from the provided configuration file.
+
+            case_dir : str
+                Path to case directory. Used to store data and results for a specific scenario.
+
+            Methods
+            -------
+            convert_stl_to_vtk(cellData, mesh)
+                Converts STL mesh to a VTK file and attaches surface properties supplied in cellData.
+        """
         # Set internal reference to directory for case data.
         self.case_dir = case_dir
 
@@ -77,7 +97,26 @@ class LogisticsModule(VisitingVehicle):
         print(self.config)
 
     def set_intertial_props(self, mass, height, radius):
-        """Simple constructor used to establish inertial properties."""
+        """
+            Simple constructor used to establish LM inertial properties.
+
+            Parameters
+            ----------
+            mass : float
+                Mass for the logistics module. Early calculations assume GDSS max docking mass.
+
+            height : float
+                Height for the LM geometry, which is assumed to be a cylinder.
+
+            radius : float
+                Radius for the LM geometry, which is assumed to be a cylinder.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply assigns class members as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+
         # TODO: Add center of mass information.
 
         # Store provided data.
@@ -144,7 +183,6 @@ class LogisticsModule(VisitingVehicle):
     def rcs_group_str_to_list(self, working_group):
         """
             Helper method needed convert configuration data into a list.
-
 
             Parameters
             ----------

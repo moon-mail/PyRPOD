@@ -357,7 +357,7 @@ class VisitingVehicle(Vehicle):
 
             Methods loads STL file of VV and turn on all thrusters to check locations + orientations.
 
-            Useful for a quick sanity check of the RCS configuration.
+            It is useful for a quick sanity check of the RCS configuration.
         """
 
         # Loop through each thruster, graphing normal vecotr and rotated plume cone.

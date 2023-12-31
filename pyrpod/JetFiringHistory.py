@@ -1,13 +1,66 @@
 import configparser
 
 class JetFiringHistory:
+    """
+        Class responsible for reading and parsing through text files
+        that contain jet firing histories for a visiting vehicle.
+
+        Attributes
+        ----------
+        config : ConfigParser
+            Object responsible for reading data from the provided configuration file.
+
+        case_dir : str
+            Path to case directory. Used to store data and results for a specific scenario.
+
+        JFH : list<dict>
+            List containing information for each firing (stored as a dict) in the JFH.
+
+        Methods
+        -------
+        read_JFH : list
+            Method reads in and parses through text file containing the JFH.
+    """
+
     def __init__(self, case_dir):
+        """
+            Constructor simply sets case directory and parses the
+            appopriate configuration file.
+
+            Parameters
+            ----------
+            case_dir : str
+                Path to case directory. Used to store data and results for a specific scenario.
+
+            Returns
+            -------
+            jfh : JetFiringHistory
+                Method reads in and parses through text file containing the JFH.
+        """
+
         self.case_dir = case_dir
         config = configparser.ConfigParser()
         config.read(self.case_dir + "config.ini")
         self.config = config
 
     def read_jfh(self):
+        """
+            Method responsible for reading and parsing through JFH data.
+
+            NOTE: Methods does not take any parameters. It assumes that self.case_dir
+            and self.config are instatiated correctly. Potential defensive programming statements?
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
+
+        """
+
         path_to_jfh = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
         with open(path_to_jfh, 'r') as f:
             lines = f.readlines()

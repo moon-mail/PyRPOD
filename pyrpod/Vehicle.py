@@ -19,49 +19,16 @@ class Vehicle:
 
         Attributes
         ----------
-        num_thrusters : int
-            Total number of thrusters in RCS configuration.
+        config : ConfigParser
+            Object responsible for reading data from the provided configuration file.
 
-        thruster_units : str
-            Units for thruster coordinates.
-
-        cog : float
-            Center of Gravity for the Visiting Vehicle.
-
-        grapple : float
-            Grappling coordinate for the Visiting Vehicle.
-
-        thruster_data : dictionary
-            Dictionary holding the main thruster configuration data.
-
-        jet_interactions : float
-            Can be ignored for now.
+        case_dir : str
+            Path to case directory. Used to store data and results for a specific scenario.
 
         Methods
         -------
-        add_thruster_config(path_to_tcd)
-            Read in thruster configuration data from the provided file path.
-
-        print_info()
-            Simple method to format printing of vehicle info.
-
-        set_stl()
-            Reads in Vehicle surface mesh from STL file.
-
-        initiate_plume_mesh()
-            Reads in surface mesh for plume clone.
-
-        transform_plume_mesh()
-            Transform plume mesh according to the specified thruster's DCM and exit coordinate.
-
-        initiate_plume_normal()
-            Collects plume normal vectors data for visualization.
-
-        plot_vv_and_thruster()
-            Plots Visiting Vehicle and plume cone for provided thruster id.
-
-        check_thruster_configuration()
-            Plots visiting vehicle and all thrusters in RCS configuration.
+        convert_stl_to_vtk(cellData, mesh)
+            Converts STL mesh to a VTK file and attaches surface properties supplied in cellData.
     """
     def __init__(self, case_dir):
         self.case_dir = case_dir
@@ -69,26 +36,40 @@ class Vehicle:
         config.read(self.case_dir + "config.ini")
         self.config = config
 
-    def set_stl(self):
+    # def set_stl(self):
+    #     """
+    #         Reads in Vehicle surface mesh from STL file.
+
+    #         Parameters
+    #         ----------
+    #         path_to_stl : str
+    #             file location for Vehicle's surface mesh using an STL file.
+
+    #         Returns
+    #         -------
+    #         Method doesn't currently return anything. Simply sets class members as needed.
+    #         Does the method need to return a status message? or pass similar data?
+    #     """
+    #     path_to_stl = self.case_dir + 'stl/' + self.config['stl']['vv']
+    #     self.mesh = mesh.Mesh.from_file(path_to_stl)
+    #     self.path_to_stl = path_to_stl
+    #     return
+
+    def convert_stl_to_vtk(self, cellData = None, mesh = None):
         """
-            Reads in Vehicle surface mesh from STL file.
+            Converts STL mesh to a VTK file and attaches surface properties supplied in cellData.
 
             Parameters
             ----------
-            path_to_stl : str
-                file location for Vehicle's surface mesh using an STL file.
+            cellData : dict<np.array>
+                Dictionary storing arrays that contain all surface properties.
 
             Returns
             -------
-            Method doesn't currently return anything. Simply sets class members as needed.
+            Method doesn't currently return anything. Simply saves data to files as needed.
             Does the method need to return a status message? or pass similar data?
         """
-        path_to_stl = self.case_dir + 'stl/' + self.config['stl']['vv']
-        self.mesh = mesh.Mesh.from_file(path_to_stl)
-        self.path_to_stl = path_to_stl
-        return
 
-    def convert_stl_to_vtk(self, cellData = None, mesh = None):
         if self.mesh == None and mesh == None:
             print("mesh is not set. Please load using self.set_stl() method")
             return

@@ -1,7 +1,34 @@
+"""Script contains helper functions for printing JFH data.
+    As PyRPOD evolves this could become a utilities script.
+    Alternatively these could be moved to JetFiringHistory.py
+"""
+
 import sys
 
 def print_JFH(t_values, r,  rot, file_name):
+    '''
+        Helper function to RPOD.print_jfh_param_curve() that is responsible for
+        printing the calculated JFH data to a text file.
 
+        Parameters
+        ----------
+        t_values : np.array?
+            Array containing time step data for each firing in the JFH.
+
+        r : np.array?
+            Array containing positional data for each firing in the JFH.
+
+        rot : np.array?
+            Array containing rotational data for each firing in the JFH.
+
+        file_name : str
+            File name for JFH txt file. It will be saved in configured case directory.
+
+        Returns
+        -------
+        Method doesn't currently return anything. Simply saves data to files as needed.
+        Does the method need to return a status message? or pass similar data?
+    '''
     x = r[0]
     y = r[1]
     z = r[2]
@@ -57,6 +84,31 @@ def print_JFH(t_values, r,  rot, file_name):
             # print()
 
 def print_test_JFH(t_values, r,  rot, file_name):
+    '''
+        Helper function to RPOD.print_jfh_param_curve() that is responsible for
+        printing the calculated JFH data to a text file.
+
+        NOTE: This is a test function and possibly broken. Keeping it for reference/possible future work.
+
+        Parameters
+        ----------
+        t_values : np.array?
+            Array containing time step data for each firing in the JFH.
+
+        r : np.array?
+            Array containing positional data for each firing in the JFH.
+
+        rot : np.array?
+            Array containing rotational data for each firing in the JFH.
+
+        file_name : str
+            File name for JFH txt file. It will be saved in configured case directory.
+
+        Returns
+        -------
+        Method doesn't currently return anything. Simply saves data to files as needed.
+        Does the method need to return a status message? or pass similar data?
+    '''
 
     x = r[0]
     y = r[1]

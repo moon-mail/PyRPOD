@@ -20,49 +20,22 @@ class TargetVehicle(Vehicle):
 
         Attributes
         ----------
-        num_thrusters : int
-            Total number of thrusters in RCS configuration.
+        Includes attributes defined in parent class "Vehicle".
 
-        thruster_units : str
-            Units for thruster coordinates.
+        path_to_stl : str
+            file location for Vehicle's surface mesh using an STL file.
 
-        cog : float
-            Center of Gravity for the Visiting Vehicle.
-
-        grapple : float
-            Grappling coordinate for the Visiting Vehicle.
-
-        thruster_data : dictionary
-            Dictionary holding the main thruster configuration data.
-
-        jet_interactions : float
-            Can be ignored for now.
+        mesh : stl.mesh.Mesh
+            Contains surface mesh using data read from STL file.
 
         Methods
         -------
-        add_thruster_config(path_to_tcd)
+        set_stl()
             Read in thruster configuration data from the provided file path.
 
-        print_info()
-            Simple method to format printing of vehicle info.
+        set_stl_elements()
+            Read in thruster configuration data from the provided file path.
 
-        set_stl()
-            Reads in Vehicle surface mesh from STL file.
-
-        initiate_plume_mesh()
-            Reads in surface mesh for plume clone.
-
-        transform_plume_mesh()
-            Transform plume mesh according to the specified thruster's DCM and exit coordinate.
-
-        initiate_plume_normal()
-            Collects plume normal vectors data for visualization.
-
-        plot_vv_and_thruster()
-            Plots Visiting Vehicle and plume cone for provided thruster id.
-
-        check_thruster_configuration()
-            Plots visiting vehicle and all thrusters in RCS configuration.
     """
 
     def set_stl(self):

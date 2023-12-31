@@ -82,7 +82,7 @@ class MissionPlanner:
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
-        # TODO: add variables for trade study analysis
+        # TODO: Add variables for trade study analysis. Maybe?
         self.case_dir = case_dir
         config = configparser.ConfigParser()
         config.read(self.case_dir + "config.ini")
@@ -90,11 +90,19 @@ class MissionPlanner:
         print(self.config)
 
     def set_lm(self, LogisticsModule):
+        """
+            Simple setter method to set VV/LM used in analysis.
+
+            NOTE: This begs the question: What's up with LM vs VV. Do we need both classes?
+            If so, how do we handle inheritance between them? Previous efforts have broken
+            the code. This is due to "hacky/minimal" effort. A follow up attempt would
+            require research into how Python handles inheritance including "container classes".
+        """
         self.vv = LogisticsModule
 
     def set_current_6dof_state(self, v = [0, 0, 0], w = [0,0,0]):
         """
-            Sets VV current inertial state. Can be done manually for read from flight plan.
+            Sets current inertial state for the VV. Can be done manually or read from flight plan.
 
             Parameters
             ----------
@@ -115,7 +123,7 @@ class MissionPlanner:
 
     def set_desired_6dof_state(self, v = [0, 0, 0], w = [0,0,0]):
         """
-            Sets VV current inertial state. Can be done manually for read from flight plan.
+            Sets desired inertial state for the VV. Can be done manually or read from flight plan.
 
             Parameters
             ----------
@@ -137,6 +145,8 @@ class MissionPlanner:
     def calc_burn_time(self, dv, isp, T):
         """
             Calculates burn time when given change in velocity (dv), specific impulse (isp), and thrust (T)
+
+            TODO: Create, return, and test t_burn (return variable).
 
             Parameters
             ----------
@@ -163,6 +173,11 @@ class MissionPlanner:
     def plot_burn_time(self, dv):
         """
             Plots burn time for a given dv and isp value. Varries thrust according to user inputs.
+
+            TODO: Add ISP value as a parameter. Remove isp_vals, add isp as a paramter to the function.
+            Test code.
+
+            TODO: Integrate with establsihed configuration file framework.
 
             Parameters
             ----------
@@ -202,6 +217,8 @@ class MissionPlanner:
     def plot_burn_time_contour(self, dv):
         """
             Plots burn time for a given dv by varrying thrust values. Graph is contoured using ISP values.
+
+            TODO: Add isp_vals as a parameter. Integrate with configuration file framework. Test Code.
 
             Parameters
             ----------
@@ -288,8 +305,8 @@ class MissionPlanner:
 
             Returns
             -------
-            Method doesn't currently return anything. Simply sets class members as needed.
-            Does the method need to return a status message? or pass similar data?
+            dm : float
+                Change in mass calculated using the ideal rocket equation.
         """
         g_0 = 9.81
         a = (dv/(isp*g_0))
@@ -348,6 +365,8 @@ class MissionPlanner:
     def plot_delta_m_contour(self):
         """
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
+
+             TODO: Add isp_range as a parameter. Integrate with configuration file framework. Test Code.
         """
         #creat plotting object.
         fig, ax = plt.subplots()
@@ -411,6 +430,8 @@ class MissionPlanner:
         """
             Calculates RCS performance according to thruster working groups for a direction of motion.
 
+            This method assumes constant mass, which needs to be addressed.
+
             Needs better name?
 
             Parameters
@@ -423,8 +444,14 @@ class MissionPlanner:
 
             Returns
             -------
-            Method doesn't currently return anything. Simply sets class members as needed.
-            Does the method need to return a status message? or pass similar data?
+            time : float
+                Burn time ellapsed.
+
+            destance : float
+                Distance covered during burn time.
+
+            propellant_used : float
+                Propellant used during burn time.
         """
         # Calculate RCS performance according to thrusters grouped to be in the direction.
         # WIP: Initial code executes simple 1DOF calculations
@@ -451,7 +478,7 @@ class MissionPlanner:
 
     def calc_6dof_performance(self):
         """
-            Calculates performance for translation and rotational maneuvers.
+            Wrapper method used to calculate performance for translation and rotational maneuvers.
         """
         # Wrapper function that sets up data for 6DOF performance
         dv = self.v_desired - self.v_current
@@ -493,15 +520,9 @@ class MissionPlanner:
         """
             Reads in VV flight as specified using CSV format.
 
-            Parameters
-            ----------
-            path_to_file : str
-                Speficied change in velocity value.
 
-            Returns
-            -------
-            Method doesn't currently return anything. Simply sets class members as needed.
-            Does the method need to return a status message? or pass similar data?
+            NOTE: Methods does not take any parameters. It assumes that self.case_dir
+            and self.config are instatiated correctly. Potential defensive programming statements?
         """
         # Reads and parses through flight plan CSV file.
         path_to_file = self.case_dir + 'jfh/' + self.config['jfh']['flight_plan']
