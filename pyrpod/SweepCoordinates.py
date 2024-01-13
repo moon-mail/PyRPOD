@@ -18,4 +18,3 @@ class SweepCoordinates:
             configs_swept_coords.append(config)
         
         return configs_swept_coords
-
