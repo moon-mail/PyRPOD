@@ -289,15 +289,13 @@ class SweepAngles:
             if pitch == pitch_max:
                 break
 
-            for thruster, thruster_info in config.items():
-                new_thruster_info = thruster_info.copy()
+            for thruster in config:
                 if thruster in neg_pos_pitch:
                     dcm = self.calculate_DCM(new_thruster_info['name'][0], -pitch - dpitch, 0)
-                    new_thruster_info['dcm'] = dcm
+                    config[thruster]['dcm'] = dcm
                 elif thruster in neg_neg_pitch:
                     dcm = self.calculate_DCM(new_thruster_info['name'][0], pitch + dpitch, 0)
-                    new_thruster_info['dcm'] = dcm
-                new_config[thruster] = new_thruster_info
+                    config[thruster]['dcm'] = dcm
 
         return configs_swept_angles
 
@@ -306,10 +304,10 @@ class SweepAngles:
 dcm = [[0, 0, 1], [0, 0, 0], [0, 0, 0]]
 #why are names and types in an array???
 config = {
-    'P1T1': {'name': ['P1T1'], 'type': ['001'], 'exit': [-1, 16, 0], 'dcm': dcm}, 
-    'P2T1': {'name': ['P2T1'], 'type': ['001'], 'exit': [-1, 0, 16], 'dcm': dcm},
-    'P3T1': {'name': ['P3T1'], 'type': ['001'], 'exit': [-1, 0, -16], 'dcm': dcm}, 
-    'P4T1': {'name': ['P4T1'], 'type': ['001'], 'exit': [-1, 0, -16], 'dcm': dcm}
+    'P1T1': {'name': ['P1T1'], 'type': ['001'], 'exit': [-1, 2.5, 0], 'dcm': dcm}, 
+    'P2T1': {'name': ['P2T1'], 'type': ['001'], 'exit': [-1, 0, 2.5], 'dcm': dcm},
+    'P3T1': {'name': ['P3T1'], 'type': ['001'], 'exit': [-1, -2.5, 0], 'dcm': dcm}, 
+    'P4T1': {'name': ['P4T1'], 'type': ['001'], 'exit': [-1, 0, -2.5], 'dcm': dcm}
 }
 
 thruster_groups = {
