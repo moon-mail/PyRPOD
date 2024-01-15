@@ -246,46 +246,58 @@ class SweepAngles:
         #Q2 and Q3
         yaw_min, yaw_max = -180, 0
         return pitch_min, pitch_max, yaw_min, yaw_max
-
-#TODO pass cant as an array w/ pitch and yaw values
-    def sweep_pos_long(self, thruster, cant):
-        thruster['dcm'] = self.calculate_DCM(thruster['name'][0], cant, 0)
-        return thruster
-
-    def sweep_neg_long():
-        return
     
     #probably should move this method to another file? call this from RPOD.py?
-    def sweep_config(self, config):
-        
-        #too large run time
-        #for each group^#of groups (need as many nested loops as #of groups), 
-        #   for each pitch, for each yaw
-        #ex: long_groups = [pos_pitch, neg_pitch, yaw(pos or neg), roll(pos or neg)]
-        #runtime == O(n^4 * n^2)  = O(n^6)!! this is just for longitudinal
-        #in reality, for every combination, grouping also accounts for translational groupings
-        #ex: all_groups = [[long: pos_pitch, neg_pitch, yaw(pos or neg), roll(pos or neg)],
-        # [lat: roll, yaw], [vert: pitch, roll]] total of 8 groups!
-        # this runtime is O(n^8 * n^2)!!!
+    def sweep_long_thrusters(self, config, dpitch, dyaw):
 
         #basic case: look at +x thrusters, pitch the pitch group symmetrically
         configs_swept_angles = []
-        configs_swept_angles.append(config)
 
+        neg_pos_pitch = []
+        neg_neg_pitch = []
+        neg_pos_yaw = []
+        neg_neg_yaw = []
+        for thruster in config:
+            if thruster in self.thruster_groups['-x']:
+                if thruster in self.thruster_groups['+pitch']:
+                    neg_pos_pitch.append(thruster)
+                if thruster in self.thruster_groups['-pitch']:
+                    neg_neg_pitch.append(thruster)
+                if thruster in self.thruster_groups['+yaw']:
+                    neg_pos_yaw.append(thruster)
+                if thruster in self.thruster_groups['-yaw']:
+                    neg_neg_yaw.append(thruster)
 
-        #pitch_min, pitch_max, _, _ = self.pos_long_angle_limits(self.r, thruster['exit'])
-        #issue ^ loop through thrusters after grabbing imits, but limits are dependent on each thruster!
-        
-        #applying hard-coded limits to facilitate algorithm
+        #hard coded limits for the meantime
         pitch_min, pitch_max, yaw_min, yaw_max = 0, 45, 0, 45
-        for cant in range(pitch_min, pitch_max, 5):
-            for thruster in config:
-                if thruster in self.thruster_groups['+x']:
-                    if thruster in self.thruster_groups['+pitch']:
-                        config[thruster] = self.sweep_pos_long(config[thruster], -cant)
-                    if thruster in self.thruster_groups['-pitch']:
-                        config[thruster] = self.sweep_pos_long(config[thruster], cant)
-            configs_swept_angles.append(config)
+        for pitch in range(pitch_min, pitch_max + dpitch, dpitch):
+            for yaw in range(yaw_min, yaw_max + dyaw, dyaw):
+                new_config = {}
+
+                for thruster, thruster_info in config.items():
+                    new_thruster_info = thruster_info.copy()
+                    if thruster in neg_pos_yaw:
+                        dcm = self.calculate_DCM(new_thruster_info['name'][0], 0, -yaw)
+                        new_thruster_info['dcm'] = dcm
+                    elif thruster in neg_neg_yaw:
+                        dcm = self.calculate_DCM(new_thruster_info['name'][0], 0, yaw)
+                        new_thruster_info['dcm'] = dcm
+                    new_config[thruster] = new_thruster_info
+
+                configs_swept_angles.append(new_config)
+
+            if pitch == pitch_max:
+                break
+
+            for thruster, thruster_info in config.items():
+                new_thruster_info = thruster_info.copy()
+                if thruster in neg_pos_pitch:
+                    dcm = self.calculate_DCM(new_thruster_info['name'][0], -pitch - dpitch, 0)
+                    new_thruster_info['dcm'] = dcm
+                elif thruster in neg_neg_pitch:
+                    dcm = self.calculate_DCM(new_thruster_info['name'][0], pitch + dpitch, 0)
+                    new_thruster_info['dcm'] = dcm
+                new_config[thruster] = new_thruster_info
 
         return configs_swept_angles
 
@@ -301,16 +313,19 @@ config = {
 }
 
 thruster_groups = {
-    '+x': ['P1T1', 'P2T1', 'P3T1', 'P4T1'],
-    '-x': [],
+    '+x': [],
+    '-x': ['P1T1', 'P2T1', 'P3T1', 'P4T1'],
     '+y': [],
     '-y': [],
     '+z': [],
     '-z': [],
     '+pitch': ['P4T1'],
-    '-pitch': ['P2T1']
+    '-pitch': ['P2T1'],
+    '+yaw' : ['P3T1'],
+    '-yaw' : ['P1T1']
 }
 
 test = SweepAngles(16, config, thruster_groups)
-config_swept_array = test.sweep_config(config)
+config_swept_array = test.sweep_long_thrusters(config, 5, 5)
 print(config_swept_array)
+print(len(config_swept_array))
