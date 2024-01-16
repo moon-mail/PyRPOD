@@ -3,6 +3,8 @@ sweep coords takes a dictionary of thruster configurations and produces an array
 configurations swept over the inputted x-coords
 '''
 
+import copy
+
 #made a copy, new config, and yet still facing overwrite issue???
 class SweepCoordinates:
 
@@ -11,11 +13,9 @@ class SweepCoordinates:
         configs_swept_coords = []
 
         for x_pos in range(x0, xf+dx, dx):
-            new_config = {}
-            for thruster, thruster_info in config.items():
-                new_thruster_info = thruster_info.copy()
-                new_thruster_info['exit'][0] = x_pos
-                new_config[thruster] = new_thruster_info
+            new_config = copy.deepcopy(config)
+            for thruster in config:
+                new_config[thruster]['exit'][0] = x_pos
 
             configs_swept_coords.append(new_config)
         
