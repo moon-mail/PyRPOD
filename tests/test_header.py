@@ -11,4 +11,4 @@
 
 import sys
 
-sys.path.insert(0, '/mnt/c/Users/andy9/Dev/PyRPOD/')
+sys.path.insert(0, '../')

@@ -1,9 +1,51 @@
 import numpy as np
 
-#TODO in actual sweep method, pass a tolerance parameter
-#this is to narrow sweep limits and account for cone angles
+#TODO pass a tolerance/ or rethink limits
+
 
 class SweepAngles:
+    '''
+    Class responsible for axially sweeping a ring of thrusters in a given configuration
+
+    __init__()
+    --------------
+    inputs: self; thruster radius <float>; thruster configuration <dict>, thruster_groups <dict>
+    initializes object storing the radius, initial "standardized" angles of each thruster, and the thruster groups
+
+    standardize_thruster_normal()
+    -------------------
+    inputs: self, thruster <dict>
+    outputs: returns thruster <dict> with standard angling for its given translational group
+    
+    calculate_init_angles()
+    -----------------------
+    inputs: self, DCM
+    outputs: pitch, yaw in deg. based on a given DCM, and the spherically defined pitch yaw
+
+    calculate_DCM()
+    inputs: self, thruster <string>, pitch <float> #deg, yaw <float> #deg
+    outputs: adds the given pitch and yaw to that thruster's initial pitch and yaw, and returns the DCM
+
+    *_angle_limits()
+    ----------------
+    inputs: self, exit <array>
+    outputs: outputs min/max for pitch/yaw based on the position and translational group of a thruster
+             these limits are based on the thrust vector not intersecting the LM
+             and not angling past the point they are stronger for a different group
+             TODO (might be worth allowing w /out updating thruster groups ex: angles above 45deg)
+
+    sweep_long_thrusters()
+    ----------------------
+    inputs: self, config <dict>, dpitch <float> #deg, dyaw <float> #deg
+    outputs: an array of swept configurations. these include yawing the yaw thrusters symmetrically
+             as well as pitching the pitch thrusters symmetrically. 
+             the array includes every combination given the inputted angling step sizes for each
+    
+    read_swept_angles()
+    -------------------
+    inputs: self, swept_configs <array>
+    outputs: prints to terminal the dcm of each thruster for each config in the swept array
+    '''
 
     def __init__(self, r, config, thruster_groups):
         
@@ -298,32 +340,13 @@ class SweepAngles:
                     config[thruster]['dcm'] = dcm
 
         return configs_swept_angles
+    
+    def read_swept_angles(self, swept_configs):
 
-
-
-dcm = [[0, 0, 1], [0, 0, 0], [0, 0, 0]]
-#why are names and types in an array???
-config = {
-    'P1T1': {'name': ['P1T1'], 'type': ['001'], 'exit': [-1, 2.5, 0], 'dcm': dcm}, 
-    'P2T1': {'name': ['P2T1'], 'type': ['001'], 'exit': [-1, 0, 2.5], 'dcm': dcm},
-    'P3T1': {'name': ['P3T1'], 'type': ['001'], 'exit': [-1, -2.5, 0], 'dcm': dcm}, 
-    'P4T1': {'name': ['P4T1'], 'type': ['001'], 'exit': [-1, 0, -2.5], 'dcm': dcm}
-}
-
-thruster_groups = {
-    '+x': [],
-    '-x': ['P1T1', 'P2T1', 'P3T1', 'P4T1'],
-    '+y': [],
-    '-y': [],
-    '+z': [],
-    '-z': [],
-    '+pitch': ['P4T1'],
-    '-pitch': ['P2T1'],
-    '+yaw' : ['P3T1'],
-    '-yaw' : ['P1T1']
-}
-
-test = SweepAngles(16, config, thruster_groups)
-config_swept_array = test.sweep_long_thrusters(config, 5, 5)
-print(config_swept_array)
-print(len(config_swept_array))
+        # per saved config, print the dcm of each thruster
+        # to quickly identify their anglings
+        for i, config in enumerate(swept_configs):
+            print(f'Config #{i}:')
+            for thruster in config:
+                print(f'{thruster}: {config[thruster]["dcm"] }')
+            print(f'\n')
