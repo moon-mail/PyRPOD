@@ -26,16 +26,16 @@ class LoadJFHChecks(unittest.TestCase):
         tv = TargetVehicle.TargetVehicle(case_dir)
         tv.set_stl()
 
-        # vv = VisitingVehicle.VisitingVehicle()
-        # vv.set_stl(case_dir + 'stl/cylinder.stl')
-        # vv.add_thruster_config(case_dir + 'tcd/TCD.txt')
+        vv = VisitingVehicle.VisitingVehicle(case_dir)
+        vv.set_stl()
+        vv.set_thruster_config()
 
-        # rpod = RPOD.RPOD(case_dir)
-        # rpod.study_init(jfh, tv, vv)
+        rpod = RPOD.RPOD(case_dir)
+        rpod.study_init(jfh, tv, vv)
         # # rpod = RPOD.RPOD(jfh, tv, vv)
 
-        # # rpod.graph_jfh()
-        # rpod.jfh_plume_strikes()
+        # rpod.graph_jfh()
+        rpod.jfh_plume_strikes()
 
 if __name__ == '__main__':
     unittest.main()

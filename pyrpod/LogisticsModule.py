@@ -94,7 +94,7 @@ class LogisticsModule(VisitingVehicle):
         config = configparser.ConfigParser()
         config.read(self.case_dir + "config.ini")
         self.config = config
-        print(self.config)
+        # print(self.config)
 
     def set_intertial_props(self, mass, height, radius):
         """

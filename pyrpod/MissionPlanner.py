@@ -87,7 +87,7 @@ class MissionPlanner:
         config = configparser.ConfigParser()
         config.read(self.case_dir + "config.ini")
         self.config = config
-        print(self.config)
+        # print(self.config)
 
     def set_lm(self, LogisticsModule):
         """
