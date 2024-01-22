@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 import numpy as np
 import math
 import os
-import csv
 
 from pyrpod.Vehicle import Vehicle
 
