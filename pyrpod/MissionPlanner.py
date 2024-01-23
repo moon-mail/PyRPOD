@@ -47,6 +47,9 @@ class MissionPlanner:
         calc_delta_m(dv, isp)
             Calculates propellant usage using expressions derived from the ideal rocket equation.
 
+        calc_total_delta_m()
+            Sums delta_m of flight plan using calc_delta_m
+
         plot_delta_m(dv)
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
@@ -274,7 +277,7 @@ class MissionPlanner:
         for v in dv:
             # print(type(v[1]))
             dv = v[1][1]
-            print()
+            print(dv)
             burn_time = []
             for thrust in thrust_range:
                 burn_time.append(abs(self.calc_burn_time(dv, isp, thrust)))
@@ -311,7 +314,21 @@ class MissionPlanner:
         g_0 = 9.81
         a = (dv/(isp*g_0))
         m_f = self.vv.mass
-        return m_f * (1 - np.exp(a))
+        dm = m_f * (1 - np.exp(a))
+        self.vv.mass -= dm
+        return dm
+    
+    def calc_total_delta_m(self):
+        firings = self.flight_plan.iterrows()
+        sum = 0
+        for firing in firings:
+            isp = firing[1][1]
+            dv = firing[1][2]
+            # print("isp =", isp, ", dv = ", dv)
+            dm = self.calc_delta_m(dv, isp)
+            print(f'firing {firing[1][0]:.0f} dm is {dm:.1f} kg')
+            sum += dm
+        print(f'total dm for flight plan is {sum:.2f} kg')
 
     def plot_delta_m(self, dv):
         """

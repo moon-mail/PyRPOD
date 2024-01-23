@@ -385,12 +385,12 @@ class RPOD (MissionPlanner):
         # Create results directory if it doesn't already exist.
         results_dir = self.case_dir + 'results'
         if not os.path.isdir(results_dir):
-            print("results dir doesn't exist")
+            #print("results dir doesn't exist")
             os.mkdir(results_dir)
 
         results_dir = results_dir + "/strikes"
         if not os.path.isdir(results_dir):
-            print("results dir doesn't exist")
+            #print("results dir doesn't exist")
             os.mkdir(results_dir)
 
         # Save STL surface of target vehicle to local variable.

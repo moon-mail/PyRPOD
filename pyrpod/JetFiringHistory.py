@@ -68,14 +68,14 @@ class JetFiringHistory:
             # print(lines.pop(0).split(' '))
             self.nt = int(lines.pop(0).split(' ')[4])
 
-            # Thow away second line
+            # Throw away second line
             lines.pop(0)
 
             JFH = []
 
             for i in range(self.nt):
                 
-                # print(i)
+                print(i)
                 # Split current into a list row at every space character.
                 curr_row = lines.pop(0).split(' ')
                 # print(curr_row)
