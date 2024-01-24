@@ -201,7 +201,7 @@ class VisitingVehicle(Vehicle):
         """
 
         # TODO determine path
-        path_to_thruster_characteristics = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+        path_to_thruster_characteristics = '../data/thruster_characteristics.csv'
         # read csv into a pd dataframe
         thruster_characteristics = pd.read_csv(path_to_thruster_characteristics)
         # convert the dataframe into a list of dictionaries
