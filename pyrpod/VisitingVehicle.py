@@ -211,8 +211,8 @@ class VisitingVehicle(Vehicle):
         # this does assume that the rows of the thruster characteristics csv are ordered by thruster types, starting at 001
 
         for thruster in self.thruster_data:
-            thruster_type = int(thruster['type'][0])
-            thruster['type'] = tcl[thruster_type - 1]
+            thruster_type = int(self.thruster_data[thruster]['type'][0])
+            self.thruster_data[thruster]['type'] = tcl[thruster_type - 1]
         
         return
 
