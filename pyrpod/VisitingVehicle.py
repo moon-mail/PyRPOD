@@ -208,6 +208,8 @@ class VisitingVehicle(Vehicle):
         tcl = thruster_characteristics.to_dict(orient='records')
     
         # replace the value of 'type' per thruster with its corresponding thruster characteristics dictionary
+        # this does assume that the rows of the thruster characteristics csv are ordered by thruster types, starting at 001
+
         for thruster in self.thruster_data:
             thruster_type = int(thruster['type'][0])
             thruster['type'] = tcl[thruster_type - 1]
