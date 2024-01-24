@@ -177,9 +177,49 @@ class VisitingVehicle(Vehicle):
             for i in range(self.num_thrusters):
                 str_thusters.append(lines.pop(0))
 
-            # Parse thrugh strings and save data in a dictionary
+            # Parse through strings and save data in a dictionary
             self.thruster_data = process_str_thrusters(str_thusters)
             self.jet_interactions = lines.pop(0)
+        return
+
+    def set_thruster_data(self):
+        """
+            Read in thruster specific data from the provided file path.
+
+            Gathers thruster-specific performance parameters for the configuration from a .csv file
+            and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.
+
+            Parameters
+            ----------
+            path_to_tcd : str
+                file location for thruster configuration data file.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+
+        # TODO determine path
+        path_to_thruster_characteristics = '../data/thruster_characteristics.csv'
+        # read csv into a pd dataframe
+        thruster_characteristics = pd.read_csv(path_to_thruster_characteristics)
+        # convert the dataframe into a list of dictionaries
+        tcl = thruster_characteristics.to_dict(orient='records')
+
+        # replace the value of 'type' per thruster with its corresponding thruster characteristics dictionary
+        for thruster in self.thruster_data:
+            thruster_type = int(self.thruster_data[thruster]['type'][0])
+            self.thruster_data[thruster]['type'] = tcl[thruster_type - 1]
+
+        # print test that outputs the first two thrusters side by side
+        # keys_list = list(self.thruster_data[thruster]["type"].keys())  # Convert dict_keys to a list
+        # for i in range(len(keys_list)):
+        #     key = keys_list[i]
+        #     print(f'thruster {self.thruster_data["P1T1"]["type"]["name"]} has a {key} of {self.thruster_data[thruster]["type"][key]}')
+        #     print(f'thruster {self.thruster_data["P1T2"]["type"]["name"]} has a {key} of {self.thruster_data[thruster]["type"][key]}')
+        # 
+        
         return
 
     def print_info(self):

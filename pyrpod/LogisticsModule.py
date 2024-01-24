@@ -134,11 +134,15 @@ class LogisticsModule(VisitingVehicle):
 
         return
 
+
+    # vv.set_thruster_data function has been implemented to do this
+    # for future applications, use vv.set_thruster_data
     def add_thruster_performance(self, thrust_val, isp):
         """ WIP. Assigns thruster performance characteristics using thruster ID specified in TCD file."""
         # TODO: re-write method to read in data from CSV file. Do docstring after.
         # 1. mass, 2. chamber temp, 3. chamber pressure 4. velocity 5. impulse bit
         # 6. thruster id, 7. gas composition,
+
         self.thrust = thrust_val
         self.isp = isp
         return
@@ -255,7 +259,7 @@ class LogisticsModule(VisitingVehicle):
 
         # printer thruster data (for reference)
         # for thruster in self.thruster_data:
-        #     # print(self.thruster_data[thruster])
+        #     print(self.thruster_data[thruster])
 
 
         # Collect labels for rcs groups (x/y/z and roll/pitch/yaw rates)

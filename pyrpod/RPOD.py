@@ -78,13 +78,10 @@ class RPOD (MissionPlanner):
         plot_burn_time_flight_plan()
             Plots burn time for all dv maneuvers in the specified flight plan.
 
-        calc_delta_m(dv, isp)
-            Calculates propellant usage using expressions derived from the ideal rocket equation.
-
-        plot_delta_m(dv)
+        plot_dm(dv)
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
-        plot_delta_m_contour()
+        plot_dm_contour()
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
         calc_trans_performance(motion, dv)

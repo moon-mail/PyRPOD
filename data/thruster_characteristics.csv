@@ -1,2 +1,3 @@
-# name, propellant,                          thrust (N), specific impulse (s), MIB (N*s), mass (kg), mass flow rate (kg/s), exit velocity (m/s), nozzle diameter (m), specific gas constant (J/kg/K), ratio of specific heats, exit temperature (K), number density (particles/m^3)
-  A110, M20 (20% CH6N2 and 80% N2H4) / MON3, 111.2,      305.5,                0.463,     0.34,      0.03658,               3039.91,             0.06096,             340.2,                          1.273,                   769.33,               1.297E23
+#,name,prop,F,isp,MIB,m,mdot,ve,d,R,gamma,Te,n
+001,A110,M20 (20% CH6N2 and 80% N2H4) / MON3,111.2,305.5,0.463,0.34,0.03658,3039.91,0.06096,340.2,1.273,769.33,1.297E23
+002,A45,M21 (20% CH6N2 and 80% N2H4) / MON3,45,330,0.463,0.34,0.03658,3039.91,0.06096,340.2,1.273,769.33,2.297E23

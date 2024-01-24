@@ -1,7 +1,9 @@
 from pyrpod.LogisticsModule import LogisticsModule
+from pyrpod.VisitingVehicle import VisitingVehicle
 
 import numpy as np
 import pandas as pd
+import ast
 import matplotlib.pyplot as plt
 import configparser
 
@@ -44,16 +46,16 @@ class MissionPlanner:
         plot_burn_time_flight_plan()
             Plots burn time for all dv maneuvers in the specified flight plan.
 
-        calc_delta_m(dv, isp)
+        calc_dm(dv, isp)
             Calculates propellant usage using expressions derived from the ideal rocket equation.
 
-        calc_total_delta_m()
-            Sums delta_m of flight plan using calc_delta_m
+        calc_total_dm()
+            Sums propellant expended in the flight plan (pre-docking) using calc_dm
 
-        plot_delta_m(dv)
+        plot_dm(dv)
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
-        plot_delta_m_contour()
+        plot_dm_contour()
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
         calc_trans_performance(motion, dv)
@@ -294,7 +296,7 @@ class MissionPlanner:
 
         return
 
-    def calc_delta_m(self, dv, isp):
+    def calc_dm(self, dv, isp):
         """
             Calculates propellant usage using expressions derived from the ideal rocket equation.
 
@@ -318,19 +320,48 @@ class MissionPlanner:
         self.vv.mass -= dm
         return dm
     
-    def calc_total_delta_m(self):
+    def calc_total_dm(self, vv_instance):
+        # flight plan specific to pre-deceleration maneuvers
+        # including rotations prior to docking approach and
+        # JFH specific to arrival/departure
         firings = self.flight_plan.iterrows()
-        sum = 0
+        # TODO: input code here to read JFH, call calc_dm, and add to dm_sum
+        
+        dm_sum = 0
         for firing in firings:
-            isp = firing[1][1]
-            dv = firing[1][2]
-            # print("isp =", isp, ", dv = ", dv)
-            dm = self.calc_delta_m(dv, isp)
-            print(f'firing {firing[1][0]:.0f} dm is {dm:.1f} kg')
-            sum += dm
-        print(f'total dm for flight plan is {sum:.2f} kg')
+            # Active thrusters for now are in the flight plan,
+            # main engine and Aux may work together on flyby or NRI.
+            # Rendezvous most likely done by Aux, each firing prior to
+            # docking needs assigned thrusters which cant be done using
+            # the JFH since it doesnt include firings prior to docking.
+            # If v0_0 is supposed to indicate that we should be accelerating
+            # in the positive x direction, we need to ask which acceleration
+            # thrusters specifically since we may have 3 accel types.
 
-    def plot_delta_m(self, dv):
+            # Read active thrusters from flight plan
+            # print(f"active thruster list:\n{firing[1][1]}")
+            # print(vv_instance.thruster_data['P1T1']['type']['isp'])
+            # print(vv_instance.thruster_data['P2T1']['type']['isp'])
+            active_thruster_list = firing[1][1].split()
+            # print(active_thruster_list)
+
+            # Calculate a thrust weighted isp value
+            # Sum the products of isp and thrust and divide by the sum of thrust
+            isp_thrust_product_sum = 0
+            thrust_sum = 0
+            for active_thruster in active_thruster_list:
+                isp_thrust_product_sum += (vv_instance.thruster_data[active_thruster]['type']['isp'] * vv_instance.thruster_data[active_thruster]['type']['F'])
+                thrust_sum += vv_instance.thruster_data[active_thruster]['type']['F']
+            weighted_isp = isp_thrust_product_sum / thrust_sum
+
+            dv = firing[1][2]
+            # print(f"firing {firing[1][0]:.0f} dv = {dv:.1f} m/s")
+            dm = self.calc_dm(dv, weighted_isp)
+            # print(f'firing {firing[1][0]:.0f} dm = {dm:.1f} kg\n')
+            dm_sum += dm
+        print(f'The change in propellant mass attributable to the pre-docking flight plan is {dm_sum:.2f} kg')
+
+    def plot_dm(self, dv):
         """
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
@@ -345,13 +376,13 @@ class MissionPlanner:
             Does the method need to return a status message? or pass similar data?
         """
         isp_range = np.linspace(100, 600, 5000)
-        delta_m = []
+        dm = []
 
         for isp in isp_range:
-            delta_m.append(abs(self.calc_delta_m(dv, isp)))
-        delta_m = np.array(delta_m)
+            dm.append(abs(self.calc_dm(dv, isp)))
+        dm = np.array(dm)
         # for i, isp, in enumerate(isp_range):
-        #     print(isp_range[i], delta_m[i])
+        #     print(isp_range[i], dm[i])
 
         thrust_tech = {
             'electro thermal': [50, 185],
@@ -364,13 +395,13 @@ class MissionPlanner:
         for tech in thrust_tech:
             # print(tech)
 
-            y_vals = np.array([delta_m.max(), delta_m.mean(), delta_m.min()])
+            y_vals = np.array([dm.max(), dm.mean(), dm.min()])
             isp_val = thrust_tech[tech][1]
             isp_line = np.array([isp_val, isp_val, isp_val])
 
             ax.plot(isp_line, y_vals, label=tech)
 
-        ax.plot(isp_range, delta_m)
+        ax.plot(isp_range, dm)
         ax.set(xlabel='ISP (s)', ylabel='mass (kg)',
             title='Max ISP vs Propellant Mass Required (' + str(abs(dv)) + ' m/s)')
         ax.grid()
@@ -379,7 +410,7 @@ class MissionPlanner:
         # plt.yscale("log")
         fig.savefig("test.png")
 
-    def plot_delta_m_contour(self):
+    def plot_dm_contour(self):
         """
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
@@ -388,8 +419,8 @@ class MissionPlanner:
         #creat plotting object.
         fig, ax = plt.subplots()
 
-        delta_m_min = 10e9
-        delta_m_max = 0
+        dm_min = 10e9
+        dm_max = 0
 
         # Step through all planned firings in the flight plan
         for firing in self.flight_plan.iterrows():
@@ -398,21 +429,21 @@ class MissionPlanner:
 
             # Calculate change in mass for a given range of ISP values.
             isp_range = np.linspace(50, 400, 5000)
-            delta_m = []
+            dm = []
 
             for isp in isp_range:
-                delta_m.append(abs(self.calc_delta_m(dv, isp)))
-            delta_m = np.array(delta_m)
+                dm.append(abs(self.calc_dm(dv, isp)))
+            dm = np.array(dm)
 
             # Save absolute min and max data for plotting.
-            if delta_m.max() > delta_m_max:
-                delta_m_max = delta_m.max()
+            if dm.max() > dm_max:
+                dm_max = dm.max()
 
-            if delta_m.min() < delta_m_min:
-                delta_m_min = delta_m.min()
+            if dm.min() < dm_min:
+                dm_min = dm.min()
 
             # Plot data.
-            ax.plot(isp_range, delta_m, label='( Δv =' + str(abs(dv)) + ' m/s)')
+            ax.plot(isp_range, dm, label='( Δv =' + str(abs(dv)) + ' m/s)')
 
         # thrust_tech = {
         #     # 'electro thermal': [50, 185],
@@ -424,7 +455,7 @@ class MissionPlanner:
         # for tech in thrust_tech:
         #     print(tech)
 
-        #     y_vals = np.array([delta_m_max, 0.5*(delta_m_max + delta_m_min), delta_m_min])
+        #     y_vals = np.array([dm_max, 0.5*(dm_max + dm_min), dm_min])
         #     isp_val = thrust_tech[tech][1]
         #     isp_line = np.array([isp_val, isp_val, isp_val])
 
@@ -539,11 +570,11 @@ class MissionPlanner:
 
 
             NOTE: Methods does not take any parameters. It assumes that self.case_dir
-            and self.config are instatiated correctly. Potential defensive programming statements?
+            and self.config are instantiated correctly. Potential defensive programming statements?
         """
         # Reads and parses through flight plan CSV file.
         path_to_file = self.case_dir + 'jfh/' + self.config['jfh']['flight_plan']
-        self.flight_plan = pd.read_csv(path_to_file)
+        self.flight_plan = pd.read_csv(path_to_file, skipinitialspace=True)
         # print(self.flight_plan)
 
         return

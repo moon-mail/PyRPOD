@@ -13,7 +13,7 @@ import unittest, os, sys
 from pyrpod import LogisticsModule, MissionPlanner
 
 class DeltaMassContourChecks(unittest.TestCase):
-    def test_delta_m_plots(self):
+    def test_dm_plots(self):
 
         # set case directory
         case_dir = '../case/flight_envelopes/'
@@ -35,7 +35,7 @@ class DeltaMassContourChecks(unittest.TestCase):
         mp = MissionPlanner.MissionPlanner(case_dir)
         mp.set_lm(lm)
         mp.read_flight_plan()
-        mp.plot_delta_m_contour()
+        mp.plot_dm_contour()
 
 if __name__ == '__main__':
     unittest.main()
