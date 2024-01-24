@@ -98,6 +98,7 @@ class RarefiedPlumeGasKinetics:
         n_ratio = rho_ratio #number density ratio = number denisty / ??nozle throat?? number density aka n/n_s
         return n_ratio, P_static
 
+'''
 T_c = 500 #K
 P_c = 745000 #N/m^2
 R = 208.13 #J / (kg * K)
@@ -128,3 +129,4 @@ plt.xlabel('theta (deg)')
 plt.ylabel('P (N/m^2)')
 
 plt.show()
+'''

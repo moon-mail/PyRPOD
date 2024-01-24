@@ -274,6 +274,7 @@ class RPOD (MissionPlanner):
         # Link JFH numbering of thrusters to thruster names.  
         link = {}
         i = 1
+        print(i)
         for thruster in self.vv.thruster_data:
             link[str(i)] = self.vv.thruster_data[thruster]['name']
             i = i + 1
