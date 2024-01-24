@@ -11,6 +11,7 @@ from stl import mesh
 
 from pyrpod.LogisticsModule import LogisticsModule
 from pyrpod.MissionPlanner import MissionPlanner
+from pyrpod.RarefiedPlumeGasKinetics import *
 
 from pyrpod.file_print import print_JFH
 
@@ -399,19 +400,26 @@ class RPOD (MissionPlanner):
 
         # Initiate array containing cummulative strikes. 
         cum_strikes = np.zeros(len(target.vectors))
-        print(len(cum_strikes))
+
+        # print(len(cum_strikes))
 
 
         # Loop through each firing in the JFH.
         for firing in range(len(self.jfh.JFH)):
-            print('firing =', firing+1)
+            # print('firing =', firing+1)
 
             # reset strikes for each firing
             strikes = np.zeros(len(target.vectors))
 
+            # reset pressures for each firing
+            pressures = np.zeros(len(target.vectors))
+
+            # reset heat fluxes for each firing
+            heat_fluxes  = np.zeros(len(target.vectors))
+
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
-            print("thrusters", thrusters)
+            # print("thrusters", thrusters)
              
             # Load visiting vehicle position and orientation
             vv_pos = self.jfh.JFH[firing]['xyz']
@@ -423,7 +431,7 @@ class RPOD (MissionPlanner):
 
                 # Save thruster id using indexed thruster value.
                 # Could naming/code be more clear?
-                print('thruster num', thruster, 'thruster id', link[str(thruster)][0])
+                # print('thruster num', thruster, 'thruster id', link[str(thruster)][0])
                 thruster_id = link[str(thruster)][0]
 
 
@@ -436,16 +444,16 @@ class RPOD (MissionPlanner):
 
                 thruster_orientation =  thruster_orientation * vv_orientation
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
-                print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
+                # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
                 plume_normal = np.array(thruster_orientation[1])
-                print("plume normal: ", plume_normal)
+                # print("plume normal: ", plume_normal)
                 
                 # calculate thruster exit coordinate with respect to the Target Vehicle.
                 
                 # print(self.vv.thruster_data[thruster_id])
                 thruster_pos = vv_pos + np.array(self.vv.thruster_data[thruster_id]['exit'])
                 thruster_pos = thruster_pos[0]
-                print('thruster position', thruster_pos)
+                # print('thruster position', thruster_pos)
 
                 # Calculate plume strikes for each face on the Target surface.
                 for i, face in enumerate(target.vectors):
@@ -501,6 +509,15 @@ class RPOD (MissionPlanner):
                         cum_strikes[i] = cum_strikes[i] + 1
                         strikes[i] = 1
 
+                        # TODO add switch case to toggle between no plume, simons, simple, and full
+                        # T_wall exists in target vehicle? sigma choose 1 for now?
+                        T_w = 1
+                        sigma = 1
+                        pressure = SimplifiedGasKinetics.get_pressure(norm_distance, theta, self.vv.thruster_data[thruster_id]['type'], T_w, sigma)
+                        pressures[i] = pressure
+
+                        heat_flux = SimplifiedGasKinetics.get_heat_flux(norm_distance, theta, self.vv.thruster_data[thruster_id]['type'], T_w, sigma)
+                        heat_fluxes[i] = heat_flux
                         # print("unit plume normal", unit_plume_normal)
  
                         # print("unit distance", unit_distance)
@@ -513,13 +530,21 @@ class RPOD (MissionPlanner):
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
                 "strikes": strikes,
-                "cum_strikes": cum_strikes
+                "cum_strikes": cum_strikes,
+
+                "pressures": pressures,
+                #add cum_pressures
+
+                "heat_fluxes": heat_fluxes
+                #add cum_heat_fluxes()
             }
 
             path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
 
-            self.target.convert_stl_to_vtk(path_to_vtk, cellData = cellData, mesh =target)
-            print()
+            # print(cellData)
+            # input()
+            self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData, target)
+            # print()
 
 
     def graph_param_curve(self, t, r_of_t):
@@ -676,41 +701,39 @@ class RPOD (MissionPlanner):
         x, y, z = [value_functions[0](t_values), value_functions[1](t_values), value_functions[2](t_values)]
         dx, dy, dz = [tan_vector_functions[0](t_values), tan_vector_functions[1](t_values), tan_vector_functions[2](t_values)]
 
-        print(type(dx), type(dy), type(dz))
+        # print(type(dx), type(dy), type(dz))
 
         # print(dx.size, dy.size, dz.size)
 
         # When derivatives reduce to constant value the lambda function will reutrn a float 
         # instead of np.array. These if statements are here fill an array with that float value.
-        print(type(dx), dx) 
-        print(type(dy), dy) 
+        # print(type(dx), dx) 
+        # print(type(dy), dy) 
         if type(x) == int:
             x = np.full(t_values.size, x)
 
         if type(dx) == int or dx.size == 1:
-            print('dx is contant')
-            print(dx)
+            # print('dx is contant')
+            # print(dx)
             dx = np.full(t_values.size, dx)
             # x = np.full(t_values.size, )
 
         if type(y) == int:
             y = np.full(t_values.size, y)
         if type(dy) == int or dy.size == 1:
-            print('dy is contant')
-            print(dy)
+            # print('dy is contant')
+            # print(dy)
             dy = np.full(t_values.size, dy)
         
         if type(z) == int:
             z = np.full(t_values.size, z)
         if type(dz) == int or dz.size == 1:
-            print('dz is contant')
-            print(dz)
+            # print('dz is contant')
+            # print(dz)
             dz = np.full(t_values.size, dz)
 
-
-
-        print(type(dx), type(dy), type(dz))
-        print(type(x), type(y), type(z))
+        # print(type(dx), type(dy), type(dz))
+        # print(type(x), type(y), type(z))
 
         # Save rotation matrix for each time step
         rot = []

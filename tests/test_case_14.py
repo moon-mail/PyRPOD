@@ -23,8 +23,8 @@ class LoadJFHChecks(unittest.TestCase):
         jfh = JetFiringHistory.JetFiringHistory(case_dir)
         jfh.read_jfh()
 
-        for firing in range(len(jfh.JFH)):
-            print(jfh.JFH[firing])
+        # for firing in range(len(jfh.JFH)):
+        #     print(jfh.JFH[firing])
 
 if __name__ == '__main__':
     unittest.main()
