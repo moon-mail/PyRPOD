@@ -201,9 +201,12 @@ class VisitingVehicle(Vehicle):
         """
 
         # TODO determine path
-        path_to_thruster_characteristics = '../data/thruster_characteristics.csv'
+        path_to_tdf = self.case_dir + 'tcd/' + self.config['tcd']['tdf']
         # read csv into a pd dataframe
-        thruster_characteristics = pd.read_csv(path_to_thruster_characteristics)
+        thruster_characteristics = pd.read_csv(path_to_tdf)
+        #convert strings to floats
+        columns_to_convert = ['thrust', 'MIB', 'mass', 'm_dot', 'v0', 'r0', 'mm', 'gamma', 'T0', 'n0', 'R']  # Add the columns you want to convert here
+        thruster_characteristics[columns_to_convert] = thruster_characteristics[columns_to_convert].astype(float)
         # convert the dataframe into a list of dictionaries
         tcl = thruster_characteristics.to_dict(orient='records')
     

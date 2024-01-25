@@ -1,0 +1,2 @@
+name,propellant,thrust,MIB,mass,m_dot,v0,r0,mm,gamma,T0,n0,R
+A110,M20 (20% CH6N2 and 80% N2H4) and MON3,111.2,0.463,0.34,0.03658,3039.91,0.06096,34.85,1.075,2775.04,2.644E24,17.0

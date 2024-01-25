@@ -229,6 +229,7 @@ class SimplifiedGasKinetics:
         Q_simple = self.get_Q_simple(X, Z)
         K_simple = self.get_K_simple(S_0, Q_simple)
         num_density_ratio = (K_simple / (2 * np.sqrt(np.pi)) * (R_0 / X) ** 2) * np.exp(-(S_0 ** 2))
+        num_density_ratio = float(num_density_ratio)
         return num_density_ratio
     
     def get_U_normalized(self, X, Z, S_0):
@@ -237,6 +238,7 @@ class SimplifiedGasKinetics:
         K_simple = self.get_K_simple(S_0, Q_simple)
         M_simple = self.get_M_simple(S_0, Q_simple)
         U_normalized = M_simple / K_simple
+        U_normalized = float(U_normalized)
         return U_normalized
     
     def get_W_normalized(self, X, Z, S_0):
@@ -245,6 +247,7 @@ class SimplifiedGasKinetics:
         K_simple = self.get_K_simple(S_0, Q_simple)
         M_simple = self.get_M_simple(S_0, Q_simple)
         W_normalized = (M_simple / K_simple) * (Z / X)
+        W_normalized = float(W_normalized)
         return W_normalized
 
     def get_temp_ratio(self, X, Z, S_0):
@@ -254,12 +257,14 @@ class SimplifiedGasKinetics:
         M_simple = self.get_M_simple(S_0, Q_simple)
         N_simple = self.get_N_simple(S_0, Q_simple)
         T_ratio = ((-2 * M_simple ** 2) / (3 * Q_simple * K_simple ** 2)) + (4 * N_simple / (3 * K_simple))
+        T_ratio = float(T_ratio)
         return T_ratio
     
     def get_num_density_centerline(self, X, S_0, R_0):
         p1 = X / np.sqrt(X ** 2 + R_0 ** 2) 
         p2 = R_0 / np.sqrt(X ** 2 + R_0 ** 2)
         n_ratio = 0.5 + 0.5 * sp.erf(S_0) - (p1 * np.exp(-S_0 ** 2 * p2 ** 2) / 2) * (1 + sp.erf(p1 * S_0))
+        n_ratio = float(n_ratio)
         return n_ratio
     
     def get_velocity_centerline(self, X, S_0, R_0):
@@ -267,6 +272,7 @@ class SimplifiedGasKinetics:
         p2 = R_0 / np.sqrt(X ** 2 + R_0 ** 2)
         n_ratio = self.get_num_density_centerline(X, S_0, R_0)
         U_ratio = 1 / (2 * n_ratio) * ((p2 ** 2 * np.exp(- S_0 ** 2) / np.sqrt(np.pi)) + (S_0 * (1 + sp.erf(S_0))) - (np.exp(- p2 ** 2 * S_0 ** 2) * p1 ** 3 * S_0 * (1 + sp.erf(p1 * S_0))))
+        U_ratio = float(U_ratio)
         return U_ratio
     
     def get_temp_centerline(self, X, S_0, R_0):
@@ -282,6 +288,7 @@ class SimplifiedGasKinetics:
         '''
         integral = 0.5 * N * R_0 ** 2
         temp_ratio = (4 * np.exp(- S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * X ** 2) * integral - (U1 ** 2 / (3/2)) 
+        temp_ratio = float(temp_ratio)
         return temp_ratio
     
     # TODO check if on centerline
@@ -289,15 +296,17 @@ class SimplifiedGasKinetics:
         X = distance * np.cos(theta)
         Z = distance * np.sin(theta)
 
-        R_0 = thruster_characteristics['nozzle exit diameter']
-        U_0 = thruster_characteristics['exit velocity']
-        R = thruster_characteristics['specific gas constant']
-        T_0 = thruster_characteristics['exit temperature']
-        n_0 = thruster_characteristics['number density']
-        molar_mass = thruster_characteristics['molar mass']
+        R_0 = thruster_characteristics['r0']
+        U_0 = thruster_characteristics['v0']
+        R = thruster_characteristics['R']
+        gamma = thruster_characteristics['gamma']
+        T_0 = thruster_characteristics['T0']
+        n_0 = thruster_characteristics['n0']
+        molar_mass = thruster_characteristics['mm']
 
         beta_0 = 1 / np.sqrt(2 * R * T_0)
         S_0 = U_0 * beta_0
+        
         if theta != 0:
             n_inf = n_0 * self.get_num_density_ratio(X, Z, R_0, S_0)
             rho_inf = n_inf * molar_mass / AVOGADROS_NUMBER
@@ -329,13 +338,13 @@ class SimplifiedGasKinetics:
         X = distance * np.cos(theta)
         Z = distance * np.sin(theta)
 
-        R_0 = thruster_characteristics['nozzle exit diameter']
-        U_0 = thruster_characteristics['exit velocity']
-        R = thruster_characteristics['specific gas constant']
-        T_0 = thruster_characteristics['exit temperature']
-        n_0 = thruster_characteristics['number density']
-        molar_mass = thruster_characteristics['molar mass']
-        gamma = thruster_characteristics['ratio of specific heats']
+        R_0 = thruster_characteristics['r0']
+        U_0 = thruster_characteristics['v0']
+        R = thruster_characteristics['R']
+        gamma = thruster_characteristics['gamma']
+        T_0 = thruster_characteristics['T0']
+        n_0 = thruster_characteristics['n0']
+        molar_mass = thruster_characteristics['mm']
 
         beta_0 = 1 / np.sqrt(2 * R * T_0)
         S_0 = U_0 * beta_0
@@ -621,6 +630,7 @@ def get_maxwellian_heat_transfer(rho, S, sigma, theta, T, T_r, R, gamma):
     q *= sigma * rho * R * T * np.sqrt(R * T / (2 * np.pi))
     return q
 
+'''
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -662,3 +672,5 @@ plt.show()
     #def get_U_normalized():
     #def get_W_normalized():
     #def get_temp_ratio():
+
+'''
