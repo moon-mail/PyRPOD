@@ -17,7 +17,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import SweepConfig
+from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD, SweepConfig
 
 class CoordinateSweepCheck(unittest.TestCase):
     def test_cant_sweep(self):
@@ -52,6 +52,20 @@ class CoordinateSweepCheck(unittest.TestCase):
         angle_sweep = SweepConfig.SweepAngles(r, config, thruster_groups)
         config_swept_array = angle_sweep.sweep_long_thrusters(config, dpitch, dyaw)
         angle_sweep.read_swept_angles(config_swept_array)
+
+        case_dir = '../case/base_case/'
+        # Load JFH data.
+        jfh = JetFiringHistory.JetFiringHistory(case_dir)
+        jfh.read_jfh()
+
+        tv = TargetVehicle.TargetVehicle(case_dir)
+        tv.set_stl()
+
+        vv = VisitingVehicle.VisitingVehicle(case_dir)
+        vv.set_stl()
+        vv.set_thruster_config()
+
+        vv.graph_thruster_configuration(config_swept_array[99], 'cant')
 
 if __name__ == '__main__':
     unittest.main()

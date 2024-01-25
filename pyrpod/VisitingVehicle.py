@@ -236,6 +236,29 @@ class VisitingVehicle(Vehicle):
         plumeMesh.rotate_using_matrix(np.matrix(rot).transpose())
         plumeMesh.translate(self.thruster_data[thruster_id]['exit'][0])
         return plumeMesh
+    
+    def transform_plume_mesh(self, config, thruster_id, plumeMesh):
+        """
+            Transform provided plume mesh according to specified thruster's DCM and exit coordinate.
+
+            Parameters
+            ----------
+            thruster_id : str
+                String to access thruster via a unique ID.
+
+            plumeMesh : mesh.Mesh
+                Surface mesh constructed from STL file in initial orientation.
+
+            Returns
+            -------
+            plumeMesh : mesh.Mesh
+                Surface mesh constructed from STL file in transformed orientation.
+
+        """
+        rot = np.matrix(config[thruster_id]['dcm'])
+        plumeMesh.rotate_using_matrix(np.matrix(rot).transpose())
+        plumeMesh.translate(config[thruster_id]['exit'])
+        return plumeMesh
 
     def initiate_plume_normal(self, thruster_id):
         """
@@ -348,7 +371,11 @@ class VisitingVehicle(Vehicle):
             index = str(i)
         # screen_shot = vpl.screenshot_fig()
         # vpl.save_fig('img/frame' + str(index) + '.png')
-        plt.savefig('img/frame' + str(index) + '.png')
+        save_dir = '../data/img/'
+        os.makedirs(save_dir, exist_ok=True)
+
+        # Save the plot to a new file
+        plt.savefig(os.path.join(save_dir, 'frame' + str(index) + '.png'))
         return i + 1
 
     def check_thruster_configuration(self):
@@ -378,5 +405,35 @@ class VisitingVehicle(Vehicle):
             normal = self.initiate_plume_normal(thruster_id)
 
             i = self.plot_vv_and_thruster(plumeMesh, thruster_id, normal, i)
+
+        return
+    
+    def graph_thruster_configuration(self, config, tag):
+        """
+            Plots visiting vehicle and all thrusters in RCS configuration.
+
+            Methods loads STL file of VV and turn on all thrusters to check locations + orientations.
+
+            It is useful for a quick sanity check of the RCS configuration.
+        """
+
+        # Loop through each thruster, graphing normal vecotr and rotated plume cone.
+        i = 0
+        for thruster in config:
+
+            # transform plume mesh to notional position.
+            plumeMesh = self.initiate_plume_mesh()
+
+            # transform plume mesh according to dcm data of current thruster.
+            plumeMesh = self.transform_plume_mesh(config, thruster, plumeMesh)
+
+            if not os.path.isdir('../data/tcd'):
+                os.system('mkdir ../data/tcd')
+
+            plumeMesh.save('../data/tcd/' + tag + str(i) + '.stl')
+
+            normal = self.initiate_plume_normal(thruster)
+
+            i = self.plot_vv_and_thruster(plumeMesh, thruster, normal, i)
 
         return

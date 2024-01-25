@@ -1,28 +1,3 @@
-'''
-# Juan Roldan
-# University of Central Florida
-# Department of Mechanical and Aerospace Engineering
-# Last Changed: 01-23-24
-
-# ========================
-# PyRPOD: test/test_case_90.py
-# ========================
-
-import test_header
-import unittest, os, sys
-from pyrpod import RPOD
-
-class SweepAnglesVisualization(unittest.TestCase):
-    def plot_swept_angles(self):
-
-        case_dir = '../case/base_case/'
-
-        rpod = RPOD.RPOD(case_dir)
-        rpod.graph_jfh()
-
-if __name__ == '__main__':
-    unittest.main()
-'''
 # Juan P. Roldan
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
@@ -38,7 +13,7 @@ if __name__ == '__main__':
 
 import test_header
 import unittest, os, sys
-from pyrpod import SweepConfig
+from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD, SweepConfig
 
 class CoordinateSweepCheck(unittest.TestCase):
     def test_coord_sweep(self):
@@ -65,6 +40,19 @@ class CoordinateSweepCheck(unittest.TestCase):
 
         # print proof of sweep to terminal
         swept_coords.read_swept_coords(swept_configs)
+
+        case_dir = '../case/base_case/'
+    # Load JFH data.
+        jfh = JetFiringHistory.JetFiringHistory(case_dir)
+        jfh.read_jfh()
+
+        tv = TargetVehicle.TargetVehicle(case_dir)
+        tv.set_stl()
+
+        vv = VisitingVehicle.VisitingVehicle(case_dir)
+        vv.set_stl()
+        vv.set_thruster_config()
+        vv.graph_thruster_configuration(swept_configs[0], 'coord')
 
 if __name__ == '__main__':
     unittest.main()

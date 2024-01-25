@@ -256,7 +256,6 @@ class RPOD (MissionPlanner):
                 index = str(i)
             plt.savefig('img/frame' + str(index) + '.png')
 
-
     def graph_jfh(self): 
         """
             Creates visualization data for the trajectory of the proposed RPOD analysis.
@@ -514,11 +513,11 @@ class RPOD (MissionPlanner):
                         # T_wall exists in target vehicle? sigma choose 1 for now?
                         T_w = 1
                         sigma = 1
-                        pressure = SimplifiedGasKinetics.get_pressure(norm_distance, theta, self.vv.thruster_data[thruster_id]['type'], T_w, sigma)
-                        pressures[i] = pressure
+                        #pressure = SimplifiedGasKinetics.get_pressure(norm_distance, theta, self.vv.thruster_data[thruster_id]['type'], T_w, sigma)
+                        #pressures[i] = pressure
 
-                        heat_flux = SimplifiedGasKinetics.get_heat_flux(norm_distance, theta, self.vv.thruster_data[thruster_id]['type'], T_w, sigma)
-                        heat_fluxes[i] = heat_flux
+                        #heat_flux = SimplifiedGasKinetics.get_heat_flux(norm_distance, theta, self.vv.thruster_data[thruster_id]['type'], T_w, sigma)
+                        #heat_fluxes[i] = heat_flux
                         # print("unit plume normal", unit_plume_normal)
  
                         # print("unit distance", unit_distance)
@@ -531,12 +530,12 @@ class RPOD (MissionPlanner):
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
                 "strikes": strikes,
-                "cum_strikes": cum_strikes,
+                "cum_strikes": cum_strikes
 
-                "pressures": pressures,
+                #"pressures": pressures,
                 #add cum_pressures
 
-                "heat_fluxes": heat_fluxes
+                #"heat_fluxes": heat_fluxes
                 #add cum_heat_fluxes()
             }
 
