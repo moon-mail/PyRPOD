@@ -50,7 +50,7 @@ class MissionPlanner:
             Calculates propellant usage using expressions derived from the ideal rocket equation.
 
         calc_total_dm()
-            Sums propellant expended in the flight plan (pre-docking) using calc_dm
+            Sums propellant expended in the flight plan (pre-docking) using calc_dm and prints.
 
         plot_dm(dv)
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
@@ -320,44 +320,38 @@ class MissionPlanner:
         self.vv.mass -= dm
         return dm
     
-    def calc_total_dm(self, vv_instance):
-        # flight plan specific to pre-deceleration maneuvers
-        # including rotations prior to docking approach and
-        # JFH specific to arrival/departure
+    def calc_total_dm(self):
+        """
+            Sums propellant expended in the flight plan (pre-docking) using calc_dm and prints.
+
+            TODO: input code here to read JFH, call calc_dm, and add to dm_sum
+
+            Parameters
+            ----------
+
+            Returns
+            -------
+            Method doesn't currently return anything.
+        """
         firings = self.flight_plan.iterrows()
-        # TODO: input code here to read JFH, call calc_dm, and add to dm_sum
-        
         dm_sum = 0
         for firing in firings:
-            # Active thrusters for now are in the flight plan,
-            # main engine and Aux may work together on flyby or NRI.
-            # Rendezvous most likely done by Aux, each firing prior to
-            # docking needs assigned thrusters which cant be done using
-            # the JFH since it doesnt include firings prior to docking.
-            # If v0_0 is supposed to indicate that we should be accelerating
-            # in the positive x direction, we need to ask which acceleration
-            # thrusters specifically since we may have 3 accel types.
-
             # Read active thrusters from flight plan
-            # print(f"active thruster list:\n{firing[1][1]}")
-            # print(vv_instance.thruster_data['P1T1']['type']['isp'])
-            # print(vv_instance.thruster_data['P2T1']['type']['isp'])
             active_thruster_list = firing[1][1].split()
-            # print(active_thruster_list)
 
             # Calculate a thrust weighted isp value
             # Sum the products of isp and thrust and divide by the sum of thrust
             isp_thrust_product_sum = 0
             thrust_sum = 0
             for active_thruster in active_thruster_list:
-                isp_thrust_product_sum += (vv_instance.thruster_data[active_thruster]['type']['isp'] * vv_instance.thruster_data[active_thruster]['type']['F'])
-                thrust_sum += vv_instance.thruster_data[active_thruster]['type']['F']
+                isp_current = float(self.vv.thruster_data[active_thruster]['type']['isp'])
+                F_current = float(self.vv.thruster_data[active_thruster]['type']['F'])
+                isp_thrust_product_sum += isp_current * F_current
+                thrust_sum += F_current
             weighted_isp = isp_thrust_product_sum / thrust_sum
 
             dv = firing[1][2]
-            # print(f"firing {firing[1][0]:.0f} dv = {dv:.1f} m/s")
             dm = self.calc_dm(dv, weighted_isp)
-            # print(f'firing {firing[1][0]:.0f} dm = {dm:.1f} kg\n')
             dm_sum += dm
         print(f'The change in propellant mass attributable to the pre-docking flight plan is {dm_sum:.2f} kg')
 

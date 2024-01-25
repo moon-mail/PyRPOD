@@ -29,7 +29,7 @@ mp.set_lm(lm)
 mp.read_flight_plan()
 
 # Calculate the fuel required for all maneuvers except for docking
-mp.calc_total_dm(lm)
+mp.calc_total_dm()
 
 
 if __name__ == '__main__':
