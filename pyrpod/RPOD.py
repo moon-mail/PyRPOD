@@ -412,7 +412,7 @@ class RPOD (MissionPlanner):
              
             # Load visiting vehicle position and orientation
             vv_pos = self.jfh.JFH[firing]['xyz']
-            vv_orientation = np.matrix(self.jfh.JFH[firing]['dcm'])
+            vv_orientation = np.matrix(self.jfh.JFH[firing]['dcm']).transpose()
 
             # Calculate strikes for  of active thrusters. 
             for thruster in thrusters:
@@ -429,12 +429,12 @@ class RPOD (MissionPlanner):
                 # First, according to DCM and exit vector using current thruster id in TCD
                 thruster_orientation = np.matrix(
                     self.vv.thruster_data[thruster_id]['dcm']
-                )
+                ).transpose()
 
-                thruster_orientation =  thruster_orientation * vv_orientation
+                thruster_orientation =   thruster_orientation.dot(vv_orientation)
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
                 # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
-                plume_normal = np.array(thruster_orientation[1])
+                plume_normal = np.array(thruster_orientation[2])
                 # print("plume normal: ", plume_normal)
                 
                 # calculate thruster exit coordinate with respect to the Target Vehicle.
