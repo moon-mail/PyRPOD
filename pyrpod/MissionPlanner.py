@@ -316,7 +316,7 @@ class MissionPlanner:
         g_0 = 9.81
         a = (dv/(isp*g_0))
         m_f = self.vv.mass
-        dm = m_f * (1 - np.exp(a))
+        dm = m_f * (np.exp(a) - 1)
         self.vv.mass -= dm
         return dm
     
@@ -340,7 +340,7 @@ class MissionPlanner:
         g_0 = 9.81
         a = (dv/(isp*g_0))
         m_f = self.vv.mass
-        dm = m_f * (1 - np.exp(a))
+        dm = m_f * (np.exp(a) - 1)
         self.vv.mass -= dm
         return dm
 
@@ -363,7 +363,7 @@ class MissionPlanner:
         """
         a = (dv/v_e)
         m_f = self.vv.mass
-        dm = m_f * (1 - np.exp(a))
+        dm = m_f * (np.exp(a) - 1)
         self.vv.mass -= dm
         return dm
 
