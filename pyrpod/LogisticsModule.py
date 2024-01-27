@@ -251,7 +251,7 @@ class LogisticsModule(VisitingVehicle):
 
         # Read in grouping configuration file.
         config = configparser.ConfigParser()
-        config.read("example.ini")
+        config.read(self.case_dir + "/tcd/rcs_groups.ini") # add to config file?
         self.config = config
 
         #Instantiate dictionary to hold grouping info

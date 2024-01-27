@@ -18,7 +18,7 @@ lm.set_inertial_props(m, h, r)
 lm.set_thruster_config()
 
 # Read thruster characteristics list from csv file
-lm.set_thruster_data()
+lm.set_thruster_metrics()
 
 # Use TCD to group DoF
 lm.assign_thruster_groups()
@@ -29,7 +29,7 @@ mp.set_lm(lm)
 mp.read_flight_plan()
 
 # Calculate the fuel required for all maneuvers except for docking
-mp.calc_total_dm()
+mp.calc_total_delta_mass()
 
 
 if __name__ == '__main__':
