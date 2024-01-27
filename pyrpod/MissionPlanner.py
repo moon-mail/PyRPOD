@@ -15,7 +15,7 @@ class MissionPlanner:
         trajectory character, and performance with respect to factors of safety.
 
         Data Inputs inlcude (redundant? better said in user guide?)
-        1. LogisticsModule (LM) object with properly defined intertial properties and candidate RCS configurations.
+        1. LogisticsModule (LM) object with properly defined inertial properties and candidate RCS configurations.
         2. Proposed flight plan including required chenges in velocity and supporting requirements.
 
 
@@ -317,7 +317,7 @@ class MissionPlanner:
         a = (dv/(isp*g_0))
         m_f = self.vv.mass
         dm = m_f * (np.exp(a) - 1)
-        self.vv.mass -= dm
+        self.vv.mass += dm
         return dm
     
     def calc_delta_mass_isp(self, dv, isp):
@@ -341,7 +341,7 @@ class MissionPlanner:
         a = (dv/(isp*g_0))
         m_f = self.vv.mass
         dm = m_f * (np.exp(a) - 1)
-        self.vv.mass -= dm
+        self.vv.mass += dm
         return dm
 
     def calc_delta_mass_v_e(self, dv, v_e):
@@ -364,13 +364,13 @@ class MissionPlanner:
         a = (dv/v_e)
         m_f = self.vv.mass
         dm = m_f * (np.exp(a) - 1)
-        self.vv.mass -= dm
+        self.vv.mass += dm
         return dm
 
     def calc_delta_mass_group(self, dv, group):
-        print(group, dv)
+        # print(group, dv)
 
-        print(self.vv.rcs_groups[group])
+        # print(self.vv.rcs_groups[group])
 
         thrust_sum = 0
         m_dot_sum = 0
@@ -382,8 +382,8 @@ class MissionPlanner:
             thruster_id = thruster_data['type'][0]
             # print(thruster_id)
             # input()
-            print(thruster_id, self.vv.thruster_metrics[thruster_id])
-            print()
+            # print(thruster_id, self.vv.thruster_metrics[thruster_id])
+            # print()
             thruster_metrics = self.vv.thruster_metrics[thruster_id]
 
             thrust_sum += thruster_metrics['F']
@@ -405,19 +405,20 @@ class MissionPlanner:
 
             Returns
             -------
-            Method doesn't currently return anything.
+            Total change in mass.
         """
         # Load firings in reverse order since the docking mass is our reference point.
         firings = self.flight_plan.sort_values(['firing'], axis=0, ascending=False).iterrows()
 
         delta_mass_sum = 0
+        total_delta_mass = 0
 
         for cur_firing in firings:
 
             # Re-naming to avoid indexing ten times in the method.
             firing = cur_firing[1]
 
-            # Read in and calculate required intertial state changes.
+            # Read in and calculate required inertial state changes.
 
             # TODO: Move to another method?
 
@@ -440,11 +441,11 @@ class MissionPlanner:
             dw_y = firing['wy_1'] - firing['wy_0']
 
             # Organize values to loop over.
-            intertial_state = [dv_x, dv_y, dv_z, dw_r, dw_p, dw_y]
+            inertial_state = [dv_x, dv_y, dv_z, dw_r, dw_p, dw_y]
             groups = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
 
             # Calculate fuel usage for each change in inertial state.
-            for i, state in enumerate(intertial_state):
+            for i, state in enumerate(inertial_state):
                 # print(state, groups[i])
 
                 if state > 0:
@@ -453,29 +454,10 @@ class MissionPlanner:
                     delta_mass_sum += self.calc_delta_mass_group(dv_x, '-' + groups[i])
 
 
-            print(delta_mass_sum)
-            self.total_delta_mass = delta_mass_sum
+            # print(f'delta_mass_sum is {delta_mass_sum}')
+            total_delta_mass += delta_mass_sum
 
-            # active_thruster_group = firing[1][1]
-            # print(active_thruster_group)
-
-            # active_thruster_list = self.vv.rcs_groups[active_thruster_group]
-            # print(active_thruster_list)
-            # Calculate a thrust weighted isp value
-            # Sum the products of isp and thrust and divide by the sum of thrust
-            # isp_thrust_product_sum = 0
-            # thrust_sum = 0
-            # for active_thruster in active_thruster_list:
-            #     isp_current = float(self.vv.thruster_data[active_thruster]['type']['isp'])
-            #     F_current = float(self.vv.thruster_data[active_thruster]['type']['F'])
-            #     isp_thrust_product_sum += isp_current * F_current
-            #     thrust_sum += F_current
-            # weighted_isp = isp_thrust_product_sum / thrust_sum
-
-            # dv = firing[1][2]
-            # dm = self.calc_delta_mass(dv, weighted_isp)
-            # dm_sum += dm
-        # print(f'The change in propellant mass attributable to the pre-docking flight plan is {dm_sum:.2f} kg'
+        return total_delta_mass
 
     def plot_delta_mass(self, dv):
         """
