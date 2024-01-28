@@ -41,6 +41,7 @@ import matplotlib.pyplot as plt
 
 #define constants
 AVOGADROS_NUMBER = 6.0221e23
+GAS_CONSTANT = 8.314
 
 def get_maxwellian_pressure(rho_inf, U, S, sigma, theta, T, T_w):
     '''
@@ -494,6 +495,7 @@ class SimplifiedGasKinetics:
         N_simple = self.get_N_simple(S_0, Q_simple)
         T_ratio = ((-2 * M_simple ** 2) / (3 * Q_simple * K_simple ** 2)) + (4 * N_simple / (3 * K_simple))
         T_ratio = float(T_ratio)
+        print(f'S0 = {S_0}, Qs = {Q_simple}, Ks = {K_simple}, Ms = {M_simple}, Ns = {N_simple}, T_ratio = {T_ratio}')
         return T_ratio
     
     def get_num_density_centerline(self, X, S_0, R_0):
@@ -548,21 +550,20 @@ class SimplifiedGasKinetics:
         X = distance * np.cos(theta)
         Z = distance * np.sin(theta)
 
-        R_0 = thruster_characteristics['r0']
-        U_0 = thruster_characteristics['v0']
+
+        R_0 = thruster_characteristics['d'] / 2
+        U_0 = thruster_characteristics['ve']
         R = thruster_characteristics['R']
         gamma = thruster_characteristics['gamma']
-        T_0 = thruster_characteristics['T0']
-        n_0 = thruster_characteristics['n0']
-        molar_mass = thruster_characteristics['mm']
+        T_0 = thruster_characteristics['Te']
+        n_0 = thruster_characteristics['n']
+        molar_mass = GAS_CONSTANT / R # kg/mol
 
         beta_0 = 1 / np.sqrt(2 * R * T_0)
         S_0 = U_0 * beta_0
-        
         if theta != 0:
             n_inf = n_0 * self.get_num_density_ratio(X, Z, R_0, S_0)
             rho_inf = n_inf * molar_mass / AVOGADROS_NUMBER
-
             T = T_0 * self.get_temp_ratio(X, Z, S_0)
 
             u = self.get_U_normalized(X, Z, S_0) / beta_0
@@ -594,13 +595,13 @@ class SimplifiedGasKinetics:
         X = distance * np.cos(theta)
         Z = distance * np.sin(theta)
 
-        R_0 = thruster_characteristics['r0']
-        U_0 = thruster_characteristics['v0']
+        R_0 = thruster_characteristics['d'] / 2
+        U_0 = thruster_characteristics['ve']
         R = thruster_characteristics['R']
         gamma = thruster_characteristics['gamma']
-        T_0 = thruster_characteristics['T0']
-        n_0 = thruster_characteristics['n0']
-        molar_mass = thruster_characteristics['mm']
+        T_0 = thruster_characteristics['Te']
+        n_0 = thruster_characteristics['n']
+        molar_mass = GAS_CONSTANT / R # kg/mol
 
         beta_0 = 1 / np.sqrt(2 * R * T_0)
         S_0 = U_0 * beta_0

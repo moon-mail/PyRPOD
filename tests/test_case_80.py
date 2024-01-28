@@ -28,7 +28,7 @@ class LoadJFHChecks(unittest.TestCase):
         vv = VisitingVehicle.VisitingVehicle(case_dir)
         vv.set_stl()
         vv.set_thruster_config()
-        vv.set_thruster_data()
+        vv.set_thruster_metrics()
 
         rpod = RPOD.RPOD(case_dir)
         rpod.study_init(jfh, tv, vv)
