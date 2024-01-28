@@ -422,8 +422,8 @@ class SimplifiedGasKinetics:
         '''
         #M_simple = (Q_simple ** 2) * ((Q_simple * S_0 ** 2) + 1 + (S_0 * (1.5 + (Q_simple * S_0 ** 2)) * 
                                 #np.sqrt(np.pi * Q_simple)) * (1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple *S_0 ** 2))
-        term1 = Q_simple * S_0 ** 2
-        term2 = 1 + S_0 * (1.5 + Q_simple * S_0 ** 2)
+        term1 = 1 + Q_simple * S_0 ** 2
+        term2 = S_0 * (1.5 + Q_simple * S_0 ** 2)
         term3 = np.sqrt(np.pi * Q_simple)
         term4 = (1 + sp.erf(S_0 * np.sqrt(Q_simple))) * np.exp(Q_simple * S_0 ** 2)
         M_simple = Q_simple ** 2 * (term1 + term2 * term3 * term4)
@@ -495,7 +495,7 @@ class SimplifiedGasKinetics:
         N_simple = self.get_N_simple(S_0, Q_simple)
         T_ratio = ((-2 * M_simple ** 2) / (3 * Q_simple * K_simple ** 2)) + (4 * N_simple / (3 * K_simple))
         T_ratio = float(T_ratio)
-        print(f'S0 = {S_0}, Qs = {Q_simple}, Ks = {K_simple}, Ms = {M_simple}, Ns = {N_simple}, T_ratio = {T_ratio}')
+        #print(f'S0 = {S_0}, Qs = {Q_simple}, Ks = {K_simple}, Ms = {M_simple}, Ns = {N_simple}, T_ratio = {T_ratio}')
         return T_ratio
     
     def get_num_density_centerline(self, X, S_0, R_0):
