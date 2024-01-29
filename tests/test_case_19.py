@@ -1,7 +1,7 @@
-# Andy Torres, Pearce Patterson
+# Andy Torres, Pearce Patterson, Nicholas A. Palumbo
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 1-24-24
+# Last Changed: 1-29-24
 
 # ========================
 # PyRPOD: test/test_case_19.py
@@ -22,9 +22,6 @@ class LoadJFHChecks(unittest.TestCase):
         jfh = JetFiringHistory.JetFiringHistory(case_dir)
         jfh.read_jfh()
 
-        for firing in jfh.JFH:
-            print(firing)
-
         # Load Target Vehicle.
         tv = TargetVehicle.TargetVehicle(case_dir)
         tv.set_stl()
@@ -33,17 +30,14 @@ class LoadJFHChecks(unittest.TestCase):
         vv = VisitingVehicle.VisitingVehicle(case_dir)
         vv.set_stl()
         vv.set_thruster_config()
-
-        for thruster in vv.thruster_data:
-            print(vv.thruster_data[thruster])
-        input()
+        # vv.set_thruster_metrics()
 
         # Initiate RPOD study.
         rpod = RPOD.RPOD(case_dir)
         rpod.study_init(jfh, tv, vv)
 
         # Run plume strike analysis
-        # rpod.graph_jfh()
+        rpod.graph_jfh()
         rpod.jfh_plume_strikes()
 
 if __name__ == '__main__':
