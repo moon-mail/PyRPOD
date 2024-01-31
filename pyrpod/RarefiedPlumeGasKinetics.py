@@ -49,6 +49,30 @@ def get_maxwellian_pressure(rho_inf, U, S, sigma, theta, T, T_w):
         Gas-surface interaction model for pressure based on Maxwell's model.
         Assumes that the pressure experienced on the surface is a function of the wall temperature.
         Sigma is the fraction of reflections which are diffusive as opposed to specular.
+
+        Parameters
+        ----------
+        rho_inf : float
+                macroscopic density of the flowfield (kg / m^3)
+        U : float
+                gas velocity relative to the surface element (m / s)
+        S : float
+                speed ratio of the gas relative to the surface element
+        sigma : float
+                [0, 1], portion of molecules reflected diffusely
+        theta : float
+                plume centerline off-angle of current position (rad)
+        T : float
+                temperature of the oncoming gas flow (K)
+        Tw : float
+                temperature of the surface element.
+                diffuse reflections correspond to temperature Tr,
+                assumed to be the wall temperature, Tw (K)
+        
+        Returns
+        -------
+        float
+            the pressure exerted on the surface element (N / m^2)
     '''
 
     p1 = ((2 - sigma) * (S * np.cos(theta)) / (np.sqrt(np.pi))) + ((sigma * np.sqrt(T_w)) / (2 * np.sqrt(T)))
@@ -60,17 +84,43 @@ def get_maxwellian_pressure(rho_inf, U, S, sigma, theta, T, T_w):
     p *= (rho_inf * U ** 2) / (2 * S ** 2)
     return p
 
-def get_maxwellian_heat_transfer(rho, S, sigma, theta, T, T_r, R, gamma):
+def get_maxwellian_heat_transfer(rho_inf, S, sigma, theta, T, T_r, R, gamma):
     '''
         Rarefied Gas Dynamics - Shen - eq. 4.45'
         Gas-surface interaction model for heat transfer based on Maxwell's model.
         Assumes the heat flux experienced on the surface is a function of the wall temperature.
         Sigma is the fraction of reflections which are diffusive as opposed to specular.
+
+        Parameters
+        ----------
+        rho_inf : float
+                macroscopic density of the flowfield (kg / m^3)
+        S : float
+                speed ratio of the gas relative to the surface element
+        sigma : float
+                [0, 1], portion of molecules reflected diffusely
+        theta : float
+                plume centerline off-angle of current position (rad)
+        T : float
+                temperature of the oncoming gas flow (K)
+        Tr : float
+                temperature of the surface element.
+                diffuse reflections correspond to temperature Tr,
+                assumed to be the wall temperature, Tw (K)
+        R : float
+                specific gas constant (J / kg * K)
+        gamma : float
+                ratio of specific heat capacities
+        
+        Returns
+        -------
+        float
+            the pressure exerted on the surface element (N / m^2)
     '''
     q = (S ** 2) + (gamma / (gamma - 1)) - (((gamma + 1) * T_r) / (2 * (gamma - 1) * T))
     q *= np.exp(- (S * np.cos(theta)) ** 2) + (np.sqrt(np.pi) * (S * np.cos(theta)) * (1 + sp.erf(S * np.cos(theta))))
     q -= 0.5 * np.exp(- (S * np.cos(theta)) ** 2)
-    q *= sigma * rho * R * T * np.sqrt(R * T / (2 * np.pi))
+    q *= sigma * rho_inf * R * T * np.sqrt(R * T / (2 * np.pi))
     return q
 
 
@@ -127,6 +177,26 @@ class Simons:
     def __init__(self, gamma, R, T_c, P_c, R_0, r):
         '''
             Simple constructor, saves parameters to self.
+
+            Parameters
+            ----------
+            gamma : float
+                    ratio of specific heat capacities
+            R : float
+                    specific gas constant (J / kg * K)
+            T_c : float
+                    chamber temperature of the thruster (K)
+            P_c : float
+                    chamber pressure of the thruster (N / m^2)
+            R_0 : float
+                    nozzle exit radius (m)
+            r : float
+                    distance from the evaluated point 
+                    to the nozzle exit center (m)
+
+            Returns
+            -------
+            None.
         '''
         self.gamma = gamma
         self.R = R
@@ -144,6 +214,14 @@ class Simons:
         '''
             Returns density at the throat, from chamber pressure/temp, and specific gas constant.
             Assumes isentropic flow from chamber to throat.
+
+            Parameters
+            ----------
+
+            Returns
+            -------
+            float
+                density of gas at the nozzle throat (kg / m^3)
         '''
         #ideal gas law P_throat = rho_throat * R * T_throat
         #therefore: rho_throat = P_throat / (R * T_throat)
@@ -155,6 +233,14 @@ class Simons:
     def get_limiting_turn_angle(self):
         '''
             From Lumpkin 1999. Solve for limiting turn angle from specific heat ratio.
+
+            Paramters
+            ---------
+
+            Returns
+            -------
+            float
+                limiting turning angle (rad)
         '''
         theta_max = (np.pi / 2) * (np.sqrt((self.gamma + 1) / (self.gamma - 1)) - 1)
         return theta_max
@@ -163,6 +249,16 @@ class Simons:
         '''
             From Cai 2012. Solve for the density decay function at a given off-centerline angle.
             Expression for kappa is chosen from Boyton 1967/68.
+
+            Parameters
+            ----------
+            theta : float
+                    plume centerline off-angle of current position (rad)
+            
+            Returns
+            -------
+            float
+                evaluation of plume angular density decay function at theta
         '''
         kappa = 2 / (self.gamma - 1) #Boyton 1967/68 from Cai2012 [22][23]
         theta_max = self.get_limiting_turn_angle()
@@ -173,6 +269,14 @@ class Simons:
         '''
             From Lumpkin 1999. Solve for normalization constant.
             Integrates theta from 0 to the limiting turn angle.
+
+            Parameters
+            ----------
+
+            Returns
+            -------
+            float
+                normalization constant
         '''
         theta_max = self.get_limiting_turn_angle()
         theta = sp.symbols('theta')
@@ -187,6 +291,14 @@ class Simons:
             Method that returns the sonic velocity of a flow given specific heat ratio,
             specific gas constant, and chamber temperature.
             This assumes isentropic flow from the chamber to the throat.
+
+            Parameters
+            ----------
+
+            Returns
+            -------
+            float
+                sonic velocity (m/s)
         '''
         T_throat = self.T_c * 0.8333 #from Isentropic Flow Tables @ Mach = 1
         sonic_velocity = np.sqrt(self.gamma * self.R * T_throat)
