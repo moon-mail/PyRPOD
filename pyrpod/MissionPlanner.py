@@ -13,7 +13,7 @@ class MissionPlanner:
         trajectory character, and performance with respect to factors of safety.
 
         Data Inputs inlcude (redundant? better said in user guide?)
-        1. LogisticsModule (LM) object with properly defined intertial properties and candidate RCS configurations.
+        1. LogisticsModule (LM) object with properly defined inertial properties and candidate RCS configurations.
         2. Proposed flight plan including required chenges in velocity and supporting requirements.
 
 
@@ -388,8 +388,8 @@ class MissionPlanner:
             delta_m = np.array(delta_m)
 
             # Save absolute min and max data for plotting.
-            if delta_m.max() > delta_m_max:
-                delta_m_max = delta_m.max()
+            if dm.max() > dm_max:
+                dm_max = dm.max()
 
             if delta_m.min() < delta_m_min:
                 delta_m_min = delta_m.min()
