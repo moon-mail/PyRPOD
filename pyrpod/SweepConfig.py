@@ -19,17 +19,20 @@ class SweepCoordinates:
     '''
     Class responsible for axially sweeping a ring of thrusters in a given configuration
 
-    METHODS:
+    Attributes
+    ----------
+    None.
+    
+    Methods
+    -------
+    move_ring(config = {}, xf)
+        Change the location of the ring of thrusters to the coordinate xf.
 
-    sweep_coords()
-    --------------
-    inputs: self; thruster configuration <dict>; x0, xf, dx <float>
-    outputs: configs_swept_coords <array>, where each element is a config dict per iteration of the sweep
+    sweep_coords(config = {}, x0, xf, dx)
+        Sweep the thruster ring from coordinate x0, to xf, over step of dx.
 
-    read_swept_coords()
-    -------------------
-    inputs: self, swept configurations <array>
-    outputs: prints to terminal the position of the ring of thrusters per saved configuration
+    read_swept_coords(swept_configs = [{}, {}, ...])
+        Prints to terminal the position of all thrusters for all the swept cofigurations.
     '''
     def move_ring(config, xf):
         '''
@@ -123,46 +126,43 @@ class SweepAngles:
     '''
     Class responsible for axially sweeping a ring of thrusters in a given configuration
 
-    METHODS:
+    Attributes
+    ----------
 
-    __init__()
-    --------------
-    inputs: self; thruster radius <float>; thruster configuration <dict>, thruster_groups <dict>
-    initializes object storing the radius, initial "standardized" angles of each thruster, and the thruster groups
+    r : float
+        Radius of the cylindrical logistics module (m).
 
-    standardize_thruster_normal()
-    -------------------
-    inputs: self, thruster <dict>
-    outputs: returns thruster <dict> with standard angling for its given translational group
+    init_yaws : dictionary
+        Stores the initial "yaw" (deg) for each thruster defined wrt to 
+        the LM-fixed coordinate system.
+
+    init_pitches : dictionary
+        Stores the initial "pitch" (deg) for each thruster defined wrt to 
+        the LM-fixed coordinate system.
+
+    thruster_groups : dictionary
+        Stores the thruster names that belong to a given translational or rotational direction.
+        See test_case_sweep_cants.py for an example.
+
+    Methods
+    -------
+    standardize_thruster_normal(thruster)
+        Method grabs a thruster's group and sets its DCM such that the thruster is pointed
+        directly opposite to the translational direction.
     
-    calculate_init_angles()
-    -----------------------
-    inputs: self, DCM
-    outputs: pitch, yaw in deg. based on a given DCM, and the spherically defined pitch yaw
+    calculate_init_angles(DCM)
+        Calculates the "pitch" and "yaw" in the spherical coordinate system from the DCM.
 
-    calculate_DCM()
-    inputs: self, thruster <string>, pitch <float> #deg, yaw <float> #deg
-    outputs: adds the given pitch and yaw to that thruster's initial pitch and yaw, and returns the DCM
+    calculate_DCM(thruster_name, pitch, yaw)
+        Calculates the DCM of a thruster from a "pitcch" and "yaw" in the spherical coordinate system.
 
-    *_angle_limits()
-    ----------------
-    inputs: self, exit <array>
-    outputs: outputs min/max for pitch/yaw based on the position and translational group of a thruster
-             these limits are based on the thrust vector not intersecting the LM
-             and not angling past the point they are stronger for a different group
-             TODO (might be worth allowing w /out updating thruster groups ex: angles above 45deg)
+    sweep_long_thrusters(config, dpitch, dyaw)
+        Sweeps the given config by angles - these include yawing the yaw thrusters symmetrically
+        as well as pitching the pitch thrusters symmetrically. These are nested. These are performed 
+        over the min and max angles allowed.
 
-    sweep_long_thrusters()
-    ----------------------
-    inputs: self, config <dict>, dpitch <float> #deg, dyaw <float> #deg
-    outputs: an array of swept configurations. these include yawing the yaw thrusters symmetrically
-             as well as pitching the pitch thrusters symmetrically. 
-             the array includes every combination given the inputted angling step sizes for each
-    
-    read_swept_angles()
-    -------------------
-    inputs: self, swept_configs <array>
-    outputs: prints to terminal the dcm of each thruster for each config in the swept array
+    read_swept_angles(swept_configs)
+        Prints to terminal the DCM of all thrusters for all the swept cofigurations.
     '''
 
     def __init__(self, r, config, thruster_groups):
