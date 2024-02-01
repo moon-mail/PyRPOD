@@ -123,56 +123,54 @@ def get_maxwellian_heat_transfer(rho_inf, S, sigma, theta, T, T_r, R, gamma):
     q *= sigma * rho_inf * R * T * np.sqrt(R * T / (2 * np.pi))
     return q
 
-
-#TODO fix broken plots and addplotting for pressures
-#broken when gamma = 2?
 class Simons:
     '''
     Class responsible for solving gas kinetics with cosine law.
     Assumes flow in the boundary is inviscid.
 
-    METHODS:
+    TODO fix broken plots and addplotting for pressures + broken when gamma = 2?
 
-    __init__()
+    Attributes
     ----------
-    inputs: for a thruster: specific heat ratio, specific gas constant, chamber temperature,
-            chamber pressure, nozzle radius, and radial distance
-    initializes object storing these inputs.
 
+    gamma : float
+        Ratio of specific heats of the gas.
+    R: float
+        Specific gas constant (J / kg * K)
+    T_c : float
+        Chamber temperature of the thruster (K).
+    P_c : float
+        Chamber pressure of the thruster (N / m^2).
+    r : float
+        Distance from the evaluated point to the nozzle exit center (m)
+    R_0 : float
+        Nozzle exit radius (m).
+
+    Methods
+    -------
     get_nozzle_throat_density()
-    ---------------------------
-    inputs: self
-    outputs: density at the throat, from chamber pressure/temp, and specific gas constant
+        Returns density at the throat, from chamber pressure/temp, and specific gas constant.
+        Assumes isentropic flow from chamber to throat.
 
     get_limiting_turn_angle()
-    -------------------------
-    inputs: self
-    outputs: max turn angle for the flow (rad)
+        Solve for limiting turn angle from specific heat ratio [Lumpkin 1999].
 
-    get_plume_angular_density_decay_function()
-    ------------------------------------------
-    inputs: self, theta
-    outputs: solution for decay function (s^3 / m^3) at a given off-centerline angle.
+    get_plume_angular_density_decay_function(theta)
+       Solve for the density decay function at a given off-centerline angle [Cai 2012].
+       Expression for kappa is from Boyton 1967/68. 
 
     get_normalization_constant()
-    ----------------------------
-    inputs: self
-    outputs: normalization constant for the plume
+        Solve for normalization constant for the plume [Lumpkin 1999].
 
     get_sonic_velocity()
-    --------------------
-    inputs: self
-    outputs: sonic velocity (m/s)
+        Returns the sonic velocity of a flow, assuming isentropic flow from the chamber to the throat.
 
     get_limiting_velocity()
-    -----------------------
-    inputs: self
-    outputs: limiting velocity (m/s)
+        Returns the limiting velocity of the flow.
 
-    get_num_density_ratio()
-    -----------------------
-    inputs: self, theta (rad)
-    outputs: number denisty ratio at a given point vs number density ratio at the exit
+    get_num_density_ratio(theta)
+        Number density from continuity equation with constant mass flux across different spherical surfaces.
+        Return the ratio of number density at an analyzed point outside of the exit vs at the exit.
     '''
     def __init__(self, gamma, R, T_c, P_c, R_0, r):
         '''
@@ -234,7 +232,7 @@ class Simons:
         '''
             From Lumpkin 1999. Solve for limiting turn angle from specific heat ratio.
 
-            Paramters
+            Parameters
             ---------
 
             Returns
@@ -308,6 +306,15 @@ class Simons:
         '''
             Calculates the limiting velocity of the plume. This is based on the 
             specific heat ratio and the sonic velocity.
+
+            Paramters
+            ---------
+            None.
+
+            Returns
+            -------
+            float
+                limiting velocity of the flow
         '''
         sonic_velocity = self.get_sonic_velocity()
         U_t = np.sqrt((self.gamma + 1) / (self.gamma - 1)) * sonic_velocity
@@ -327,6 +334,16 @@ class Simons:
         '''
             Number density from continuity equation with constant mass flux across different spherical surfaces.
             Return the ratio of number density at an analyzed point outside of the exit vs at the exit.
+
+            Parameters
+            ----------
+            theta : float
+                    Angle off centerline of the current point being analyzed (rad).
+            
+            Returns
+            -------
+            float
+                the ratio of number density at an analyzed point outside of the exit vs at the exit
         '''
         f = self.get_plume_angular_density_decay_function(theta)
         #??? make own function for rho_ratio???
