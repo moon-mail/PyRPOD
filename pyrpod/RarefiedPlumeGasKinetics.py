@@ -435,100 +435,132 @@ class SimplifiedGasKinetics:
         Attributes
         ----------
 
-        None.
+        distance : float
+            distance from the nozzle exit center to the point being analyzed (m)
+        
+        theta : float
+            plume centerline off-angle of current position (rad)
+        
+        X : float
+            the x-coorinate of the point being analyzed (m)
+
+        Z : float
+            the y-coordinate of the point being analyzed (m)
+
+        R_0 : float
+            the thruster nozzle exit radius (m)
+
+        U_0 : float
+            the macroscopic exit velocity (m/s)
+        
+        R : float
+            specific gas constant (J / kg * K)
+
+        gamma : float
+            ratio of specific heats of the gas
+
+        T_0 : float
+            the macroscopic exit temperature (K)
+
+        n_0 : float
+            the number density at the nozzle exit (# particles / m^3)
+
+        molar_mass : float
+            molar mass of the fluid (kg/mol)
+
+        beta_0 : float
+            sqrt(1 / 2RT_0) | (m/s)
+
+        S_0 : float
+            molecular speed ratio at the nozzle exit
+
+        Q_simple : float
+            special factor Q, simplified [Cai 2012, II.B]
+
+        K_simple : float
+            special factor K, simplified [Cai 2012, II.B]
+
+        M_simple : float
+            special factor M, simplified [Cai 2012, II.B]
+
+        N_simple : float
+            special factor N, simplified [Cai 2012, II.B]
         
         Methods
         --------
-        get_speed_ratio()
+        set_thruster_characteristics(TODO)
 
-        get_Q_simple()
-        --------------
-        inputs: self, X, and Z coordinate of point to analyze.
-        outputs: Q'
+        get_beta(T)
 
-        get_K_simple()
-        --------------
-        inputs: self, speed ratio at the nozzle exit, Q simple
-        outpiuts: special factor K, simplified
+        get_speed_ratio(U, beta)
 
-        get_M_simple()
-        --------------
-        inputs: self, speed ratio at the nozzle exit, Q simple
-        outpiuts: special factor M, simplified
+        set_Q_simple()
 
-        get_N_simple()
-        --------------
-        inputs: self, speed ratio at the nozzle exit, Q simple
-        outpiuts: special factor N, simplified
+        set_K_simple()
+
+        set_M_simple()
+
+        set_N_simple()
 
         get_num_density_ratio()
-        -----------------------
-        inputs: self, X coordinate (m), Z coordinate (m), nozzle exit radius, speed ratio at nozzle exit
-        outputs: number density at point (X, 0, Z) vs at the nozzle exit
 
         get_U_normalized()
-        ------------------
-        inputs: self, X, Z, speed ratio at nozzle exit
-        outputs: x-velocity component at point (X, 0, Z) multiplied by sqr(beta at the nozzle exit)
 
         get_W_normalized()
-        ------------------
-        inputs: self, X, Z, speed ratio at nozzle exit
-        outputs: z-velocity component at point (X, 0, Z) multiplied by sqr(beta at the nozzle exit)
 
         get_temp_ratio()
-        ----------------
-        inputs: self, X-coordinate, Z-coordinate, speed raito at nozzle exit
-        outputs: temperature at point (X, 0, Z) vs at the nozzle exit
 
         get_num_density_centerline()
-        ----------------------------
-        inputs: self, X-coordinate, speed ratio at the nozzle exit, and the nozzle exit radius
-        outputs: number density at point (X, 0, 0) vs at the nozzle exit
 
         get_velocity_centerline()
-        ------------------
-        inputs: self, X-coordinate, speed ratio at the nozzle exit, and the nozzle exit radius
-        outputs: macroscopic velocity at point (X, 0, 0) multiplied by sqr(beta at the nozzle exit)
 
         get_temp_centerline()
-        ----------------------------
-        inputs: self, X-coordinate, speed ratio at the nozzle exit, and the nozzle exit radius
-        outputs: temperature at point (X, 0, 0) vs at the nozzle exit
 
         get_pressure()
-        --------------
-        inputs: self, distance, theta, thruster_characteristics, wall temperature, sigma
-        outputs: pressure at the point (X, 0, Z)
 
         get_heat_flux()
-        ---------------
-        inputs: self, distance, theta, thruster_characteristics, wall temperature, sigma
-        outputs: heat flux at the point (X, 0, Z)
     '''
     #maybe group the special factors into one method and return an array of them?
     def __init__(self, distance, theta, thruster_characteristics, T_w, sigma):
         '''
             Simple constructor. Can be reworked to save constants for a plume.
         '''
+
+        # save information about the coordinate being analyzed
         self.distance = distance
         self.theta = theta
         self.X = distance * np.cos(theta)
         self.Z = distance * np.sin(theta)
 
+        # save thruster-specific characteristics
         self.set_thruster_characteristics(thruster_characteristics)
 
-        self.T_w = T_w
-        self.sigma = sigma
-
+        # save gas kinetic special factors
         self.set_Q_simple()
         self.set_K_simple()
         self.set_M_simple()
         self.set_N_simple()
 
+        # save gas-surface interaction parameters
+        self.T_w = T_w
+        self.sigma = sigma
+
         return
 
     def set_thruster_characteristics(self, thruster_characteristics):
+        '''
+            Setter for thruster-specific characteristics.
+
+            Parameters
+            ----------
+            thruster_characteristics : TODO
+                stores thruster-specific characteristics:
+                R0, U0, R, gamma, T0, n0.
+
+            Returns
+            -------
+            None.
+        '''
         
         self.R_0 = thruster_characteristics['d'] / 2
         self.U_0 = thruster_characteristics['ve']
@@ -544,19 +576,53 @@ class SimplifiedGasKinetics:
         return
 
     def get_beta(self, T):
+        '''
+            Solves for beta at a given temperature.
+
+            Parameters
+            ----------
+            T : float
+                temperature (K)
+
+            Returns
+            -------
+            float
+                beta at the given temperature
+        '''
         beta = 1 / np.sqrt(2 * self.R * T)
         return beta
 
     def get_speed_ratio(self, U, beta):
         '''
             Method to solve for the speed ratio of the flow at a specified flow.
+
+            Parameters
+            ----------
+            U : float
+                macroscopic velocity magnitude of the flow (m/s)
+            
+            beta : float
+                beta (m^-1 / s^-1)
+            
+            Returns
+            -------
+            float
+                speed ratio of the flow
         '''
         S = U * beta
         return S
 
     def set_Q_simple(self):
         '''
-            Solves for Q in its simplified form. Returns Q'.
+            Setter for Q in its simplified form. Returns Q'.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            None.
         '''
         Q_simple = self.X ** 2 / (self.X ** 2 + self.Z ** 2)
         self.Q_simple = Q_simple
@@ -567,6 +633,14 @@ class SimplifiedGasKinetics:
         '''
             Solves for simplified special factor K. This simplification is just the 
             substitution of Q for Q'.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            None.
         '''
         #K_simple = Q_simple * ((Q_simple * S_0) + ((0.5 + (Q_simple * S_0 ** 2)) * np.sqrt(np.pi * Q_simple) * 
                                #(1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple * S_0 ** 2)))
