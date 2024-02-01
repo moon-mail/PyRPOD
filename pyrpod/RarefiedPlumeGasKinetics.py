@@ -545,6 +545,7 @@ class SimplifiedGasKinetics:
 
     def get_beta(self, T):
         beta = 1 / np.sqrt(2 * self.R * T)
+        return beta
 
     def get_speed_ratio(self, U, beta):
         '''
