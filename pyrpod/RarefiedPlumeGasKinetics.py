@@ -432,17 +432,14 @@ class SimplifiedGasKinetics:
         From Cai 2012.
         Assumes special factor Q simplifies to Q' = X^2 / (X^2 + Z^2).
 
-        METHODS:
-
-        __init__()
+        Attributes
         ----------
-        inputs: self
-        outputs: none
 
+        None.
+        
+        Methods
+        --------
         get_speed_ratio()
-        -----------------
-        inputs: self, initial velocity (m/s), specific gas constant, and exit temperature
-        outputs: speed ratio of the plume at the given point.
 
         get_Q_simple()
         --------------
@@ -510,25 +507,50 @@ class SimplifiedGasKinetics:
         outputs: heat flux at the point (X, 0, Z)
     '''
     #maybe group the special factors into one method and return an array of them?
-    def __init__(self):
+    def __init__(self, distance, theta, thruster_characteristics, T_w, sigma):
         '''
             Simple constructor. Can be reworked to save constants for a plume.
         '''
+
+        self.X = distance * np.cos(theta)
+        self.Z = distance * np.sin(theta)
+
+        self.set_thruster_characteristics(thruster_characteristics)
+
+        self.T_w = T_w
+        self.sigma = sigma
+
         return
 
-    def get_speed_ratio(self, U, R, T):
+    def set_thruster_characteristics(self, thruster_characteristics):
+        
+        self.R_0 = thruster_characteristics['d'] / 2
+        self.U_0 = thruster_characteristics['ve']
+        self.R = thruster_characteristics['R']
+        self.gamma = thruster_characteristics['gamma']
+        self.T_0 = thruster_characteristics['Te']
+        self.n_0 = thruster_characteristics['n']
+        self.molar_mass = GAS_CONSTANT / self.R # kg/mol
+
+        self.S_0 = self.get_speed_ratio(self.U_0, self.T_0)
+
+        return
+
+    def get_speed_ratio(self, U, T):
         '''
             Method to solve for the speed ratio of the flow at a specified flow.
         '''
-        S = U / np.sqrt(2 * R * T)
+        S = U / np.sqrt(2 * self.R * T)
         return S
 
-    def get_Q_simple(self, X, Z):
+    def set_Q_simple(self):
         '''
             Solves for Q in its simplified form. Returns Q'.
         '''
-        Q_simple = X ** 2 / (X ** 2 + Z ** 2)
-        return Q_simple
+        Q_simple = self.X ** 2 / (self.X ** 2 + self.Z ** 2)
+        self.Q_simple = Q_simple
+
+        return
     
     def get_K_simple(self, S_0, Q_simple):
         '''
