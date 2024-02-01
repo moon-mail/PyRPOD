@@ -511,7 +511,8 @@ class SimplifiedGasKinetics:
         '''
             Simple constructor. Can be reworked to save constants for a plume.
         '''
-
+        self.distance = distance
+        self.theta = theta
         self.X = distance * np.cos(theta)
         self.Z = distance * np.sin(theta)
 
@@ -519,6 +520,11 @@ class SimplifiedGasKinetics:
 
         self.T_w = T_w
         self.sigma = sigma
+
+        self.set_Q_simple()
+        self.set_K_simple()
+        self.set_M_simple()
+        self.set_N_simple()
 
         return
 
@@ -532,15 +538,19 @@ class SimplifiedGasKinetics:
         self.n_0 = thruster_characteristics['n']
         self.molar_mass = GAS_CONSTANT / self.R # kg/mol
 
-        self.S_0 = self.get_speed_ratio(self.U_0, self.T_0)
+        self.beta_0 = self.get_beta(self.T_0)
+        self.S_0 = self.get_speed_ratio(self.U_0, self.beta_0)
 
         return
 
-    def get_speed_ratio(self, U, T):
+    def get_beta(self, T):
+        beta = 1 / np.sqrt(2 * self.R * T)
+
+    def get_speed_ratio(self, U, beta):
         '''
             Method to solve for the speed ratio of the flow at a specified flow.
         '''
-        S = U / np.sqrt(2 * self.R * T)
+        S = U * beta
         return S
 
     def set_Q_simple(self):
@@ -552,235 +562,204 @@ class SimplifiedGasKinetics:
 
         return
     
-    def get_K_simple(self, S_0, Q_simple):
+    def set_K_simple(self):
         '''
             Solves for simplified special factor K. This simplification is just the 
             substitution of Q for Q'.
         '''
         #K_simple = Q_simple * ((Q_simple * S_0) + ((0.5 + (Q_simple * S_0 ** 2)) * np.sqrt(np.pi * Q_simple) * 
                                #(1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple * S_0 ** 2)))
-        term1 = Q_simple * S_0
-        term2 = 0.5 + Q_simple * S_0 ** 2
-        term3 = np.sqrt(np.pi * Q_simple)
-        term4 = (1 + sp.erf(S_0 * np.sqrt(Q_simple))) * np.exp(Q_simple * S_0 ** 2)
-        K_simple = Q_simple * (term1 + term2 * term3 * term4)
-        return K_simple
+        term1 = self.Q_simple * self.S_0
+        term2 = 0.5 + self.Q_simple * self.S_0 ** 2
+        term3 = np.sqrt(np.pi * self.Q_simple)
+        term4 = (1 + sp.erf(self.S_0 * np.sqrt(self.Q_simple))) * np.exp(self.Q_simple * self.S_0 ** 2)
+        K_simple = self.Q_simple * (term1 + term2 * term3 * term4)
+        self.K_simple = K_simple
+
+        return
     
-    def get_M_simple(self, S_0, Q_simple):
+    def set_M_simple(self):
         '''
             Solves for simplified special factor M. This simplification is just the 
             substitution of Q for Q'.
         '''
         #M_simple = (Q_simple ** 2) * ((Q_simple * S_0 ** 2) + 1 + (S_0 * (1.5 + (Q_simple * S_0 ** 2)) * 
                                 #np.sqrt(np.pi * Q_simple)) * (1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple *S_0 ** 2))
-        term1 = 1 + Q_simple * S_0 ** 2
-        term2 = S_0 * (1.5 + Q_simple * S_0 ** 2)
-        term3 = np.sqrt(np.pi * Q_simple)
-        term4 = (1 + sp.erf(S_0 * np.sqrt(Q_simple))) * np.exp(Q_simple * S_0 ** 2)
-        M_simple = Q_simple ** 2 * (term1 + term2 * term3 * term4)
-        return M_simple
+        term1 = 1 + self.Q_simple * self.S_0 ** 2
+        term2 = self.S_0 * (1.5 + self.Q_simple * self.S_0 ** 2)
+        term3 = np.sqrt(np.pi * self.Q_simple)
+        term4 = (1 + sp.erf(self.S_0 * np.sqrt(self.Q_simple))) * np.exp(self.Q_simple * self.S_0 ** 2)
+        M_simple = self.Q_simple ** 2 * (term1 + term2 * term3 * term4)
+        self.M_simple = M_simple
+
+        return
     
-    def get_N_simple(self, S_0, Q_simple):
+    def set_N_simple(self):
         '''
             Solves for simplified special factor N. This simplification is just the 
             substitution of Q for Q'.
         '''
         #N_simple = S_0 * (Q_simple ** 2) * (1.25 + (Q_simple * S_0 ** 2) / 2)
         #N_simple += (0.5 * np.sqrt(np.pi * Q_simple ** 3)) * (0.75 + 3 * Q_simple * S_0 **2 + Q_simple ** 2 * S_0 ** 4) * (1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple * S_0 ** 2)
-        term1 = S_0 * Q_simple ** 2 * (1.25 + Q_simple * S_0 ** 2 / 2)
-        term2 = 0.5 * np.sqrt(np.pi * Q_simple ** 3)
-        term3 = 0.75 + 3 * Q_simple * S_0 ** 2 + Q_simple ** 2 * S_0 ** 4
-        term4 = (1 + sp.erf(S_0 * np.sqrt(Q_simple))) * np.exp(Q_simple * S_0 ** 2)
+        term1 = self.S_0 * self.Q_simple ** 2 * (1.25 + self.Q_simple * self.S_0 ** 2 / 2)
+        term2 = 0.5 * np.sqrt(np.pi * self.Q_simple ** 3)
+        term3 = 0.75 + 3 * self.Q_simple * self.S_0 ** 2 + self.Q_simple ** 2 * self.S_0 ** 4
+        term4 = (1 + sp.erf(self.S_0 * np.sqrt(self.Q_simple))) * np.exp(self.Q_simple * self.S_0 ** 2)
         N_simple = term1 + term2 * term3 * term4
-        return N_simple
+        self.N_simple = N_simple
+
+        return
     
-    def get_num_density_ratio(self, X, Z, R_0, S_0):
+    def get_num_density_ratio(self):
         '''
             Method to calculate the number denisty at a point (X, 0, Z) outside of the nozzle.
             This density is normalized over the number density at the nozzle exit.
         '''
-        #num_density_ratio = n_1s(X, 0, Z) / n_0
-        Q_simple = self.get_Q_simple(X, Z)
-        K_simple = self.get_K_simple(S_0, Q_simple)
-        num_density_ratio = (K_simple / (2 * np.sqrt(np.pi)) * (R_0 / X) ** 2) * np.exp(-(S_0 ** 2))
+        # num_density_ratio = n_1s(X, 0, Z) / n_0
+        num_density_ratio = (self.K_simple / (2 * np.sqrt(np.pi)) * (self.R_0 / self.X) ** 2)
+        num_density_ratio *= np.exp(-(self.S_0 ** 2))
         num_density_ratio = float(num_density_ratio)
         return num_density_ratio
     
-    def get_U_normalized(self, X, Z, S_0):
+    def get_U_normalized(self):
         '''
             Method to calculate the macroscopic x-component of velocity at a point (X, 0, Z) outside of the nozzle.
             This velocity component is normalized with the parameter beta at the exit. 
             Beta relates velocity to speed ratio.
         '''
-        #U_normalized = U_1s (X, 0, Z) * sqrt(beta)
-        Q_simple = self.get_Q_simple(X, Z)
-        K_simple = self.get_K_simple(S_0, Q_simple)
-        M_simple = self.get_M_simple(S_0, Q_simple)
-        U_normalized = M_simple / K_simple
+        # U_normalized = U_1s (X, 0, Z) * sqrt(beta)
+        U_normalized = self.M_simple / self.K_simple
         U_normalized = float(U_normalized)
         return U_normalized
     
-    def get_W_normalized(self, X, Z, S_0):
+    def get_W_normalized(self):
         '''
             Method to calculate the macroscopic z-component of velocity at a point (X, 0, Z) outside of the nozzle.
             This velocity component is normalized with the parameter beta at the exit. 
             Beta relates velocity to speed ratio.
         '''
-        #W_normalized = W_1s (X, 0, Z) * sqrt(beta)
-        Q_simple = self.get_Q_simple(X, Z)
-        K_simple = self.get_K_simple(S_0, Q_simple)
-        M_simple = self.get_M_simple(S_0, Q_simple)
-        W_normalized = (M_simple / K_simple) * (Z / X)
+        # W_normalized = W_1s (X, 0, Z) * sqrt(beta)
+        W_normalized = (self.M_simple / self.K_simple) * (self.Z / self.X)
         W_normalized = float(W_normalized)
         return W_normalized
 
-    def get_temp_ratio(self, X, Z, S_0):
+    def get_temp_ratio(self):
         '''
             Method to calculate the temperature at a point (X, 0, Z) outside of the nozzle.
             This temperature is normalized over the temperature at the nozzle exit.
         '''
-        #T_ratio = T_1s / T_0
-        Q_simple = self.get_Q_simple(X, Z)
-        K_simple = self.get_K_simple(S_0, Q_simple)
-        M_simple = self.get_M_simple(S_0, Q_simple)
-        N_simple = self.get_N_simple(S_0, Q_simple)
-        T_ratio = ((-2 * M_simple ** 2) / (3 * Q_simple * K_simple ** 2)) + (4 * N_simple / (3 * K_simple))
+        # T_ratio = T_1s / T_0
+        T_ratio = ((-2 * self.M_simple ** 2) / (3 * self.Q_simple * self.K_simple ** 2))
+        T_ratio += (4 * self.N_simple / (3 * self.K_simple))
         T_ratio = float(T_ratio)
         #print(f'S0 = {S_0}, Qs = {Q_simple}, Ks = {K_simple}, Ms = {M_simple}, Ns = {N_simple}, T_ratio = {T_ratio}')
         return T_ratio
     
-    def get_num_density_centerline(self, X, S_0, R_0):
+    def get_num_density_centerline(self):
         '''
             Method to calculate the number denisty at a point (X, 0, 0) outside of the nozzle.
             This density is normalized over the number density at the nozzle exit.
         '''
-        p1 = X / np.sqrt(X ** 2 + R_0 ** 2) 
-        p2 = R_0 / np.sqrt(X ** 2 + R_0 ** 2)
-        n_ratio = 0.5 + 0.5 * sp.erf(S_0) - (p1 * np.exp(-S_0 ** 2 * p2 ** 2) / 2) * (1 + sp.erf(p1 * S_0))
+        p1 = self.X / np.sqrt(self.X ** 2 + self.R_0 ** 2) 
+        p2 = self.R_0 / np.sqrt(self.X ** 2 + self.R_0 ** 2)
+        n_ratio = 0.5 + 0.5 * sp.erf(self.S_0) - (p1 * np.exp(-self.S_0 ** 2 * p2 ** 2) / 2) * (1 + sp.erf(p1 * self.S_0))
         n_ratio = float(n_ratio)
         return n_ratio
     
-    def get_velocity_centerline(self, X, S_0, R_0):
+    def get_velocity_centerline(self):
         '''
             Method to calculate the macroscopic velocity at a point (X, 0, 0) outside of the nozzle.
             This velocity is normalized with the parameter beta at the exit. 
             Beta relates velocity to speed ratio.
+
+            TODO split U_ratio to multiple lines
         '''
-        p1 = X / np.sqrt(X ** 2 + R_0 ** 2) 
-        p2 = R_0 / np.sqrt(X ** 2 + R_0 ** 2)
-        n_ratio = self.get_num_density_centerline(X, S_0, R_0)
-        U_ratio = 1 / (2 * n_ratio) * ((p2 ** 2 * np.exp(- S_0 ** 2) / np.sqrt(np.pi)) + (S_0 * (1 + sp.erf(S_0))) - (np.exp(- p2 ** 2 * S_0 ** 2) * p1 ** 3 * S_0 * (1 + sp.erf(p1 * S_0))))
+        p1 = self.X / np.sqrt(self.X ** 2 + self.R_0 ** 2) 
+        p2 = self.R_0 / np.sqrt(self.X ** 2 + self.R_0 ** 2)
+        n_ratio = self.get_num_density_centerline()
+        U_ratio = 1 / (2 * n_ratio) * ((p2 ** 2 * np.exp(- self.S_0 ** 2) / np.sqrt(np.pi)) + (self.S_0 * (1 + sp.erf(self.S_0))) - (np.exp(- p2 ** 2 * self.S_0 ** 2) * p1 ** 3 * self.S_0 * (1 + sp.erf(p1 * self.S_0))))
         U_ratio = float(U_ratio)
         return U_ratio
     
-    def get_temp_centerline(self, X, S_0, R_0):
+    def get_temp_centerline(self):
         '''
             Method to calculate the temperature at a point (X, 0, 0) outside of the nozzle.
             This temperature is normalized over the temperature at the nozzle exit.
         '''
-        n_ratio = self.get_num_density_centerline(X, S_0, R_0)
-        U1 = self.get_velocity_centerline(X, S_0, R_0)
-        Q_simple = self.get_Q_simple(X, 0)
-        N = self.get_N_simple(S_0, Q_simple)
+        n_ratio = self.get_num_density_centerline()
+        U1 = self.get_velocity_centerline()
         '''
         r = sp.symbols("r")
         f = N * r
         integral = sp.integrate(f, (r, 0, R_0))
         temp_ratio = (4 * np.exp(- S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * X ** 2) * integral.evalf() - (U1 ** 2 / (3/2)) 
         '''
-        integral = 0.5 * N * R_0 ** 2
-        temp_ratio = (4 * np.exp(- S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * X ** 2) * integral - (U1 ** 2 / (3/2)) 
+        integral = 0.5 * self.N_simple * self.R_0 ** 2
+        temp_ratio = (4 * np.exp(- self.S_0 ** 2)) / (3 * n_ratio * np.sqrt(np.pi) * self.X ** 2) * integral - (U1 ** 2 / (3/2)) 
         temp_ratio = float(temp_ratio)
         return temp_ratio
     
-    def get_pressure(self, distance, theta, thruster_characteristics, T_w, sigma):
+    def get_pressure(self):
         '''
             Method to call gas-surface interaction model. Passes thruster characteristics and
             normalized plume parameters to the Maxwell model to solve for pressre.
         '''
-        X = distance * np.cos(theta)
-        Z = distance * np.sin(theta)
+        if self.theta != 0:
+            n_inf = self.n_0 * self.get_num_density_ratio()
+            rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
+            T = self.T_0 * self.get_temp_ratio()
 
-
-        R_0 = thruster_characteristics['d'] / 2
-        U_0 = thruster_characteristics['ve']
-        R = thruster_characteristics['R']
-        gamma = thruster_characteristics['gamma']
-        T_0 = thruster_characteristics['Te']
-        n_0 = thruster_characteristics['n']
-        molar_mass = GAS_CONSTANT / R # kg/mol
-
-        beta_0 = 1 / np.sqrt(2 * R * T_0)
-        S_0 = U_0 * beta_0
-        if theta != 0:
-            n_inf = n_0 * self.get_num_density_ratio(X, Z, R_0, S_0)
-            rho_inf = n_inf * molar_mass / AVOGADROS_NUMBER
-            T = T_0 * self.get_temp_ratio(X, Z, S_0)
-
-            u = self.get_U_normalized(X, Z, S_0) / beta_0
-            w = self.get_W_normalized(X, Z, S_0) / beta_0
+            u = self.get_U_normalized() / self.beta_0
+            w = self.get_W_normalized() / self.beta_0
             U = np.sqrt(u ** 2 + w ** 2)
-            beta = 1 / np.sqrt(2 * R * T)
+            beta = self.get_beta(T)
             S = U * beta
 
-            pressure = get_maxwellian_pressure(rho_inf, U, S, sigma, theta, T, T_w)
+            pressure = get_maxwellian_pressure(rho_inf, U, S, self.sigma, self.theta, T, self.T_w)
             return pressure
         else:
-            n_inf = n_0 * self.get_num_density_centerline(X, S_0, R_0)
-            rho_inf = n_inf * molar_mass / AVOGADROS_NUMBER
+            n_inf = self.n_0 * self.get_num_density_centerline()
+            rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
 
-            T = T_0 * self.get_temp_centerline(X, S_0, R_0)
+            T = self.T_0 * self.get_temp_centerline()
 
-            U = self.get_velocity_centerline(X, S_0, R_0) / beta_0
-            beta = 1 / np.sqrt(2 * R * T)
+            U = self.get_velocity_centerline() / self.beta_0
+            beta = self.get_beta(T)
             S = U * beta
 
-            pressure = get_maxwellian_pressure(rho_inf, U, S, sigma, theta, T, T_w)
+            pressure = get_maxwellian_pressure(rho_inf, U, S, self.sigma, self.theta, T, self.T_w)
         return pressure
     
-    def get_heat_flux(self, distance, theta, thruster_characteristics, T_w, sigma):
+    def get_heat_flux(self):
         '''
             Method to call gas-surface interaction model. Passes thruster characteristics and
             normalized plume parameters to the Maxwell model to solve for heat flux.
         '''
-        X = distance * np.cos(theta)
-        Z = distance * np.sin(theta)
+        if self.theta != 0:
+            n_inf = self.n_0 * self.get_num_density_ratio()
+            rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
 
-        R_0 = thruster_characteristics['d'] / 2
-        U_0 = thruster_characteristics['ve']
-        R = thruster_characteristics['R']
-        gamma = thruster_characteristics['gamma']
-        T_0 = thruster_characteristics['Te']
-        n_0 = thruster_characteristics['n']
-        molar_mass = GAS_CONSTANT / R # kg/mol
+            T = self.T_0 * self.get_temp_ratio()
 
-        beta_0 = 1 / np.sqrt(2 * R * T_0)
-        S_0 = U_0 * beta_0
-        if theta != 0:
-            n_inf = n_0 * self.get_num_density_ratio(X, Z, R_0, S_0)
-            rho_inf = n_inf * molar_mass / AVOGADROS_NUMBER
-
-            T = T_0 * self.get_temp_ratio(X, Z, S_0)
-
-            u = self.get_U_normalized(X, Z, S_0) / beta_0
-            w = self.get_W_normalized(X, Z, S_0) / beta_0
+            u = self.get_U_normalized() / self.beta_0
+            w = self.get_W_normalized() / self.beta_0
             U = np.sqrt(u ** 2 + w ** 2)
-            beta = 1 / np.sqrt(2 * R * T)
+            beta = self.get_beta(T)
             S = U * beta
 
-            heat_flux = get_maxwellian_heat_transfer(rho_inf, S, sigma, theta, T, T_w, R, gamma)
+            heat_flux = get_maxwellian_heat_transfer(rho_inf, S, self.sigma, self.theta, T, self.T_w, self.R, self.gamma)
             return heat_flux
         else:
-            n_inf = n_0 * self.get_num_density_centerline(X, S_0, R_0)
-            rho_inf = n_inf * molar_mass / AVOGADROS_NUMBER
+            n_inf = self.n_0 * self.get_num_density_centerline()
+            rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
 
-            T = T_0 * self.get_temp_centerline(X, S_0, R_0)
+            T = self.T_0 * self.get_temp_centerline()
 
-            U = self.get_velocity_centerline(X, S_0, R_0) / beta_0
-            beta = 1 / np.sqrt(2 * R * T)
+            U = self.get_velocity_centerline() / self.beta_0
+            beta = self.get_beta(T)
             S = U * beta
 
-            heat_flux = get_maxwellian_heat_transfer(rho_inf, S, sigma, theta, T, T_w, R, gamma)
+            heat_flux = get_maxwellian_heat_transfer(rho_inf, S, self.sigma, self.theta, T, self.T_w, self.R, self.gamma)
         return heat_flux
 
     def plot_ac_density_profiles(R_0, S_0):
