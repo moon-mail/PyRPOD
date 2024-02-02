@@ -631,7 +631,7 @@ class SimplifiedGasKinetics:
     
     def set_K_simple(self):
         '''
-            Solves for simplified special factor K. This simplification is just the 
+            Setter for simplified special factor K. This simplification is just the 
             substitution of Q for Q'.
 
             Parameters
@@ -655,8 +655,16 @@ class SimplifiedGasKinetics:
     
     def set_M_simple(self):
         '''
-            Solves for simplified special factor M. This simplification is just the 
+            Setter for simplified special factor M. This simplification is just the 
             substitution of Q for Q'.
+
+            Paramters
+            ---------
+            None.
+
+            Returns
+            -------
+            None.
         '''
         #M_simple = (Q_simple ** 2) * ((Q_simple * S_0 ** 2) + 1 + (S_0 * (1.5 + (Q_simple * S_0 ** 2)) * 
                                 #np.sqrt(np.pi * Q_simple)) * (1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple *S_0 ** 2))
@@ -671,8 +679,16 @@ class SimplifiedGasKinetics:
     
     def set_N_simple(self):
         '''
-            Solves for simplified special factor N. This simplification is just the 
+            Setter for simplified special factor N. This simplification is just the 
             substitution of Q for Q'.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            None.
         '''
         #N_simple = S_0 * (Q_simple ** 2) * (1.25 + (Q_simple * S_0 ** 2) / 2)
         #N_simple += (0.5 * np.sqrt(np.pi * Q_simple ** 3)) * (0.75 + 3 * Q_simple * S_0 **2 + Q_simple ** 2 * S_0 ** 4) * (1 + sp.erf(S_0 * np.sqrt(Q_simple))) ** (Q_simple * S_0 ** 2)
@@ -689,6 +705,15 @@ class SimplifiedGasKinetics:
         '''
             Method to calculate the number denisty at a point (X, 0, Z) outside of the nozzle.
             This density is normalized over the number density at the nozzle exit.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                number density at a point (X, 0, Z) vs number density at the nozzle exit
         '''
         # num_density_ratio = n_1s(X, 0, Z) / n_0
         num_density_ratio = (self.K_simple / (2 * np.sqrt(np.pi)) * (self.R_0 / self.X) ** 2)
@@ -701,6 +726,15 @@ class SimplifiedGasKinetics:
             Method to calculate the macroscopic x-component of velocity at a point (X, 0, Z) outside of the nozzle.
             This velocity component is normalized with the parameter beta at the exit. 
             Beta relates velocity to speed ratio.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                returns U normalized
         '''
         # U_normalized = U_1s (X, 0, Z) * sqrt(beta)
         U_normalized = self.M_simple / self.K_simple
@@ -712,6 +746,15 @@ class SimplifiedGasKinetics:
             Method to calculate the macroscopic z-component of velocity at a point (X, 0, Z) outside of the nozzle.
             This velocity component is normalized with the parameter beta at the exit. 
             Beta relates velocity to speed ratio.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                returns W normalized
         '''
         # W_normalized = W_1s (X, 0, Z) * sqrt(beta)
         W_normalized = (self.M_simple / self.K_simple) * (self.Z / self.X)
@@ -722,6 +765,15 @@ class SimplifiedGasKinetics:
         '''
             Method to calculate the temperature at a point (X, 0, Z) outside of the nozzle.
             This temperature is normalized over the temperature at the nozzle exit.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                ratio of temperature at a point (X, 0, Z) to the temperature at the nozzle exit
         '''
         # T_ratio = T_1s / T_0
         T_ratio = ((-2 * self.M_simple ** 2) / (3 * self.Q_simple * self.K_simple ** 2))
@@ -734,6 +786,16 @@ class SimplifiedGasKinetics:
         '''
             Method to calculate the number denisty at a point (X, 0, 0) outside of the nozzle.
             This density is normalized over the number density at the nozzle exit.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                number density at a point on the centerline
+                vs the number density at the nozzle exit
         '''
         p1 = self.X / np.sqrt(self.X ** 2 + self.R_0 ** 2) 
         p2 = self.R_0 / np.sqrt(self.X ** 2 + self.R_0 ** 2)
@@ -748,6 +810,16 @@ class SimplifiedGasKinetics:
             Beta relates velocity to speed ratio.
 
             TODO split U_ratio to multiple lines
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                velocity at a point on the centerline (X, 0, 0) normalized
+                with the parameter beta at the exit
         '''
         p1 = self.X / np.sqrt(self.X ** 2 + self.R_0 ** 2) 
         p2 = self.R_0 / np.sqrt(self.X ** 2 + self.R_0 ** 2)
@@ -760,6 +832,16 @@ class SimplifiedGasKinetics:
         '''
             Method to calculate the temperature at a point (X, 0, 0) outside of the nozzle.
             This temperature is normalized over the temperature at the nozzle exit.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                temperature on the point on the centerline (X, 0, 0) 
+                vs temperature at the nozzle exit
         '''
         n_ratio = self.get_num_density_centerline()
         U1 = self.get_velocity_centerline()
@@ -778,6 +860,15 @@ class SimplifiedGasKinetics:
         '''
             Method to call gas-surface interaction model. Passes thruster characteristics and
             normalized plume parameters to the Maxwell model to solve for pressre.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                pressure on the surface outside of the nozzle exit (N / m^2)
         '''
         if self.theta != 0:
             n_inf = self.n_0 * self.get_num_density_ratio()
@@ -809,6 +900,15 @@ class SimplifiedGasKinetics:
         '''
             Method to call gas-surface interaction model. Passes thruster characteristics and
             normalized plume parameters to the Maxwell model to solve for heat flux.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                heat flux on the surface outside of the nozzle exit (W / m^2)
         '''
         if self.theta != 0:
             n_inf = self.n_0 * self.get_num_density_ratio()
