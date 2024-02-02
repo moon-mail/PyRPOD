@@ -415,7 +415,8 @@ class RPOD (MissionPlanner):
 
 
         # Loop through each firing in the JFH.
-        for firing in tqdm(range(len(self.jfh.JFH)), desc='Processing firings'):
+        for firing in range(len(self.jfh.JFH)):
+        # for firing in tqdm(range(len(self.jfh.JFH)), desc='Processing firings'):
             # print('firing =', firing+1)
 
             # reset strikes for each firing

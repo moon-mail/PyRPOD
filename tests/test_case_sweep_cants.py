@@ -57,7 +57,7 @@ class CoordinateSweepCheck(unittest.TestCase):
         
         # call sweep_long_thruster on the configuration and print the DCM's
         config_swept_array = angle_sweep.sweep_long_thrusters(config, dpitch, dyaw)
-        angle_sweep.read_swept_angles(config_swept_array)
+        # angle_sweep.read_swept_angles(config_swept_array)
 
 if __name__ == '__main__':
     unittest.main()

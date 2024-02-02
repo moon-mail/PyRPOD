@@ -39,7 +39,7 @@ class CoordinateSweepCheck(unittest.TestCase):
         swept_configs = swept_coords.sweep_coords(config, x0, xf, dx)
 
         # print proof of sweep to terminal
-        swept_coords.read_swept_coords(swept_configs)
+        # swept_coords.read_swept_coords(swept_configs)
 
 if __name__ == '__main__':
     unittest.main()
