@@ -331,10 +331,10 @@ class RPOD (MissionPlanner):
                     self.vv.thruster_data[thruster_id]['dcm']
                 )
                 plumeMesh.rotate_using_matrix(thruster_orientation.transpose())
+                plumeMesh.rotate_using_matrix(vv_orientation.transpose())
                 plumeMesh.translate(self.vv.thruster_data[thruster_id]['exit'][0])
 
                 # Second, according to DCM and position vector of the VV.
-                plumeMesh.rotate_using_matrix(vv_orientation.transpose())
                 plumeMesh.translate(self.jfh.JFH[firing]['xyz'])
 
                 if active_cones == None:
@@ -690,12 +690,18 @@ class RPOD (MissionPlanner):
         '''
 
         # t_values = np.linspace(0,2*np.pi,100)
-        t_values = np.linspace(0, 50, 20)
+        t_values = np.linspace(0, 25, 100)
 
         # Symbolic Calculations of tangent and normal unit vectors
         r = r_of_t
         rprime = [sp.diff(r[0],t), sp.diff(r[1],t), sp.diff(r[2],t)]
-        tanvector = [rprime[0]/make_norm(rprime), rprime[1]/make_norm(rprime), rprime[2]/make_norm(rprime)]
+
+        # print('1', rprime[0]/make_norm(rprime))
+        # print('2', rprime[1]/make_norm(rprime))
+        # print('3', rprime[2]/make_norm(rprime))
+        # tanvector = [rprime[0]/make_norm(rprime), rprime[1]/make_norm(rprime), rprime[2]/make_norm(rprime)]
+        tanvector = [0, 0, -0.25]
+
         tanprime = [sp.diff(tanvector[0],t), sp.diff(tanvector[1],t), sp.diff(tanvector[2],t)]
         normalvector = [tanprime[0]/make_norm(tanprime), tanprime[1]/make_norm(tanprime), tanprime[1]/make_norm(tanprime)]
         tan_vector_functions = [sp.lambdify(t, tanvector[0]),sp.lambdify(t, tanvector[1]), sp.lambdify(t, tanvector[2])]
@@ -732,7 +738,7 @@ class RPOD (MissionPlanner):
         
         if type(z) == int:
             z = np.full(t_values.size, z)
-        if type(dz) == int or dz.size == 1:
+        if type(dz) == int:
             # print('dz is contant')
             # print(dz)
             dz = np.full(t_values.size, dz)
