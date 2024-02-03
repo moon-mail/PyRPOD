@@ -516,27 +516,112 @@ class RPOD (MissionPlanner):
             self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData, target)
             # print()
 
-    # def print_jfh_1d_approach(self):
-    #     """
-    #         Method creates JFH data for axial approach using simpified physics calculations.
+    def print_jfh_1d_approach(self, v_ida, v_o, r_o):
+        """
+            Method creates JFH data for axial approach using simpified physics calculations.
 
-    #         NOTE: Methods does not take any parameters. It assumes that self.case_dir
-    #         and self.config are instatiated correctly. Potential defensive programming statements?
+            This approach models one continuous firing.
 
-    #         Parameters
-    #         ----------
-    #         None
+            Kinematics and mass changes are discretized according to the thruster's minimum firing time.
 
-    #         Returns
-    #         -------
-    #         Method doesn't currently return anything. Simply sets class members as needed.
-    #         Does the method need to return a status message? or pass similar data?
-
-    #     """
+            Parameters
+            ----------
+            v_ida : float
+            v_o : float
 
 
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
+
+        """
+
+        # Calculate required change in velocity.
+        dv_req = v_o - v_ida
+
+        # Determin thruster configuration characterstics. WIP.
+        total_thrust = [500, 500, 500, 500] # N
+        total_m_dot = [0.5, 0.5, 0.5, 0.5] # kg/s
+        dt = 0.025
+        dm_firing = sum(total_m_dot) * dt
+        v_e  = sum(total_thrust) / sum(total_m_dot)
+
+        # Calculate propellant used for docking and changes in mass.
+        delta_m_docking = round(self.calc_delta_mass_v_e(dv_req, v_e), 0)
+        docking_dry_mass = self.vv.mass
+        docking_wet_mass = self.vv.mass + delta_m_docking
+        print('docking dry mass', docking_dry_mass)
+        print('docking wet mass', docking_wet_mass)
 
 
-def make_test_jfh():
+        # Instantiate data structure to hold JFH data.
+        # First values are initial conditions.
+        x = [r_o]
+        dx = [0]
 
-    return
+        dt_vals = [dt]
+        t = [0]
+
+        dv = [0]
+        dxdt = [v_o]
+
+        mass = [docking_wet_mass]
+        dm_total = [dm_firing]
+
+        n = [1]
+        # Calculate JFH data for required firings.
+        while (dv_req > 0):
+            print('dv_req', dv_req, 'n firings', n)
+
+
+            # Grab last value in the JFH arrays (initial conditions for current time step)
+            print('x, dx, dt, t, dxdt, mass, dm_total')
+            print(x[-1], dx[-1], dt_vals[-1], t[-1], dxdt[-1], mass[-1], dm_total[-1])
+
+            # Update VV mass per firing
+            mass_o = mass[-1]
+            mass.append(mass_o - dm_firing)
+            mass_f = mass[-1]
+
+            # Caclulate velocioty change per firing.
+            dv_firing = self.calc_dv(v_e, mass_o, mass_f)
+            dv.append(dv_firing)
+            # print(dv_firing)
+            # print(round(dxdt[-1] - dv_firing, 2))
+            # input()
+            dxdt.append(dxdt[-1] - dv_firing)
+
+            # Calculate distance traveled per firing
+            # print(dxdt[-1], dxdt[-2]) # last and second to last element.
+            v_avg = 0.5 * (dxdt[-1] + dxdt[-2])
+            dx.append(v_avg * dt)
+            x.append(x[-1] - v_avg*dt)
+
+            # Calculate left over v_req (TERMINATES LOOP)
+            dv_req -= dv_firing
+
+            # Calculate mass expanded up to thois point.
+            dm_total.append(dm_total[-1] + dm_firing)
+
+            # Calculate current firing.
+            n.append(n[-1]+1)
+
+        one_d_results = {
+            'n_firings': n,
+            'x': x,
+            'dx': dx,
+            't': t,
+            'dv': dv,
+            'v': dxdt,
+            'mass': mass,
+            'delta_mass': dm_total
+        }
+
+        print(one_d_results)
+        return
+
+
+    def make_test_jfh():
+
+        return

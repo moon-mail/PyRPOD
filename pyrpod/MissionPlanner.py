@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import configparser
+import math
 
 class MissionPlanner:
     """
@@ -291,7 +292,7 @@ class MissionPlanner:
 
         return
 
-    def calc_delta_m(self, dv, isp):
+    def calc_delta_mass_isp(self, dv, isp):
         """
             Calculates propellant usage using expressions derived from the ideal rocket equation.
 
@@ -311,7 +312,32 @@ class MissionPlanner:
         g_0 = 9.81
         a = (dv/(isp*g_0))
         m_f = self.vv.mass
-        return m_f * (1 - np.exp(a))
+        dm = m_f * (np.exp(a) - 1)
+        self.vv.mass += dm
+        return dm
+
+    def calc_delta_mass_v_e(self, dv, v_e):
+        """
+            Calculates propellant usage using expressions derived from the ideal rocket equation.
+
+            Parameters
+            ----------
+            dv : float
+                Speficied change in velocity value.
+
+            isp : float
+                Speficied specific impulse value.
+
+            Returns
+            -------
+            dm : float
+                Change in mass calculated using the ideal rocket equation.
+        """
+        a = (dv/v_e)
+        m_f = self.vv.mass
+        dm = m_f * (np.exp(a) - 1)
+        # self.vv.mass += dm
+        return dm
 
     def plot_delta_m(self, dv):
         """
@@ -610,3 +636,6 @@ class MissionPlanner:
             fig.savefig("test" + str(firing[0]) + ".png")
             plt.show()
         return
+
+    def calc_dv(self, v_e, m_o, m_f):
+        return v_e * math.log(m_o/m_f)
