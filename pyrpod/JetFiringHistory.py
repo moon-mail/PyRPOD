@@ -152,7 +152,6 @@ class JetFiringHistory:
             self.JFH = JFH
 
 
-
     def graph_param_curve(self, t, r_of_t):
         ''' Used to quickly prototype and visualize a proposed approach path.
             Calculates the unit tangent vector at a given timestep and

@@ -11,8 +11,30 @@ from stl import mesh
 from pyrpod.LogisticsModule import LogisticsModule
 from pyrpod.MissionPlanner import MissionPlanner
 
+from pyrpod.file_print import print_1d_JFH
 
 from tqdm import tqdm
+
+def rotation_matrix_from_vectors(vec1, vec2):
+    """ Find the rotation matrix that aligns vec1 to vec2
+    :param vec1: A 3d "source" vector
+    :param vec2: A 3d "destination" vector
+    :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
+    """
+    if vec1 == vec2:
+        x = [1, 0, 0]
+        y = [0, 1, 0]
+        z = [0, 0, 1]
+        id_matrix = np.array([x, y, z])
+        return id_matrix
+
+    a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
+    v = np.cross(a, b)
+    c = np.dot(a, b)
+    s = np.linalg.norm(v)
+    kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2)) 
+    return rotation_matrix
 
 class RPOD (MissionPlanner):
     """
@@ -527,12 +549,17 @@ class RPOD (MissionPlanner):
             Parameters
             ----------
             v_ida : float
-            v_o : float
+                VisitingVehicle docking velocity (determined by international docking adapter)
 
+            v_o : float
+                VisitingVehicle incoming axial velocity.
+
+            r_o : float
+                Initial distance to docking port.
 
             Returns
             -------
-            Method doesn't currently return anything. Simply sets class members as needed.
+            Method doesn't currently return anything. Simply prints data to a files as needed.
             Does the method need to return a status message? or pass similar data?
 
         """
@@ -555,9 +582,11 @@ class RPOD (MissionPlanner):
         print('docking wet mass', docking_wet_mass)
 
 
-        # Instantiate data structure to hold JFH data.
+        # Instantiate data structure to hold JFH data + physics data.
         # First values are initial conditions.
         x = [r_o]
+        y = [0]
+        z = [0]
         dx = [0]
 
         dt_vals = [dt]
@@ -570,9 +599,17 @@ class RPOD (MissionPlanner):
         dm_total = [dm_firing]
 
         n = [1]
-        # Calculate JFH data for required firings.
+
+        # Create dummy rotation matrices.
+        y1 = [1, 0, 0]
+        x1 = [1, 0, 0]
+
+        rot = [np.matrix(rotation_matrix_from_vectors(x1, y1))]
+
+        # Calculate JFH and 1D physics data for required firings.
+        i = 0 # ugly but useful
         while (dv_req > 0):
-            print('dv_req', dv_req, 'n firings', n)
+            print('dv_req', round(dv_req, 4), 'n firings', n[i])
 
 
             # Grab last value in the JFH arrays (initial conditions for current time step)
@@ -597,6 +634,8 @@ class RPOD (MissionPlanner):
             v_avg = 0.5 * (dxdt[-1] + dxdt[-2])
             dx.append(v_avg * dt)
             x.append(x[-1] - v_avg*dt)
+            y.append(0)
+            z.append(0)
 
             # Calculate left over v_req (TERMINATES LOOP)
             dv_req -= dv_firing
@@ -606,19 +645,30 @@ class RPOD (MissionPlanner):
 
             # Calculate current firing.
             n.append(n[-1]+1)
+            i += 1
 
-        one_d_results = {
-            'n_firings': n,
-            'x': x,
-            'dx': dx,
-            't': t,
-            'dv': dv,
-            'v': dxdt,
-            'mass': mass,
-            'delta_mass': dm_total
-        }
+            # Add time data.
+            t.append(t[-1] + dt)
 
-        print(one_d_results)
+
+            rot.append(np.matrix(rotation_matrix_from_vectors(x1, y1)))
+
+        # one_d_results = {
+        #     'n_firings': n,
+        #     'x': x,
+        #     'dx': dx,
+        #     't': t,
+        #     'dv': dv,
+        #     'v': dxdt,
+        #     'mass': mass,
+        #     'delta_mass': dm_total
+        # }
+
+        # print(one_d_results)
+
+        r = [x, y, z]
+
+        print_1d_JFH(t, r, rot, 'JFH_1d.A')
         return
 
 

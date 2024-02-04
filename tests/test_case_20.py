@@ -38,10 +38,10 @@ class Produce1DJFHChecks(unittest.TestCase):
         rpod.study_init(jfh, tv, lm)
 
         # Produce JFH using 1D physics
-        r_o = 20 # initial distance (m)
+        r_o = 20 + 14 # initial distance (m)
         v_ida = 0.1 # Docking velocity (m/s)
         v_o = 2.25 # Initial varelocity (axial overshoot?) (m/s)
-        
+
         rpod.print_jfh_1d_approach(v_ida = v_ida, v_o = v_o, r_o = r_o)
 
 if __name__ == '__main__':
