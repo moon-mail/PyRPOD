@@ -13,7 +13,7 @@ from pyrpod.LogisticsModule import LogisticsModule
 from pyrpod.MissionPlanner import MissionPlanner
 
 from pyrpod.file_print import print_JFH
-from tqdm import tqdm
+import tqdm
 
 # Helper functions
 def rotation_matrix_from_vectors(vec1, vec2):
@@ -257,7 +257,7 @@ class RPOD (MissionPlanner):
             plt.savefig('img/frame' + str(index) + '.png')
 
 
-    def graph_jfh(self): 
+    def graph_jfh(self, axial_pos_count): 
         """
             Creates visualization data for the trajectory of the proposed RPOD analysis.
 
@@ -265,6 +265,12 @@ class RPOD (MissionPlanner):
 
             This utilities allows engineers to visualize the trajectory in the JFH before running
             the full simulation and wasting computation time.
+
+            Parameters
+            ----------
+            axial_pos_count : int
+                Iteration counter for the evaluations of axial positioning (along the x axis) of
+                the nozzle exit with respect to the LM's docking adapter.
 
             Returns
             -------
@@ -301,9 +307,12 @@ class RPOD (MissionPlanner):
             # print("thrusters", thrusters)
              
             # Load, transform, and, graph STLs of visiting vehicle.  
-            VVmesh = mesh.Mesh.from_file('../data/stl/cylinder.stl')
+            VVmesh = mesh.Mesh.from_file('../case/axial_pos/stl/logistics_module.stl')
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm'])
             # print(vv_orientation.transpose())
+            # Translation for aft_pos case to put center of LM at origin
+            VVmesh.translate([-7470, -13012.5, -7470])   # 7470 is distance from tip of solar array to radial center of LM
+            # 13012.5/2 is distance from the far side of the panel of the solar panels to the axial center of the LM
             VVmesh.rotate_using_matrix(vv_orientation.transpose())
             VVmesh.translate(self.jfh.JFH[firing]['xyz'])
 
@@ -318,14 +327,18 @@ class RPOD (MissionPlanner):
                 # print('thruster num', thruster, 'thruster id', link[str(thruster)][0])
                 thruster_id = link[str(thruster)][0]
 
-                # Load plume STL in initial configuration. 
-                plumeMesh = mesh.Mesh.from_file('../data/stl/mold_funnel.stl')
-                plumeMesh.translate([0, 0, -54.342])            # nozzle throat (x, y, z) = (r_exit, r_exit, 0), 54.342 is distance b/w throat and exit
+                # Load plume STL in initial configuration.
+                plumeMesh = mesh.Mesh.from_file('../case/axial_pos/stl/thruster_cluster_scaled.stl')
 
-                # Additional translations used for mold_funnel_centerline, 1000 is the length of the centerline and 39.728 is exit diameter
+                # Translations to center mold_funnel on the global origin, 54.342 is distance b/w throat and exit
+                # plumeMesh.translate([0, 0, -54.342])    # nozzle throat (x, y, z) = (r_exit, r_exit, 0)
+
+                # Translations to center mold_funnel_centerline on the global origin, 1000 is the length of the centerline and 39.728 is exit diameter
                 # plumeMesh.translate([-39.728/2, -39.728/2, -1000])    # nozzle throat (x, y, z) = (0, 0, 0)
 
-                plumeMesh.rotate([1, 0, 0], math.radians(180))  # align nozzle exit with +z direction, which the TCD is wrt
+                # Translations to center thruster_cluster_scaled on the global origin
+                plumeMesh.translate([-400*20, (-650/2)*20, -300*20])
+
                 plumeMesh.points = 0.05 * plumeMesh.points
 
                 # Transform plume
@@ -365,15 +378,17 @@ class RPOD (MissionPlanner):
             
             # print(self.vv.mesh)
             # print(self.case_dir + self.config['stl']['vv'])
-
-            path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
-            path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl" 
+            
+            # axial_pos = "%.6f" % axial_pos
+            # axial_pos = str(axial_pos).zfill(12)
+            path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + "-" + str(axial_pos_count)
+            path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + "-" + str(axial_pos_count) + ".stl" 
             # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
             VVmesh.save(path_to_stl)
             # print()
 
 
-    def jfh_plume_strikes(self):
+    def jfh_plume_strikes(self, axial_pos_count):
         """
             Calculates number of plume strikes according to data provided for RPOD analysis.
             Method does not take any parameters but assumes that study assets are correctly configured.
@@ -381,6 +396,12 @@ class RPOD (MissionPlanner):
             A Simple plume model is used. It does not calculate plume physics, only strikes. which
             are determined with a user defined "plume cone" geometry. Simple vector mathematics is
             used to determine if an VTK surface elements is struck by the "plume cone".
+
+            Parameters
+            ----------
+            axial_pos_count : int
+                Iteration counter for the evaluations of axial positioning (along the x axis) of
+                the nozzle exit with respect to the LM's docking adapter.
 
             Returns
             -------
@@ -415,7 +436,8 @@ class RPOD (MissionPlanner):
 
 
         # Loop through each firing in the JFH.
-        for firing in tqdm(range(len(self.jfh.JFH)), desc='Processing firings'):
+        # for firing in tqdm(range(len(self.jfh.JFH)), desc='Processing firings'):
+        for firing in range(len(self.jfh.JFH)):
             # print('firing =', firing+1)
 
             # reset strikes for each firing
@@ -455,9 +477,23 @@ class RPOD (MissionPlanner):
                 # calculate thruster exit coordinate with respect to the Target Vehicle.
                 
                 # print(self.vv.thruster_data[thruster_id])
-                thruster_pos = vv_pos + np.array(self.vv.thruster_data[thruster_id]['exit'])
+                thruster_pos = vv_pos + np.array(self.vv.thruster_data[thruster_id]['exit'], dtype=object)
                 thruster_pos = thruster_pos[0]
                 # print('thruster position', thruster_pos)
+
+                # Move center of impingement region from the thruster_cluster_scaled.stl centerline to the nozzle centerline
+                p1t1_adjustment = [0, 141.421356, 141.421356]
+                p2t1_adjustment = [0, -141.421356, 141.421356]
+                p3t1_adjustment = [0, -141.421356, -141.421356]
+                p4t1_adjustment = [0, 141.421356, -141.421356]
+                if self.vv.thruster_data[thruster_id]['name'][0] == 'P1T1':
+                    thruster_pos += p1t1_adjustment
+                if self.vv.thruster_data[thruster_id]['name'][0] == 'P2T1':
+                    thruster_pos += p2t1_adjustment
+                if self.vv.thruster_data[thruster_id]['name'][0] == 'P3T1':
+                    thruster_pos += p3t1_adjustment
+                if self.vv.thruster_data[thruster_id]['name'][0] == 'P4T1':
+                    thruster_pos += p4t1_adjustment
 
                 # Calculate plume strikes for each face on the Target surface.
                 for i, face in enumerate(target.vectors):
@@ -528,7 +564,7 @@ class RPOD (MissionPlanner):
                 "cum_strikes": cum_strikes
             }
 
-            path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
+            path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + "-" + str(axial_pos_count)
 
             # print(cellData)
             # input()

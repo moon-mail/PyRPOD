@@ -54,8 +54,10 @@ class TargetVehicle(Vehicle):
         """
         path_to_stl = self.case_dir + 'stl/' + self.config['stl']['tv']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
-        self.mesh.rotate([0,0,1], math.radians(45)) # Tilt the box as opposed to changing the TCD
-        self.mesh.translate([-8,40,0])              # Move the LM to the center of the box
+        
+        # Translation for axial_pos case to put center of convex face of target vehicle at global origin
+        self.mesh.translate([-52915.02622/2,-52915.02622/2,-32000])
+        self.mesh.rotate([0,1,0], math.radians(-90))
         self.path_to_stl = path_to_stl
         return
 
