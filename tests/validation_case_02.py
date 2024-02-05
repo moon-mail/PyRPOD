@@ -4,7 +4,7 @@
 # Last Changed: 02-05-24
 
 # ========================
-# PyRPOD: tests/validation_case_01.py
+# PyRPOD: tests/validation_case_02.py
 # ========================
 # Validation case of Simons Model: number density when r/D = 10
 

@@ -738,6 +738,7 @@ class SimplifiedGasKinetics:
         p2 = self.R_0 / np.sqrt(self.X ** 2 + self.R_0 ** 2)
         n_ratio = 0.5 + 0.5 * sp.erf(self.S_0) - (p1 * np.exp(-self.S_0 ** 2 * p2 ** 2) / 2) * (1 + sp.erf(p1 * self.S_0))
         n_ratio = float(n_ratio)
+
         return n_ratio
     
     def get_velocity_centerline(self):
@@ -873,95 +874,6 @@ class SimplifiedGasKinetics:
 
             heat_flux = get_maxwellian_heat_transfer(rho_inf, S, self.sigma, self.theta, T, self.T_w, self.R, self.gamma)
         return heat_flux
-
-    def plot_ac_density_profiles(R_0, S_0):
-
-        D = 2 * R_0
-        r = 10 * D
-
-        plt.figure()
-        plume = SimplifiedGasKinetics()
-        n_ratios = []
-        theta_max = np.pi / 2
-        theta_range = np.arange(0, theta_max, 0.1)
-
-        for theta in theta_range:
-            X = r * np.cos(theta)
-            Z = r * np.sin(theta)
-            n_ratio = plume.get_num_density_ratio(X, Z, R_0, S_0)
-            n_ratios.append(n_ratio)
-
-        plt.plot(theta_range * (180 / np.pi), n_ratios) #n/n_s / n_0/n_s = n/n_0
-        plt.title("Density Profiles Along r/D = 10")
-        plt.xlabel('theta (deg)')
-        plt.ylabel('n/n_s')
-        plt.legend(labels=[f"S_0 = {S_0}"])
-
-        plt.show()
-
-        plume.get_num_density_ratio(X, Z, R_0, S_0)
-        return 1
-
-    def plot_cl_num_density_ratios(speed_ratios, R_0):
-
-        D = 2 * R_0
-        X_max = 10 * D
-
-        for S_0 in speed_ratios:
-            plume = SimplifiedGasKinetics()
-            num_densities = []
-            x_range = np.arange(0, X_max, 0.05)
-            for x in x_range:
-                num_densities.append(plume.get_num_density_centerline(x, S_0, R_0))
-
-            plt.plot(x_range / D, num_densities, label=f"S_0 = {S_0}")
-        plt.title("Normalized Analytical Number Density Along Centerline")
-        plt.xlabel('X/D')
-        plt.ylabel('n_1/n_0')
-        plt.ylim(0,1.2)
-        plt.legend()
-        plt.show()
-
-    def plot_cl_normalized_U(speed_ratios, R_0):
-
-        D = 2 * R_0
-        X_max = 10 * D
-
-        for S_0 in speed_ratios:
-            plume = SimplifiedGasKinetics()
-            Us = []
-            x_range = np.arange(0, X_max, 0.05)
-            for x in x_range:
-                Us.append(plume.get_velocity_centerline(x, S_0, R_0))
-
-            plt.plot(x_range / D, Us, label=f"S_0 = {S_0}")
-        plt.title("Normalized Analytical U-velocity Distribution Along Centerline")
-        plt.xlabel('X/D')
-        plt.ylabel('U1*sqrt(beta0)')
-        plt.legend()
-        plt.show()
-
-    def plot_cl_normalized_temp(speed_ratios, R_0):
-
-        D = 2 * R_0
-        X_max = 10 * D
-
-        for S_0 in speed_ratios:
-            plume = SimplifiedGasKinetics()
-            temps = []
-            x_range = np.arange(0.05, X_max, 0.05)
-            for x in x_range:
-                temp = plume.get_temp_centerline(x, S_0, R_0)
-                temp = temp.evalf()
-                temps.append(temp)
-
-            plt.plot(x_range / D, temps, label=f"S_0 = {S_0}")
-        plt.title("Normalized Analytical Temperature Distribution Along Centerline")
-        plt.xlabel('X/D')
-        plt.ylabel('T1/T0')
-        plt.legend()
-        plt.show()
-
 '''
 import math
 from scipy.special import legendre
