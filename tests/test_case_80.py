@@ -1,10 +1,10 @@
 # Juan P. Roldan
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 01-25-23
+# Last Changed: 01-25-24
 
 # ========================
-# PyRPOD: test/test_case_80.py
+# PyRPOD: tests/test_case_80.py
 # ========================
 # Test case for testing plume gas kinetic models in jfh firings.
 

@@ -145,6 +145,8 @@ class Simons:
         Distance from the evaluated point to the nozzle exit center (m)
     R_0 : float
         Nozzle exit radius (m).
+    A : float
+        normalization constant
 
     Methods
     -------
@@ -203,6 +205,8 @@ class Simons:
         self.P_c = P_c
         self.r = r
         self.R_0 = R_0
+
+        self.set_normalization_constant()
         #self.rho_throat = self.get_nozzle_throat_density()
         #self.theta_max = self.get_limiting_turn_angle()
         #self.A = self.get_normalization_constant()
@@ -263,18 +267,18 @@ class Simons:
         f = (np.cos((np.pi / 2) * (theta / theta_max))) ** kappa
         return f
 
-    def get_normalization_constant(self):
+    def set_normalization_constant(self):
         '''
-            From Lumpkin 1999. Solve for normalization constant.
+            From Lumpkin 1999. Setter for normalization constant.
             Integrates theta from 0 to the limiting turn angle.
 
             Parameters
             ----------
+            None.
 
             Returns
             -------
-            float
-                normalization constant
+            None.
         '''
         theta_max = self.get_limiting_turn_angle()
         theta = sp.symbols('theta')
@@ -282,7 +286,13 @@ class Simons:
         integrand = sp.sin(theta) * f
         integral = sp.integrate(integrand, (theta, 0, theta_max)) #integrate from 0 to max turning angle
         A = 0.5 * np.sqrt((self.gamma - 1) / (self.gamma + 1)) / (integral.evalf())
-        return A
+        
+        # if A is complex, take the real part
+        if type(A) == sp.Add:
+            A = sp.re(A)
+
+        self.A = A
+        return
     
     def get_sonic_velocity(self):
         '''
@@ -347,82 +357,9 @@ class Simons:
         '''
         f = self.get_plume_angular_density_decay_function(theta)
         #??? make own function for rho_ratio???
-        A = self.get_normalization_constant()
-        rho_ratio = A * ((self.R_0/self.r) ** 2) * f #rho_ratio = density / nozzle throat denisty aka rho / rho_s
+        rho_ratio = self.A * ((self.R_0/self.r) ** 2) * f #rho_ratio = density / nozzle throat denisty aka rho / rho_s
         n_ratio = rho_ratio
         return n_ratio
-
-    def plot_density_profiles(gammas, R, T_c, P_c, R_0, r):
-
-        plt.figure()
-        kappas = []
-        for gamma in gammas:
-            plume = Simons(gamma, R, T_c, P_c, R_0, r)
-            kappa = 2 / (gamma - 1)
-            kappas.append(kappa)
-            n_ratios = []
-            theta_max = plume.get_limiting_turn_angle()
-            theta_range = np.arange(0, theta_max, 0.1)
-
-            for theta in theta_range:
-                n_ratio = plume.get_num_density_ratio(theta)
-                n_ratios.append(n_ratio)
-
-            plt.plot(theta_range * (180 / np.pi), n_ratios) #n/n_s / n_0/n_s = n/n_0
-        plt.title("Density Profiles Along r/D = 10")
-        plt.xlabel('theta (deg)')
-        plt.ylabel('n/n_s')
-        plt.legend(labels=[f"kappa = {kappa:.2f}" for kappa in kappas])
-
-        plt.show()
-    
-    def plot_cl_density_profiles(gamma, R, T_c, P_c, R_0):
-
-        D = 2 * R_0
-        X_max = 10 * D
-        theta = 0
-
-        num_densities = []
-
-        plt.figure()
-        x_range = np.arange(0, X_max, 0.05)
-        for x in x_range:
-            plume = Simons(gamma, R, T_c, P_c, R_0, x)
-            n_ratio = plume.get_num_density_ratio(theta)
-            num_densities.append(n_ratio)
-
-        plt.plot(x_range / (D), num_densities) #n/n_s / n_0/n_s = n/n_0
-        plt.title("Density Profiles Along r/D = 10")
-        plt.xlabel('theta (deg)')
-        plt.ylabel('n/n_s')
-        plt.legend(labels=[f"S_0 = 2"])
-
-        plt.show()
-
-    def plot_pressure_profiles(gammas, R, T_c, P_c, R_0, r):
-
-        plt.figure()
-        kappas = []
-        for gamma in gammas:
-            plume = Simons(gamma, R, T_c, P_c, R_0, r)
-            kappa = 2 / (gamma - 1)
-            kappas.append(kappa)
-            pressures = []
-            theta_max = plume.get_limiting_turn_angle()
-            theta_range = np.arange(0, theta_max, 0.1)
-
-            for theta in theta_range:
-                rho_ratio = plume.get_num_density_ratio(theta)
-                pressure = plume.get_static_pressure(rho_ratio)
-                pressures.append(pressure)
-
-            plt.plot(theta_range * (180 / np.pi), pressures) #n/n_s / n_0/n_s = n/n_0
-        plt.title("Static Pressures Along r/D = 10")
-        plt.xlabel('theta (deg)')
-        plt.ylabel('P (N/m^2)')
-        plt.legend(labels=[f"kappa = {kappa:.2f}" for kappa in kappas])
-
-        plt.show()
 
 # TODO save plume constants into self
 class SimplifiedGasKinetics:
