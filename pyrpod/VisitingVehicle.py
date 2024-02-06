@@ -173,12 +173,12 @@ class VisitingVehicle(Vehicle):
             self.grapple = process_coordinates(lines.pop(0))
 
             # Save all strings containing thruster data in a list
-            str_thusters = []
+            str_thrusters = []
             for i in range(self.num_thrusters):
-                str_thusters.append(lines.pop(0))
+                str_thrusters.append(lines.pop(0))
 
             # Parse through strings and save data in a dictionary
-            self.thruster_data = process_str_thrusters(str_thusters)
+            self.thruster_data = process_str_thrusters(str_thrusters)
             self.jet_interactions = lines.pop(0)
         return
 
