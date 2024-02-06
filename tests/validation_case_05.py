@@ -7,6 +7,7 @@
 # PyRPOD: tests/validation_case_05.py
 # ========================
 # Validation case of Simple Model: temperature along centerline
+# TODO determine cause of mismatch. NOT VALIDATED!
 
 import test_header
 import unittest, os, sys
@@ -20,16 +21,23 @@ class ValidationSimple(unittest.TestCase):
         # set plume parameters
         R_0 = 0.1
         D = 2 * R_0
+
+        # enforce analyis on the centerline
         theta = 0
         
+        # surface parameters (do not matter for this validation)
         T_w = 800
         sigma = 1
+
+        # speed ratios to contour over
         speed_ratios = [1, 2, 3]
-        # contour gammas into one plot
+
+        # max distance to evaluate
         X_max = 10 * D
 
         for S_0 in speed_ratios:
             num_densities = []
+            # set example thruster characteristics matching the speed ratios enforced above
             thruster_characteristics = {'d': D, 've': S_0*1000, 'R': 1000/3, 'gamma': 1.6, 'Te': 1500, 'n': 100000000}
             x_range = np.arange(0.01, X_max, 0.05)
             for x in x_range:

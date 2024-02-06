@@ -18,14 +18,19 @@ class ValidationSimons(unittest.TestCase):
     def test_validate_simons_n_cl(self):
 
         # set plume parameters
+        # matching Cai 2012 validation plots
         gamma = 2.2
         R_0 = 0.1
+        D = 2 * R_0
         R = 8
         T_c, P_c = 1, 1
-
-        D = 2 * R_0
-        X_max = 10 * D
+        
+        # enforce analysis on centerline
         theta = 0
+
+        # max distance to evaluate
+        X_max = 10 * D
+        
 
         num_densities = []
 

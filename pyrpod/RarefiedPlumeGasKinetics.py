@@ -808,7 +808,7 @@ class SimplifiedGasKinetics:
             float
                 pressure on the surface outside of the nozzle exit (N / m^2)
         '''
-        if self.theta != 0:
+        if self.theta != 0: # not on centerline
             n_inf = self.n_0 * self.get_num_density_ratio()
             rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
             T = self.T_0 * self.get_temp_ratio()
@@ -821,7 +821,7 @@ class SimplifiedGasKinetics:
 
             pressure = get_maxwellian_pressure(rho_inf, U, S, self.sigma, self.theta, T, self.T_w)
             return pressure
-        else:
+        else: # on centerline
             n_inf = self.n_0 * self.get_num_density_centerline()
             rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
 
@@ -848,7 +848,7 @@ class SimplifiedGasKinetics:
             float
                 heat flux on the surface outside of the nozzle exit (W / m^2)
         '''
-        if self.theta != 0:
+        if self.theta != 0: # not on centerline
             n_inf = self.n_0 * self.get_num_density_ratio()
             rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
 
@@ -862,7 +862,7 @@ class SimplifiedGasKinetics:
 
             heat_flux = get_maxwellian_heat_transfer(rho_inf, S, self.sigma, self.theta, T, self.T_w, self.R, self.gamma)
             return heat_flux
-        else:
+        else: # on centerline
             n_inf = self.n_0 * self.get_num_density_centerline()
             rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
 

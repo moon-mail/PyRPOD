@@ -20,12 +20,17 @@ class ValidationSimple(unittest.TestCase):
         # set plume parameters
         R_0 = 0.1
         D = 2 * R_0
-        theta = 0
+        # speed ratio to evaluate
+        S_0 = 2
         
+        # surface parameters (do not matter for this validation)
         T_w = 800
         sigma = 1
-        S_0 = 2
+
+        # enforce distance to analyze
         r = 10 * D
+
+        # set thruster characteristics enforcing the speed ratio above
         thruster_characteristics = {'d': D, 've': S_0*1000, 'R': 1000/3, 'gamma': 1.6, 'Te': 1500, 'n': 100000000}
 
         plt.figure()
