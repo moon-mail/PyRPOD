@@ -52,10 +52,11 @@ class TargetVehicle(Vehicle):
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
+        # TODO: pass back self.mesh so we can rotate and translate the tv within the test case and avoid altering source code
         path_to_stl = self.case_dir + 'stl/' + self.config['stl']['tv']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
-        self.mesh.rotate([0,0,1], math.radians(45)) # Tilt the box as opposed to changing the TCD
-        self.mesh.translate([-8,40,0])              # Move the LM to the center of the box
+        # self.mesh.rotate([0,0,1], math.radians(45)) # Tilt the box as opposed to changing the TCD
+        # self.mesh.translate([-8,40,0])              # Move the LM to the center of the box
         self.path_to_stl = path_to_stl
         return
 
