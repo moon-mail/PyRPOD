@@ -388,8 +388,8 @@ class MissionPlanner:
             delta_m = np.array(delta_m)
 
             # Save absolute min and max data for plotting.
-            if dm.max() > dm_max:
-                dm_max = dm.max()
+            if delta_m.max() > delta_m_max:
+                delta_m_max = delta_m.max()
 
             if delta_m.min() < delta_m_min:
                 delta_m_min = delta_m.min()

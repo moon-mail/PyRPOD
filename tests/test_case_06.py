@@ -37,7 +37,7 @@ class ThrustEnvelopeChecks(unittest.TestCase):
         m = 0.45*30000 # lb converted to kg
         h = 14 # m
         r = 4.0/2.0 # m
-        lm.set_intertial_props(m, h, r)
+        lm.set_inertial_props(m, h, r)
 
         # Load in thruster configuration data from text file
         lm.set_thruster_config()
