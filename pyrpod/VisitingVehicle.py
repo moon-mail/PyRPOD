@@ -229,6 +229,7 @@ class VisitingVehicle(Vehicle):
 
         return
 
+
     def print_info(self):
         """Simple method to format printing of vehicle info."""
 
