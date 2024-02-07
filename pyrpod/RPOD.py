@@ -11,9 +11,9 @@ from stl import mesh
 
 from pyrpod.LogisticsModule import LogisticsModule
 from pyrpod.MissionPlanner import MissionPlanner
+#from pyrpod.RarefiedPlumeGasKinetics import SimplifiedGasKinetics
 
 from pyrpod.file_print import print_JFH
-from tqdm import tqdm
 
 # Helper functions
 def rotation_matrix_from_vectors(vec1, vec2):
@@ -281,12 +281,12 @@ class RPOD (MissionPlanner):
         # Create results directory if it doesn't already exist.
         results_dir = self.case_dir + 'results'
         if not os.path.isdir(results_dir):
-            # print("results dir doesn't exist")
+            print("results dir doesn't exist")
             os.mkdir(results_dir)
 
         results_dir = results_dir + "/jfh"
         if not os.path.isdir(results_dir):
-            # print("results dir doesn't exist")
+            print("results dir doesn't exist")
             os.mkdir(results_dir)
 
         # Save STL surface of target vehicle to local variable.
@@ -294,15 +294,15 @@ class RPOD (MissionPlanner):
 
         # Loop through each firing in the JFH.
         for firing in range(len(self.jfh.JFH)):
-            # print('firing =', firing+1)
+            print('firing =', firing+1)
 
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
-            # print("thrusters", thrusters)
+            print("thrusters", thrusters)
              
-            # Load, transform, and, graph STLs of visiting vehicle.  
+            # Load, transform, and, graph STLs of visting vehicle.  
             VVmesh = mesh.Mesh.from_file('../data/stl/cylinder.stl')
-            vv_orientation = np.array(self.jfh.JFH[firing]['dcm'])
+            vv_orientation = np.matrix(self.jfh.JFH[firing]['dcm'])
             # print(vv_orientation.transpose())
             VVmesh.rotate_using_matrix(vv_orientation.transpose())
             VVmesh.translate(self.jfh.JFH[firing]['xyz'])
@@ -315,38 +315,27 @@ class RPOD (MissionPlanner):
 
                 # Save thruster id using indexed thruster value.
                 # Could naming/code be more clear?
-                # print('thruster num', thruster, 'thruster id', link[str(thruster)][0])
+                print('thruster num', thruster, 'thruster id', link[str(thruster)][0])
                 thruster_id = link[str(thruster)][0]
 
                 # Load plume STL in initial configuration. 
                 plumeMesh = mesh.Mesh.from_file('../data/stl/mold_funnel.stl')
-                plumeMesh.translate([0, 0, -54.342])            # nozzle throat (x, y, z) = (r_exit, r_exit, 0), 54.342 is distance b/w throat and exit
-
-                # Additional translations used for mold_funnel_centerline, 1000 is the length of the centerline and 39.728 is exit diameter
-                # plumeMesh.translate([-39.728/2, -39.728/2, -1000])    # nozzle throat (x, y, z) = (0, 0, 0)
-
-                plumeMesh.rotate([1, 0, 0], math.radians(180))  # align nozzle exit with +z direction, which the TCD is wrt
+                plumeMesh.translate([0, 0, -50])
+                plumeMesh.rotate([1, 0, 0], math.radians(180)) 
                 plumeMesh.points = 0.05 * plumeMesh.points
 
                 # Transform plume
                 
-                # First, according to DCM of current thruster id in TCD
-                thruster_orientation = np.array(
+                # First, according to DCM and exit vector using current thruster id in TCD
+                thruster_orientation = np.matrix(
                     self.vv.thruster_data[thruster_id]['dcm']
                 )
                 plumeMesh.rotate_using_matrix(thruster_orientation.transpose())
-
-                # Second, according to DCM of VV in JFH
                 plumeMesh.rotate_using_matrix(vv_orientation.transpose())
-
-                # Third, according to position vector of the VV in JFH
-                plumeMesh.translate(self.jfh.JFH[firing]['xyz'])
-                
-                # Fourth, according to exit vector of current thruster id in TCD
                 plumeMesh.translate(self.vv.thruster_data[thruster_id]['exit'][0])
 
-                # Takeaway: Do rotations before translating away from the rotation axes!   
-
+                # Second, according to DCM and position vector of the VV.
+                plumeMesh.translate(self.jfh.JFH[firing]['xyz'])
 
                 if active_cones == None:
                     active_cones = plumeMesh
@@ -356,7 +345,7 @@ class RPOD (MissionPlanner):
                     )
 
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
-                # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
+                print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
 
             if not active_cones == None:
                 VVmesh = mesh.Mesh(
@@ -364,14 +353,117 @@ class RPOD (MissionPlanner):
                 )
             
             # print(self.vv.mesh)
-            # print(self.case_dir + self.config['stl']['vv'])
+            print(self.case_dir + self.config['stl']['vv'])
 
             path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
             path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl" 
             # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
             VVmesh.save(path_to_stl)
-            # print()
+            print()
 
+    def graph_jfh(self, config_iter): 
+        """
+            Creates visualization data for the trajectory of the proposed RPOD analysis.
+
+            This method does NOT calculate plume strikes.
+
+            This utilities allows engineers to visualize the trajectory in the JFH before running
+            the full simulation and wasting computation time.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply produces data as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+        # Link JFH numbering of thrusters to thruster names.  
+        link = {}
+        i = 1
+        for thruster in self.vv.thruster_data:
+            link[str(i)] = self.vv.thruster_data[thruster]['name']
+            i = i + 1
+
+        # Create results directory if it doesn't already exist.
+        results_dir = self.case_dir + 'results'
+        if not os.path.isdir(results_dir):
+            print("results dir doesn't exist")
+            os.mkdir(results_dir)
+
+        results_dir = results_dir + "/jfh"
+        if not os.path.isdir(results_dir):
+            print("results dir doesn't exist")
+            os.mkdir(results_dir)
+
+        # Save STL surface of target vehicle to local variable.
+        target = self.target.mesh
+
+        # Loop through each firing in the JFH.
+        for firing in range(len(self.jfh.JFH)):
+            print('firing =', firing+1)
+
+            # Save active thrusters for current firing. 
+            thrusters = self.jfh.JFH[firing]['thrusters']
+            print("thrusters", thrusters)
+             
+            # Load, transform, and, graph STLs of visting vehicle.  
+            VVmesh = mesh.Mesh.from_file('../data/stl/cylinder.stl')
+            vv_orientation = np.matrix(self.jfh.JFH[firing]['dcm'])
+            # print(vv_orientation.transpose())
+            VVmesh.rotate_using_matrix(vv_orientation.transpose())
+            VVmesh.translate(self.jfh.JFH[firing]['xyz'])
+
+            active_cones = None
+
+            # Load and graph STLs of active thrusters. 
+            for thruster in thrusters:
+
+
+                # Save thruster id using indexed thruster value.
+                # Could naming/code be more clear?
+                print('thruster num', thruster, 'thruster id', link[str(thruster)][0])
+                thruster_id = link[str(thruster)][0]
+
+                # Load plume STL in initial configuration. 
+                plumeMesh = mesh.Mesh.from_file('../data/stl/mold_funnel.stl')
+                plumeMesh.translate([0, 0, -50])
+                plumeMesh.rotate([1, 0, 0], math.radians(180)) 
+                plumeMesh.points = 0.05 * plumeMesh.points
+
+                # Transform plume
+                
+                # First, according to DCM and exit vector using current thruster id in TCD
+                thruster_orientation = np.matrix(
+                    self.vv.thruster_data[thruster_id]['dcm']
+                )
+                plumeMesh.rotate_using_matrix(thruster_orientation.transpose())
+                plumeMesh.rotate_using_matrix(vv_orientation.transpose())
+                plumeMesh.translate(self.vv.thruster_data[thruster_id]['exit'][0])
+
+                # Second, according to DCM and position vector of the VV.
+                plumeMesh.translate(self.jfh.JFH[firing]['xyz'])
+
+                if active_cones == None:
+                    active_cones = plumeMesh
+                else:
+                    active_cones = mesh.Mesh(
+                        np.concatenate([active_cones.data, plumeMesh.data])
+                    )
+
+                # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
+                print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
+
+            if not active_cones == None:
+                VVmesh = mesh.Mesh(
+                    np.concatenate([VVmesh.data, active_cones.data])
+                )
+            
+            # print(self.vv.mesh)
+            print(self.case_dir + self.config['stl']['vv'])
+
+            path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
+            path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + str(config_iter)+ ".stl" 
+            # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
+            VVmesh.save(path_to_stl)
+            print()
 
     def jfh_plume_strikes(self):
         """
@@ -397,12 +489,12 @@ class RPOD (MissionPlanner):
         # Create results directory if it doesn't already exist.
         results_dir = self.case_dir + 'results'
         if not os.path.isdir(results_dir):
-            #print("results dir doesn't exist")
+            print("results dir doesn't exist")
             os.mkdir(results_dir)
 
         results_dir = results_dir + "/strikes"
         if not os.path.isdir(results_dir):
-            #print("results dir doesn't exist")
+            print("results dir doesn't exist")
             os.mkdir(results_dir)
 
         # Save STL surface of target vehicle to local variable.
@@ -411,16 +503,27 @@ class RPOD (MissionPlanner):
 
         # Initiate array containing cummulative strikes. 
         cum_strikes = np.zeros(len(target.vectors))
+
+        # Initiate array containing cummulative strikes. 
+        cum_pressures = np.zeros(len(target.vectors))
+
+        # Initiate array containing cummulative heatflux. 
+        cum_heat_flux = np.zeros(len(target.vectors))
         # print(len(cum_strikes))
 
 
         # Loop through each firing in the JFH.
         for firing in range(len(self.jfh.JFH)):
-        # for firing in tqdm(range(len(self.jfh.JFH)), desc='Processing firings'):
             # print('firing =', firing+1)
 
             # reset strikes for each firing
             strikes = np.zeros(len(target.vectors))
+
+            # reset pressures for each firing
+            pressures = np.zeros(len(target.vectors))
+
+            # reset pressures for each firing
+            heat_flux = np.zeros(len(target.vectors))
 
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
@@ -428,9 +531,9 @@ class RPOD (MissionPlanner):
              
             # Load visiting vehicle position and orientation
             vv_pos = self.jfh.JFH[firing]['xyz']
-            vv_orientation = np.array(self.jfh.JFH[firing]['dcm']).transpose()
+            vv_orientation = np.matrix(self.jfh.JFH[firing]['dcm']).transpose()
 
-            # Calculate strikes for active thrusters. 
+            # Calculate strikes for  of active thrusters. 
             for thruster in thrusters:
 
 
@@ -443,7 +546,7 @@ class RPOD (MissionPlanner):
                 # Load data to calculate plume transformations
                 
                 # First, according to DCM and exit vector using current thruster id in TCD
-                thruster_orientation = np.array(
+                thruster_orientation = np.matrix(
                     self.vv.thruster_data[thruster_id]['dcm']
                 ).transpose()
 
@@ -466,7 +569,7 @@ class RPOD (MissionPlanner):
 
                     # Calculate centroid for face
                     # Transposed data is convienient to calculate averages
-                    face = np.array(face).transpose()
+                    face = np.matrix(face).transpose()
 
                     x = np.array(face[0]).mean()
                     y = np.array(face[1]).mean()
@@ -474,7 +577,7 @@ class RPOD (MissionPlanner):
 
                     centroid = np.array([x, y, z])
 
-                    # Calculate distance vector between face centroid and thruster exit.
+                    # Calculate distance vector between face centroid and trhuster exit.
                     distance = thruster_pos - centroid
                     # print('distance vector', distance)
                     norm_distance  = np.sqrt(distance[0]**2 + distance[1]**2 + distance[2]**2)
@@ -514,6 +617,15 @@ class RPOD (MissionPlanner):
                         cum_strikes[i] = cum_strikes[i] + 1
                         strikes[i] = 1
 
+                        T_w = 100
+                        sigma = 1
+                        thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
+                        simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
+                        pressures[i] = simple_plume.get_pressure()
+                        cum_pressures[i] += pressures[i]
+
+                        heat_flux[i] = simple_plume.get_heat_flux()
+                        cum_heat_flux[i] += heat_flux[i]
                         # print("unit plume normal", unit_plume_normal)
  
                         # print("unit distance", unit_distance)
@@ -526,7 +638,13 @@ class RPOD (MissionPlanner):
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
                 "strikes": strikes,
-                "cum_strikes": cum_strikes
+                "cum_strikes": cum_strikes,
+
+                "pressures": pressures,
+                "cum_pressures": cum_pressures,
+
+                "heat_flux": heat_flux,
+                "cum_heat_flux": cum_heat_flux
             }
 
             path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
@@ -675,12 +793,18 @@ class RPOD (MissionPlanner):
         '''
 
         # t_values = np.linspace(0,2*np.pi,100)
-        t_values = np.linspace(0, 50, 20)
+        t_values = np.linspace(0, 25, 100)
 
         # Symbolic Calculations of tangent and normal unit vectors
         r = r_of_t
         rprime = [sp.diff(r[0],t), sp.diff(r[1],t), sp.diff(r[2],t)]
-        tanvector = [rprime[0]/make_norm(rprime), rprime[1]/make_norm(rprime), rprime[2]/make_norm(rprime)]
+
+        # print('1', rprime[0]/make_norm(rprime))
+        # print('2', rprime[1]/make_norm(rprime))
+        # print('3', rprime[2]/make_norm(rprime))
+        # tanvector = [rprime[0]/make_norm(rprime), rprime[1]/make_norm(rprime), rprime[2]/make_norm(rprime)]
+        tanvector = [0, 0, -0.25]
+
         tanprime = [sp.diff(tanvector[0],t), sp.diff(tanvector[1],t), sp.diff(tanvector[2],t)]
         normalvector = [tanprime[0]/make_norm(tanprime), tanprime[1]/make_norm(tanprime), tanprime[1]/make_norm(tanprime)]
         tan_vector_functions = [sp.lambdify(t, tanvector[0]),sp.lambdify(t, tanvector[1]), sp.lambdify(t, tanvector[2])]
@@ -717,7 +841,7 @@ class RPOD (MissionPlanner):
         
         if type(z) == int:
             z = np.full(t_values.size, z)
-        if type(dz) == int or dz.size == 1:
+        if type(dz) == int:
             # print('dz is contant')
             # print(dz)
             dz = np.full(t_values.size, dz)

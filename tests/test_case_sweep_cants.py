@@ -49,8 +49,8 @@ class CoordinateSweepCheck(unittest.TestCase):
         r = 2 # m
 
         # define step sizes for each angle
-        dpitch = 5 # deg
-        dyaw = 5 # deg
+        dpitch = 10 # deg
+        dyaw = 10 # deg
 
         # create SweepAngles object
         angle_sweep = SweepConfig.SweepAngles(r, config, thruster_groups)
@@ -58,6 +58,28 @@ class CoordinateSweepCheck(unittest.TestCase):
         # call sweep_long_thruster on the configuration and print the DCM's
         config_swept_array = angle_sweep.sweep_long_thrusters(config, dpitch, dyaw)
         # angle_sweep.read_swept_angles(config_swept_array)
+
+        for i, config in enumerate(config_swept_array):
+            # Path to directory holding data assets and results for a specific RPOD study.
+            case_dir = '../case/sweep_vis_case/'
+
+            # Load JFH data.
+            jfh = JetFiringHistory.JetFiringHistory(case_dir)
+            jfh.read_jfh()
+
+            tv = TargetVehicle.TargetVehicle(case_dir)
+            tv.set_stl()
+
+            vv = VisitingVehicle.VisitingVehicle(case_dir)
+            vv.set_stl()
+            vv.set_thruster_config(config)
+            #vv.set_thruster_metrics()
+
+            rpod = RPOD.RPOD(case_dir)
+            rpod.study_init(jfh, tv, vv)
+
+            rpod.graph_jfh(i)
+            #rpod.jfh_plume_strikes()
 
 if __name__ == '__main__':
     unittest.main()
