@@ -1,1 +1,8 @@
-firing, active thrusters, ME_Aux, ME, Aux, +y, +z, -y, -z, +yaw, +pitch, +roll, -yaw, -pitch, -roll
+firing, MAE, ME, AE, +y, -y, +z, -z, +yaw, -yaw, +pitch, -pitch, +roll, -roll
+
+MAE - Main and Auxiliary Engines
+ME - Main Engines
+AE - Auxiliary Engines
+
+All translations in m/s
+All rotations in rad/s

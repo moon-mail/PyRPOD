@@ -9,13 +9,13 @@ case_dir = '../case/fuel_calc_case/'
 lm = LogisticsModule.LogisticsModule(case_dir)
 
 # Define LM mass distribution properties.
-m_f = 14000 # kg
-h = 16 # m
+m_dock = 14000 # kg
+h = 12 # m
 r = 2.0 # m
-lm.set_inertial_props(m_f, h, r)
+lm.set_inertial_props(m_dock, h, r) # going to have to back propagate to find initial separation mass and going to have to forward propagate to find mass after disposal
 
 # Load in thruster configuration data from text file
-lm.set_thruster_config()
+# lm.set_thruster_config() # TCD needs to be finished before this is called
 
 # Read thruster characteristics list from csv file
 lm.set_thruster_metrics()
@@ -28,10 +28,11 @@ mp = MissionPlanner.MissionPlanner(case_dir)
 mp.set_lm(lm)
 mp.read_flight_plan()
 
-# Calculate the fuel required for all maneuvers except for docking
-initial_separation_mass = m_f - mp.calc_total_delta_mass()
+# Calculate the fuel required for all maneuvers
+mp.calc_total_delta_mass()
 
-print(f'The estimated initial separation mass is {initial_separation_mass:.1f} kg.')
+# initial_separation_mass = m_f - mp.calc_total_delta_mass()
+# print(f'The estimated initial separation mass is {initial_separation_mass:.1f} kg.')
 
 
 if __name__ == '__main__':

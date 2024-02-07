@@ -268,6 +268,9 @@ class RPOD (MissionPlanner):
             Method doesn't currently return anything. Simply produces data as needed.
             Does the method need to return a status message? or pass similar data?
         """
+
+        # read config.ini and save here for the mesh to be initialized
+
         # Link JFH numbering of thrusters to thruster names.  
         link = {}
         i = 1
@@ -316,7 +319,7 @@ class RPOD (MissionPlanner):
                 thruster_id = link[str(thruster)][0]
 
                 # Load plume STL in initial configuration. 
-                plumeMesh = mesh.Mesh.from_file('../data/stl/mold_funnel.stl')
+                plumeMesh = mesh.Mesh.from_file(self.config['stl']['tc'])
                 plumeMesh.translate([0, 0, -54.342])            # nozzle throat (x, y, z) = (r_exit, r_exit, 0), 54.342 is distance b/w throat and exit
 
                 # Additional translations used for mold_funnel_centerline, 1000 is the length of the centerline and 39.728 is exit diameter

@@ -14,20 +14,20 @@ AUT6 006
 # first 4 packs are going to be pitch/yaw
 P1T1 001 decel1 looking in +x dir, this is the left hand side
 P1T2 001 decel2
-P1T3 001
-P1T4 001
+P1T3 001    accel1
+P1T4 001    accel2
 P2T1 001 decel1
 P2T2 001 decel2
-P2T3 001
-P2T4 001
+P2T3 001    accel1
+P2T4 001    accel2
 P3T1 001 decel1
 P3T2 001 decel2
-P3T3 001
-P3T4 001
+P3T3 001    accel1
+P3T4 001    accel2
 P4T1 001 decel1
 P4T2 001 decel2
-P4T3 001
-P4T4 001
+P4T3 001    accel1
+P4T4 001    accel2
 # last 4 packs are going to be roll/y/z
 P5T1 001 pos
 P5T2 001 neg
