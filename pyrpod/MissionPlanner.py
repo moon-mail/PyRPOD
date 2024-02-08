@@ -656,8 +656,8 @@ class MissionPlanner:
             dv : float
                 Specified change in velocity value.
 
-            group : list
-                Thruster groups in the flight plan.
+            group : string
+                Thruster group from flight plan.
 
             Returns
             -------
@@ -726,46 +726,54 @@ class MissionPlanner:
 
         dm_total = 0
 
-        # for i in reversed(range(3)):
+        for i in reversed(range(3)):
 
-        #     dm = 0
+            dm = 0
 
-        #     # Re-naming to avoid indexing ten times in the method.
-        #     firing = cur_firing[1]
-        #     print(firing)
+            # Re-naming to avoid indexing ten times in the method.
+            firing = firings_list[i]
+            # print(firing)
 
-        #     # Read in and calculate required inertial state changes.
+            # for key,value in firing.items():
+                
+            #     if key != 'firing':
+            #         dv = firing[key]
+            #         print(key)
+                
 
-        #     # Change in x velocity (axial)
-        #     dv_x = firing['MAE'] + firing['ME'] + firing['AE']
+
+             # Read in and calculate required inertial state changes.
+
+            # Change in x velocity (axial)
+            dv_x = firing['MAE'] + firing['ME'] + firing['AE']
 
         #     # Change in y velocity (lateral)
-        #     dv_y = abs(firing['vy_pos'] - firing['vy_neg'])
+            dv_y = abs(firing['vy_pos'] - firing['vy_neg'])
 
         #     # Change in z velocity (vertical)
-        #     dv_z = abs(firing['vz_pos'] - firing['vz_neg'])
+            dv_z = abs(firing['vz_pos'] - firing['vz_neg'])
 
         #     # Change in yaw angular velocity
-        #     dw_y = abs(firing['wy_pos'] - firing['wy_neg'])
+            dw_y = abs(firing['wy_pos'] - firing['wy_neg'])
 
         #     # Change in pitch angular velocity
-        #     dw_p = abs(firing['wp_pos'] - firing['wp_neg'])
+            dw_p = abs(firing['wp_pos'] - firing['wp_neg'])
 
         #     # Change in roll angular velocity
-        #     dw_r = abs(firing['wr_pos'] - firing['wr_neg'])
+            dw_r = abs(firing['wr_pos'] - firing['wr_neg'])
 
         #     # Organize values to loop over.
-        #     inertial_state = [dv_x, dv_y, dv_z, dw_r, dw_p, dw_y]
-        #     groups = ['MAE', 'ME', 'AE', 'y', 'z', 'roll', 'pitch', 'yaw']
+            inertial_state = [dv_x, dv_y, dv_z, dw_r, dw_p, dw_y]
+            groups = ['MAE', 'ME', 'AE', 'y', 'z', 'roll', 'pitch', 'yaw']
 
             # # Calculate fuel usage for each change in inertial state.
-            # for i, state in enumerate(inertial_state):
-            #     print(state, groups[i])
-            #     # if state > 0:
-            #         # dm += self.calc_delta_mass_group(dv, groups[i])
+            for i, state in enumerate(inertial_state):
+                print(state, groups[i])
+                if state > 0:
+                    dm += self.calc_delta_mass_group(dv, groups[i])
 
-            # # print(f'delta_mass_sum is {delta_mass_sum}')
-            # dm_total += dm
-            # print('\n')
+            # print(f'delta_mass_sum is {delta_mass_sum}')
+            dm_total += dm
+            print('\n')
 
         return dm_total
