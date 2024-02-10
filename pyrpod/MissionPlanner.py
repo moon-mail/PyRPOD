@@ -643,8 +643,10 @@ class MissionPlanner:
                 Change in mass.
         """
         m_current = self.vv.mass
+        print('m_current is', m_current)
         dm = m_current*(np.exp(dv/v_e)-1)
         self.vv.mass += dm
+        print('m_after back propagation is', self.vv.mass)
         return dm
 
     def calc_delta_mass_group(self, dv, group):
@@ -670,9 +672,10 @@ class MissionPlanner:
         m_dot_sum = 0
 
         # dw needs to account for moment of inertia -> pitch_optimizer?
-
+        print(group)
+        print('current group', self.vv.rcs_groups[group])
         for thruster_name in self.vv.rcs_groups[group]:
-
+            
             # if thruster_name == pitch or yaw:
                 # I = 
 
@@ -680,17 +683,29 @@ class MissionPlanner:
                 # I = 
 
             # else:
-            thruster_data = self.vv.thruster_data[thruster_name]
-            # print(self.vv.thruster_data[thruster_name])
-            thruster_id = thruster_data['type'][0]
+
+            
+            print(thruster_name)
+
+            # Read the TCD to get the type of thruster_name
+            thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
+
+            # Grab the thruster characteristics, force and mass flow rate, for that type
+            print(self.vv.thruster_metrics[thruster_type])
+            thrust = self.vv.thruster_metrics[thruster_type]['F']
+            m_dot = self.vv.thruster_metrics[thruster_type]['mdot']
+
             # print(thruster_id)
             # print(thruster_id, self.vv.thruster_metrics[thruster_id])
-            thruster_metrics = self.vv.thruster_metrics[thruster_id]
+            # print(self.vv.thruster_metrics[thruster_name])
 
-            thrust_sum += thruster_metrics['F']
-            m_dot_sum += thruster_metrics['mdot']
+            thrust_sum += thrust
+            print('thrust sum now is', thrust_sum)
+            m_dot_sum += m_dot
+            print('m_dot sum is now', m_dot_sum)
 
         v_e = thrust_sum / m_dot_sum
+        print('v_e is', v_e)
 
         dm = self.calc_delta_mass_v_e(dv, v_e)
         return dm
@@ -735,42 +750,41 @@ class MissionPlanner:
             # print(firing)
 
             # for key,value in firing.items():
-                
             #     if key != 'firing':
             #         dv = firing[key]
             #         print(key)
-                
 
-
-             # Read in and calculate required inertial state changes.
+            # Read in and calculate required inertial state changes.
 
             # Change in x velocity (axial)
-            dv_x = firing['MAE'] + firing['ME'] + firing['AE']
+            dv_MAE = firing['MAE']
+            dv_ME = firing['ME']
+            dv_AE = firing['AE']
 
-        #     # Change in y velocity (lateral)
-            dv_y = abs(firing['vy_pos'] - firing['vy_neg'])
+            # Change in y velocity (lateral)
+            dv_y = firing['vy_pos'] + firing['vy_neg']
 
-        #     # Change in z velocity (vertical)
-            dv_z = abs(firing['vz_pos'] - firing['vz_neg'])
+            # Change in z velocity (vertical)
+            dv_z = firing['vz_pos'] + firing['vz_neg']
 
-        #     # Change in yaw angular velocity
-            dw_y = abs(firing['wy_pos'] - firing['wy_neg'])
+            # Change in yaw angular velocity
+            dw_y = firing['wy_pos'] + firing['wy_neg']
 
-        #     # Change in pitch angular velocity
-            dw_p = abs(firing['wp_pos'] - firing['wp_neg'])
+            # Change in pitch angular velocity
+            dw_p = firing['wp_pos'] + firing['wp_neg']
 
-        #     # Change in roll angular velocity
-            dw_r = abs(firing['wr_pos'] - firing['wr_neg'])
+            # Change in roll angular velocity
+            dw_r = firing['wr_pos'] + firing['wr_neg']
 
-        #     # Organize values to loop over.
-            inertial_state = [dv_x, dv_y, dv_z, dw_r, dw_p, dw_y]
-            groups = ['MAE', 'ME', 'AE', 'y', 'z', 'roll', 'pitch', 'yaw']
+            # Organize values to loop over.
+            inertial_state = [dv_MAE, dv_ME, dv_AE, dv_y, dv_z, dw_r, dw_p, dw_y]
+            groups = ['mae', 'me', 'ae', 'y', 'z', 'roll', 'pitch', 'yaw']
 
-            # # Calculate fuel usage for each change in inertial state.
+            # Calculate fuel usage for each change in inertial state.
             for i, state in enumerate(inertial_state):
-                print(state, groups[i])
+                # print(state, groups[i])
                 if state > 0:
-                    dm += self.calc_delta_mass_group(dv, groups[i])
+                    dm += self.calc_delta_mass_group(state, groups[i])
 
             # print(f'delta_mass_sum is {delta_mass_sum}')
             dm_total += dm

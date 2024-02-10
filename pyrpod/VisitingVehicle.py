@@ -204,7 +204,7 @@ class VisitingVehicle(Vehicle):
         path_to_thruster_metrics = self.case_dir + '/tcd/thruster_characteristics.csv'
 
         # specify columns to be read as strings.
-        str_cols = ['#']
+        str_cols = ['type']
         dict_types = {x: 'str' for x in str_cols}
 
         # read csv into a pd dataframe
@@ -219,8 +219,8 @@ class VisitingVehicle(Vehicle):
         for thruster in thruster_metrics_list:
 
             # Seperate thruster metrics to form new key value pairs.
-            thruster_id = thruster['#']
-            thruster_metrics = thruster.pop('#')
+            thruster_id = thruster['type']
+            thruster_metrics = thruster.pop('type')
 
             # Save thruster metrics
             self.thruster_metrics[thruster_id] = thruster

@@ -134,9 +134,6 @@ class LogisticsModule(VisitingVehicle):
 
         return
 
-
-    # vv.set_thruster_data function has been implemented to do this
-    # for future applications, use vv.set_thruster_data
     def add_thruster_performance(self, thrust_val, isp):
         """ WIP. Assigns thruster performance characteristics using thruster ID specified in TCD file."""
         # TODO: re-write method to read in data from CSV file. Do docstring after.
@@ -239,6 +236,7 @@ class LogisticsModule(VisitingVehicle):
             Does the method need to return a status message? or pass similar data?
         """
         thruster_ids = self.rcs_group_str_to_list(group)
+        print('im here', thruster_ids)
 
         self.rcs_groups[group] = []
 
@@ -266,6 +264,7 @@ class LogisticsModule(VisitingVehicle):
         group_ids = []
         for item in self.config.items('thruster_groups'):
             group_ids.append(item[0])
+            print('right here', item[0])
 
         # Assign thruster groups according provided grouping data.
         for group in group_ids:

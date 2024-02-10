@@ -75,7 +75,7 @@ class JetFiringHistory:
 
             for i in range(self.nt):
                 
-                print(i)
+                # print(i)
                 # Split current into a list row at every space character.
                 curr_row = lines.pop(0).split(' ')
                 # print(curr_row)
