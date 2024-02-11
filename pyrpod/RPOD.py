@@ -536,14 +536,14 @@ class RPOD (MissionPlanner):
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
                 "strikes": strikes,
-                "cum_strikes": cum_strikes,
-
-                "pressures": pressures,
-                "cum_pressures": cum_pressures,
-
-                "heat_flux": heat_flux,
-                "cum_heat_flux": cum_heat_flux
+                "cum_strikes": cum_strikes
             }
+
+            if self.config['pm']['kinetics'] != 'None':
+                cellData["pressures"] = pressures
+                cellData["cum_pressures"] = cum_pressures
+                cellData["heat_flux"] = heat_flux
+                cellData["cum_heat_flux"] = cum_heat_flux
 
             path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
 
