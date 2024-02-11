@@ -54,6 +54,8 @@ class TargetVehicle(Vehicle):
         """
         path_to_stl = self.case_dir + 'stl/' + self.config['tv']['stl']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
+        self.mesh.rotate([0,0,1], math.radians(45)) # Tilt the box as opposed to changing the TCD
+        self.mesh.translate([-8,40,0])              # Move the LM to the center of the box
         self.path_to_stl = path_to_stl
         return
 

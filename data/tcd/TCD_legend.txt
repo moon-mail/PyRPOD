@@ -1,0 +1,5 @@
+# thrusters
+units
+CoG
+Grapple Coordinates
+name type x y z dcm

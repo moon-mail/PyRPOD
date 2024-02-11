@@ -68,7 +68,7 @@ class JetFiringHistory:
             # print(lines.pop(0).split(' '))
             self.nt = int(lines.pop(0).split(' ')[4])
 
-            # Thow away second line
+            # Throw away second line
             lines.pop(0)
 
             JFH = []

@@ -26,13 +26,13 @@ class LogisticsModule(VisitingVehicle):
             LM volume (cylinder form factor)
 
         I_x : float
-            x-axis (roll) moment of intertia (cylinder form factor)
+            x-axis (roll) moment of inertia (cylinder form factor)
 
         I_y : float
-            y-axis (pitch) moment of intertia (cylinder form factor)
+            y-axis (pitch) moment of inertia (cylinder form factor)
 
         I_z : float
-            z-axis (yaw) moment of intertia (cylinder form factor)
+            z-axis (yaw) moment of inertia (cylinder form factor)
 
         Methods
         -------
@@ -94,9 +94,9 @@ class LogisticsModule(VisitingVehicle):
         config = configparser.ConfigParser()
         config.read(self.case_dir + "config.ini")
         self.config = config
-        print(self.config)
+        # print(self.config)
 
-    def set_intertial_props(self, mass, height, radius):
+    def set_inertial_props(self, mass, height, radius):
         """
             Simple constructor used to establish LM inertial properties.
 

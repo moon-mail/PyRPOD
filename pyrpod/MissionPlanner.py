@@ -13,7 +13,7 @@ class MissionPlanner:
         trajectory character, and performance with respect to factors of safety.
 
         Data Inputs inlcude (redundant? better said in user guide?)
-        1. LogisticsModule (LM) object with properly defined intertial properties and candidate RCS configurations.
+        1. LogisticsModule (LM) object with properly defined inertial properties and candidate RCS configurations.
         2. Proposed flight plan including required chenges in velocity and supporting requirements.
 
 
@@ -87,7 +87,7 @@ class MissionPlanner:
         config = configparser.ConfigParser()
         config.read(self.case_dir + "config.ini")
         self.config = config
-        print(self.config)
+        # print(self.config)
 
     def set_lm(self, LogisticsModule):
         """
