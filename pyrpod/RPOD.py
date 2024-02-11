@@ -353,7 +353,7 @@ class RPOD (MissionPlanner):
                 )
             
             # print(self.vv.mesh)
-            print(self.case_dir + self.config['stl']['vv'])
+            print(self.case_dir + self.config['vv']['stl'])
 
             path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
             path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl" 
@@ -514,15 +514,16 @@ class RPOD (MissionPlanner):
                         cum_strikes[i] = cum_strikes[i] + 1
                         strikes[i] = 1
 
-                        T_w = 100
-                        sigma = 1
-                        thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
-                        simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
-                        pressures[i] = simple_plume.get_pressure()
-                        cum_pressures[i] += pressures[i]
+                        if self.config['pm']['kinetcs'] == "Simplified":
+                            T_w = self.config['tv']['surface_temp']
+                            sigma = self.config['tv']['sigma']
+                            thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
+                            simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
+                            pressures[i] = simple_plume.get_pressure()
+                            cum_pressures[i] += pressures[i]
 
-                        heat_flux[i] = simple_plume.get_heat_flux()
-                        cum_heat_flux[i] += heat_flux[i]
+                            heat_flux[i] = simple_plume.get_heat_flux()
+                            cum_heat_flux[i] += heat_flux[i]
                         # print("unit plume normal", unit_plume_normal)
  
                         # print("unit distance", unit_distance)
