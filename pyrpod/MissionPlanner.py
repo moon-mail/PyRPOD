@@ -1,5 +1,6 @@
 from pyrpod.LogisticsModule import LogisticsModule
 from pyrpod.VisitingVehicle import VisitingVehicle
+from pyrpod.JetFiringHistory import JetFiringHistory
 
 import numpy as np
 import pandas as pd
@@ -28,6 +29,12 @@ class MissionPlanner:
 
         Methods
         -------
+        set_lm(LogisticsModule)
+            Simple setter method to set VV/LM used in analysis.
+
+        set_jfh(JetFiringHistory)
+            Simple setter method to set JFH used in propellant usage calculations.
+
         set_current_6dof_state(v = [0, 0, 0], w = [0,0,0])
             Sets VV current inertial state. Can be done manually or read from flight plan.
 
@@ -68,7 +75,10 @@ class MissionPlanner:
             Reads in VV flight as specified using CSV format.
 
         calc_burn_time_updated(dv, v_e, m_dot)
-            Calculates burn time when given change in velocity (dv), exhaust velocity (v_e), and mass flow rate (m_dot)
+            Calculates burn time when given change in velocity (dv), exhaust velocity (v_e), and mass flow rate (m_dot).
+
+        calc_delta_v(dt, v_e, m_dot)
+            Calculates change in velocity given change in time (dt), exhaust velocity (v_e), and mass flow rate (m_dot).
 
         calc_delta_mass_v_e(dv, v_e)
             Calculates propellant usage using expressions derived from the ideal rocket equation.
@@ -77,7 +87,7 @@ class MissionPlanner:
             Calculates mean exhaust velocity from thruster group and passes into calc_delta_mass_v_e.
 
         calc_total_delta_mass()
-            Sums propellant expended in the flight plan and JFHx2.
+            Sums propellant expended in the flight plan and JFH twice (approach and departure).
             Calls calc_delta_mass_group for each change in velocity specified in the flight plan.
     """
     def __init__(self, case_dir):
@@ -86,8 +96,7 @@ class MissionPlanner:
 
             Parameters
             ----------
-            LogisticsModule : LogisticsModule
-                LM Object containing surface mesh and thruster configuration data.
+            
 
             Returns
             -------
@@ -109,8 +118,32 @@ class MissionPlanner:
             If so, how do we handle inheritance between them? Previous efforts have broken
             the code. This is due to "hacky/minimal" effort. A follow up attempt would
             require research into how Python handles inheritance including "container classes".
+
+            Parameters
+            ----------
+            LogisticsModule : LogisticsModule
+                LM Object containing surface mesh and thruster configuration data.
+
+            Returns
+            -------
+            Method doesn't currently return anything.
         """
         self.vv = LogisticsModule
+
+    def set_jfh(self, JetFiringHistory):
+        """
+            Simple setter method to set JFH used in propellant usage calculations.
+
+            Parameters
+            ----------
+            JetFiringHistory : JetFiringHistory
+                JFH Object containing specifics of each firing.
+
+            Returns
+            -------
+            Method doesn't currently return anything.
+        """
+        self.jfh = JetFiringHistory
 
     def set_current_6dof_state(self, v = [0, 0, 0], w = [0,0,0]):
         """
@@ -603,7 +636,7 @@ class MissionPlanner:
     
     def calc_burn_time_updated(self, dv, v_e, m_dot):
         """
-            Calculates burn time when given change in velocity (dv), exhaust velocity (v_e), and mass flow rate (m_dot)
+            Calculates burn time given change in velocity (dv), exhaust velocity (v_e), and mass flow rate (m_dot)
 
             Parameters
             ----------
@@ -624,6 +657,30 @@ class MissionPlanner:
         m_current=self.vv.mass
         dt=(m_current*(np.exp(dv/v_e)-1))/m_dot
         return dt
+    
+    def calc_delta_v(self, dt, v_e, m_dot):
+        """
+            Calculates change in velocity given change in time (dt), exhaust velocity (v_e), and mass flow rate (m_dot)
+
+            Parameters
+            ----------
+            dt : float
+                Specified change in time value.
+
+            v_e : float
+                Specified exhaust velocity.
+
+            m_dot : float
+                Specified mass flow rate.
+
+            Returns
+            -------
+            dv : float
+                Change in velocity in meters per second
+        """
+        m_current=self.vv.mass
+        dv = v_e*np.log(((m_dot*dt)/m_current)+1)
+        return dv
 
     def calc_delta_mass_v_e(self, dv, v_e):
         """
@@ -724,6 +781,7 @@ class MissionPlanner:
             -------
             Total change in mass.
         """
+        # Pandas dataframe for the flight plan
         dataframe = pd.read_csv(self.case_dir + 'jfh/' + self.config['jfh']['flight_plan'])
         firings_list = dataframe.to_dict(orient='records')
 
@@ -736,13 +794,11 @@ class MissionPlanner:
         # for cur_firing in reversed(range(3)):
         #     print(cur_firing)
 
-        
-
-
+        # Initialization
         dm_total = 0
 
+        # Back propagate from docking, accounting for approach, rendezvous, NRI, and flyby
         for i in reversed(range(3)):
-
             dm = 0
 
             # Re-naming to avoid indexing ten times in the method.
@@ -757,22 +813,17 @@ class MissionPlanner:
             # Read in and calculate required inertial state changes.
 
             # Change in x velocity (axial)
-            dv_MAE = firing['MAE']
-            dv_ME = firing['ME']
-            dv_AE = firing['AE']
-
+            dv_MAE = firing['mae']
+            dv_ME = firing['me']
+            dv_AE = firing['ae']
             # Change in y velocity (lateral)
             dv_y = firing['vy_pos'] + firing['vy_neg']
-
             # Change in z velocity (vertical)
             dv_z = firing['vz_pos'] + firing['vz_neg']
-
             # Change in yaw angular velocity
             dw_y = firing['wy_pos'] + firing['wy_neg']
-
             # Change in pitch angular velocity
             dw_p = firing['wp_pos'] + firing['wp_neg']
-
             # Change in roll angular velocity
             dw_r = firing['wr_pos'] + firing['wr_neg']
 
@@ -786,8 +837,46 @@ class MissionPlanner:
                 if state > 0:
                     dm += self.calc_delta_mass_group(state, groups[i])
 
-            # print(f'delta_mass_sum is {delta_mass_sum}')
             dm_total += dm
             print('\n')
+
+        
+
+        # Read the JFH and add prop usage for each firing to a sum, then multiply the sum by two (approach and departure)
+        # loop over the length of the number of firings (rows), grab 't' (which is actually dt) 
+            
+        # we could also grab 'thrusters' and then
+        # from 'thrusters' grab the type from the TCD and its corresponding mass flow rate from thruster_characteristics
+            
+        # we want to call calc_delta_mass_group, need to pass in dv and the group
+        # we want to use the exhaust velocity method, need dv
+        # how is dv found? Tsiolkovsky? maybe we need a function to calculate this?
+            
+        # JFH will only use thrusters 10 - 33
+            
+        # check thrusters listed and match to a group to determine what method should be used to calc dm
+        
+
+        for i in range(len(self.jfh.JFH)):
+            dm = 0
+
+            print('self.jfh.JFH is', self.jfh.JFH)
+            print('range(len(self.jfh.JFH)) is', range(len(self.jfh.JFH)))
+            print("self.jfh.JFH[0]['t'] is", self.jfh.JFH[0]['t'])
+            print("self.jfh.JFH[0]['thrusters'] is", self.jfh.JFH[0]['thrusters'])
+            # print("")
+
+            # Organize values to loop over.
+            inertial_state = [dv_x, dv_y, dv_z, dw_r, dw_p, dw_y]
+            groups = ['x', 'y', 'z', 'roll', 'pitch', 'yaw']
+
+            # Calculate fuel usage for each change in inertial state.
+            for i, state in enumerate(inertial_state):
+                # print(state, groups[i])
+                if state > 0:
+                    dm += self.calc_delta_mass_group(state, groups[i])
+            
+            dm_total += dm
+
 
         return dm_total

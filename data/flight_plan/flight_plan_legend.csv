@@ -1,8 +1,8 @@
-firing, MAE, ME, AE, +y, -y, +z, -z, +yaw, -yaw, +pitch, -pitch, +roll, -roll
+firing, mae, me, ae, +y, -y, +z, -z, +yaw, -yaw, +pitch, -pitch, +roll, -roll
 
-MAE - Main and Auxiliary Engines
-ME - Main Engines
-AE - Auxiliary Engines
+mae - Main and Auxiliary Engines
+me - Main Engines
+ae - Auxiliary Engines
 
 All translations in m/s
 All rotations in rad/s

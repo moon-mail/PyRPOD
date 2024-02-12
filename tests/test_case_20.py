@@ -31,7 +31,7 @@ mp.set_lm(lm)
 
 
 # Fix function to read flight plan and not save spaces in the keys
-# try the read_jfh function
+# from the read_jfh function
 # Remove empty strings from list. 
                 # while("" in curr_row):
                 #     curr_row.remove("")
@@ -39,6 +39,9 @@ mp.read_flight_plan()
 
 jfh = JetFiringHistory.JetFiringHistory(case_dir)
 jfh.read_jfh()
+
+# Set JFH used in propellant usage calculations.
+mp.set_jfh(jfh)
 
 rpod = RPOD.RPOD(case_dir)
 # rpod.graph_jfh()

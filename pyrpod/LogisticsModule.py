@@ -236,7 +236,7 @@ class LogisticsModule(VisitingVehicle):
             Does the method need to return a status message? or pass similar data?
         """
         thruster_ids = self.rcs_group_str_to_list(group)
-        print('im here', thruster_ids)
+        print('thruster_ids', thruster_ids)
 
         self.rcs_groups[group] = []
 
@@ -264,11 +264,13 @@ class LogisticsModule(VisitingVehicle):
         group_ids = []
         for item in self.config.items('thruster_groups'):
             group_ids.append(item[0])
-            print('right here', item[0])
+            print('group_ids', item[0])
+        print('\n')
 
         # Assign thruster groups according provided grouping data.
         for group in group_ids:
             self.assign_thrusters(group)
+        print('\n')
 
     def plot_active_thrusters(self, active_thrusters, working_group, normals):
         """
