@@ -15,7 +15,7 @@ r = 2.0 # m
 lm.set_inertial_props(m_dock, h, r) # going to have to back propagate to find initial separation mass and going to have to forward propagate to find mass after disposal
 
 # Load in thruster configuration data from text file
-lm.set_thruster_config() # TCD needs to be finished before this is called
+lm.set_thruster_config() # TCD needs to be finished
 
 # Read thruster characteristics list from csv file
 lm.set_thruster_metrics()
@@ -48,7 +48,8 @@ rpod = RPOD.RPOD(case_dir)
 # rpod.jfh_plume_strikes()
 
 # Calculate the fuel required for all maneuvers
-mp.calc_total_delta_mass()
+dm_total = mp.calc_total_delta_mass(lm)
+print("dm_total is ", dm_total)
 
 # initial_separation_mass = m_f - mp.calc_total_delta_mass()
 # print(f'The estimated initial separation mass is {initial_separation_mass:.1f} kg.')
