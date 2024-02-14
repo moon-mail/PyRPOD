@@ -1,7 +1,10 @@
 from pyrpod.LogisticsModule import LogisticsModule
+from pyrpod.VisitingVehicle import VisitingVehicle
+from pyrpod.JetFiringHistory import JetFiringHistory
 
 import numpy as np
 import pandas as pd
+import ast
 import matplotlib.pyplot as plt
 import configparser
 
@@ -26,6 +29,12 @@ class MissionPlanner:
 
         Methods
         -------
+        set_lm(LogisticsModule)
+            Simple setter method to set VV/LM used in analysis.
+
+        set_jfh(JetFiringHistory)
+            Simple setter method to set JFH used in propellant usage calculations.
+
         set_current_6dof_state(v = [0, 0, 0], w = [0,0,0])
             Sets VV current inertial state. Can be done manually or read from flight plan.
 
@@ -44,13 +53,10 @@ class MissionPlanner:
         plot_burn_time_flight_plan()
             Plots burn time for all dv maneuvers in the specified flight plan.
 
-        calc_delta_m(dv, isp)
-            Calculates propellant usage using expressions derived from the ideal rocket equation.
-
-        plot_delta_m(dv)
+        plot_dm(dv)
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
-        plot_delta_m_contour()
+        plot_dm_contour()
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
         calc_trans_performance(motion, dv)
@@ -59,14 +65,35 @@ class MissionPlanner:
         calc_6dof_performance()
             Calculates performance for translation and rotational maneuvers.
 
-        read_flight_plan(path_to_file)
-            Reads in VV flight as specified using CSV format.
-
         calc_flight_performance()
             Calculates 6DOF performance for all firings specified in the flight plan.
 
         plot_thrust_envelope()
             Plots operational envelope relating burn time to thrust required for all firings in the flight plan.
+
+        read_flight_plan(path_to_file)
+            Reads in VV flight as specified using CSV format.
+
+        calc_burn_time_updated(dv, v_e, m_dot)
+            Calculates burn time when given change in velocity (dv), exhaust velocity (v_e), and mass flow rate (m_dot).
+
+        calc_delta_v(dt, v_e, m_dot)
+            Calculates change in velocity given change in time (dt), exhaust velocity (v_e), and mass flow rate (m_dot).
+
+        calc_delta_mass_v_e(dv, v_e)
+            Calculates propellant usage using expressions derived from the ideal rocket equation.
+
+        calc_thrust_sum(group)
+            Calculates thrust sum for a thruster group.
+
+        calc_m_dot_sum(group)
+            Calculates mass flow rate sum for a thruster group.
+
+        calc_v_e(group)
+            Calculates mean exhaust velocity for a thruster group.
+
+        calc_total_delta_mass(LogisticsModule)
+            Sums propellant expenditure.
     """
     def __init__(self, case_dir):
         """
@@ -74,8 +101,7 @@ class MissionPlanner:
 
             Parameters
             ----------
-            LogisticsModule : LogisticsModule
-                LM Object containing surface mesh and thruster configuration data.
+            
 
             Returns
             -------
@@ -97,8 +123,32 @@ class MissionPlanner:
             If so, how do we handle inheritance between them? Previous efforts have broken
             the code. This is due to "hacky/minimal" effort. A follow up attempt would
             require research into how Python handles inheritance including "container classes".
+
+            Parameters
+            ----------
+            LogisticsModule : LogisticsModule
+                LM Object containing surface mesh and thruster configuration data.
+
+            Returns
+            -------
+            Method doesn't currently return anything.
         """
         self.vv = LogisticsModule
+
+    def set_jfh(self, JetFiringHistory):
+        """
+            Simple setter method to set JFH used in propellant usage calculations.
+
+            Parameters
+            ----------
+            JetFiringHistory : JetFiringHistory
+                JFH Object containing specifics of each firing.
+
+            Returns
+            -------
+            Method doesn't currently return anything.
+        """
+        self.jfh = JetFiringHistory
 
     def set_current_6dof_state(self, v = [0, 0, 0], w = [0,0,0]):
         """
@@ -274,7 +324,7 @@ class MissionPlanner:
         for v in dv:
             # print(type(v[1]))
             dv = v[1][1]
-            print()
+            print(dv)
             burn_time = []
             for thrust in thrust_range:
                 burn_time.append(abs(self.calc_burn_time(dv, isp, thrust)))
@@ -291,29 +341,7 @@ class MissionPlanner:
 
         return
 
-    def calc_delta_m(self, dv, isp):
-        """
-            Calculates propellant usage using expressions derived from the ideal rocket equation.
-
-            Parameters
-            ----------
-            dv : float
-                Speficied change in velocity value.
-
-            isp : float
-                Speficied specific impulse value.
-
-            Returns
-            -------
-            dm : float
-                Change in mass calculated using the ideal rocket equation.
-        """
-        g_0 = 9.81
-        a = (dv/(isp*g_0))
-        m_f = self.vv.mass
-        return m_f * (1 - np.exp(a))
-
-    def plot_delta_m(self, dv):
+    def plot_delta_mass(self, dv):
         """
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
@@ -328,13 +356,13 @@ class MissionPlanner:
             Does the method need to return a status message? or pass similar data?
         """
         isp_range = np.linspace(100, 600, 5000)
-        delta_m = []
+        dm = []
 
         for isp in isp_range:
-            delta_m.append(abs(self.calc_delta_m(dv, isp)))
-        delta_m = np.array(delta_m)
+            dm.append(abs(self.calc_dm(dv, isp)))
+        dm = np.array(dm)
         # for i, isp, in enumerate(isp_range):
-        #     print(isp_range[i], delta_m[i])
+        #     print(isp_range[i], dm[i])
 
         thrust_tech = {
             'electro thermal': [50, 185],
@@ -347,13 +375,13 @@ class MissionPlanner:
         for tech in thrust_tech:
             # print(tech)
 
-            y_vals = np.array([delta_m.max(), delta_m.mean(), delta_m.min()])
+            y_vals = np.array([dm.max(), dm.mean(), dm.min()])
             isp_val = thrust_tech[tech][1]
             isp_line = np.array([isp_val, isp_val, isp_val])
 
             ax.plot(isp_line, y_vals, label=tech)
 
-        ax.plot(isp_range, delta_m)
+        ax.plot(isp_range, dm)
         ax.set(xlabel='ISP (s)', ylabel='mass (kg)',
             title='Max ISP vs Propellant Mass Required (' + str(abs(dv)) + ' m/s)')
         ax.grid()
@@ -362,7 +390,7 @@ class MissionPlanner:
         # plt.yscale("log")
         fig.savefig("test.png")
 
-    def plot_delta_m_contour(self):
+    def plot_delta_mass_contour(self):
         """
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
@@ -371,8 +399,8 @@ class MissionPlanner:
         #creat plotting object.
         fig, ax = plt.subplots()
 
-        delta_m_min = 10e9
-        delta_m_max = 0
+        dm_min = 10e9
+        dm_max = 0
 
         # Step through all planned firings in the flight plan
         for firing in self.flight_plan.iterrows():
@@ -381,21 +409,21 @@ class MissionPlanner:
 
             # Calculate change in mass for a given range of ISP values.
             isp_range = np.linspace(50, 400, 5000)
-            delta_m = []
+            dm = []
 
             for isp in isp_range:
-                delta_m.append(abs(self.calc_delta_m(dv, isp)))
-            delta_m = np.array(delta_m)
+                dm.append(abs(self.calc_dm(dv, isp)))
+            dm = np.array(dm)
 
             # Save absolute min and max data for plotting.
-            if delta_m.max() > delta_m_max:
-                delta_m_max = delta_m.max()
+            if dm.max() > dm_max:
+                dm_max = dm.max()
 
-            if delta_m.min() < delta_m_min:
-                delta_m_min = delta_m.min()
+            if dm.min() < dm_min:
+                dm_min = dm.min()
 
             # Plot data.
-            ax.plot(isp_range, delta_m, label='( Δv =' + str(abs(dv)) + ' m/s)')
+            ax.plot(isp_range, dm, label='( Δv =' + str(abs(dv)) + ' m/s)')
 
         # thrust_tech = {
         #     # 'electro thermal': [50, 185],
@@ -407,7 +435,7 @@ class MissionPlanner:
         # for tech in thrust_tech:
         #     print(tech)
 
-        #     y_vals = np.array([delta_m_max, 0.5*(delta_m_max + delta_m_min), delta_m_min])
+        #     y_vals = np.array([dm_max, 0.5*(dm_max + dm_min), dm_min])
         #     isp_val = thrust_tech[tech][1]
         #     isp_line = np.array([isp_val, isp_val, isp_val])
 
@@ -516,21 +544,6 @@ class MissionPlanner:
         #         self.calc_rot_performance(motion)
         return
 
-    def read_flight_plan(self):
-        """
-            Reads in VV flight as specified using CSV format.
-
-
-            NOTE: Methods does not take any parameters. It assumes that self.case_dir
-            and self.config are instatiated correctly. Potential defensive programming statements?
-        """
-        # Reads and parses through flight plan CSV file.
-        path_to_file = self.case_dir + 'jfh/' + self.config['jfh']['flight_plan']
-        self.flight_plan = pd.read_csv(path_to_file)
-        # print(self.flight_plan)
-
-        return
-
     def calc_flight_performance(self):
         """
             Calculates 6DOF performance for all firings specified in the flight plan.
@@ -610,3 +623,505 @@ class MissionPlanner:
             fig.savefig("test" + str(firing[0]) + ".png")
             plt.show()
         return
+    
+    def read_flight_plan(self):
+        """
+            Reads in VV flight as specified using CSV format.
+
+
+            NOTE: Methods does not take any parameters. It assumes that self.case_dir
+            and self.config are instantiated correctly. Potential defensive programming statements?
+        """
+        # Reads and parses through flight plan CSV file.
+        path_to_file = self.case_dir + 'jfh/' + self.config['jfh']['flight_plan']
+        self.flight_plan = pd.read_csv(path_to_file, skipinitialspace=True)
+        # print(self.flight_plan)
+
+        return
+    
+    def calc_burn_time_updated(self, dv, v_e, m_dot):
+        """
+            Calculates burn time given change in velocity (dv), exhaust velocity (v_e), and mass flow rate (m_dot)
+
+            Parameters
+            ----------
+            dv : float
+                Specified change in velocity value.
+
+            v_e : float
+                Specified exhaust velocity.
+
+            m_dot : float
+                Specified mass flow rate.
+
+            Returns
+            -------
+            dt : float
+                Burn time in seconds
+        """
+        m_current=self.vv.mass
+        dt=(m_current*(np.exp(dv/v_e)-1))/m_dot
+        return dt
+    
+    def calc_delta_v(self, dt, v_e, m_dot, m_current):
+        """
+            Calculates change in velocity given change in time (dt), exhaust velocity (v_e), and mass flow rate (m_dot)
+
+            Parameters
+            ----------
+            dt : float
+                Specified change in time value.
+
+            v_e : float
+                Specified exhaust velocity.
+
+            m_dot : float
+                Specified mass flow rate.
+
+            m_current : float
+                Specified mass.
+
+            Returns
+            -------
+            dv : float
+                Change in velocity in meters per second
+        """
+        # m_current=self.vv.mass
+        # print("m_current is ", m_current)
+        dv = v_e*np.log(((m_dot*dt)/m_current)+1)
+        return dv
+    
+    def calc_delta_mass_rotation(self, dv, group, forward_propagation):
+        """
+            Calculates propellant usage using expressions derived from the ideal rocket equation.
+
+            # TODO: add a 180 degree roll to the flight plan pre approach to match the paper
+
+            Parameters
+            ----------
+            dv : float
+                Specified change in velocity value.
+
+            group : string
+                Thruster group from flight plan.
+
+            forward_propagation : boolean
+                Specified direction of propagation.
+
+            Returns
+            -------
+            dm : float
+                Change in mass.
+        """
+
+        if forward_propagation == False:
+            print('ERROR: functionality not added for a rotation in back propagation')
+
+        if forward_propagation == True:
+            if group == 'pitch' or group == 'yaw':
+                if forward_propagation == True:
+                    m_current = self.vv.mass
+                    t_firing = (self.vv.I_y*dv)/(self.vv.radius*self.calc_thrust_sum(group)) # I_y is pitch/yaw
+                    print('t_firing is ', t_firing)
+                    print('m_current is', m_current)
+                    dm = self.calc_m_dot_sum(group)*t_firing
+                    self.vv.mass -= dm
+                    print('m_after forward propagation is', self.vv.mass)
+
+            if group == 'roll':
+                print('ERROR: functionality not added for a roll rotation')
+
+        return dm
+
+    def calc_delta_mass_v_e(self, dv, v_e, forward_propagation):
+        """
+            Calculates propellant usage using expressions derived from the ideal rocket equation.
+
+            Parameters
+            ----------
+            dv : float
+                Specified change in velocity value.
+
+            v_e : float
+                Specified exhaust velocity value.
+
+            forward_propagation : boolean
+                Specified direction of propagation.
+
+            Returns
+            -------
+            dm : float
+                Change in mass.
+        """
+        # dw needs to account for moment of inertia -> pitch_optimizer?
+        # if thruster_name == pitch or yaw:
+                # I = 
+
+            # if roll:
+                # I = 
+
+            # else:
+
+        if forward_propagation == False:
+            m_current = self.vv.mass
+            print('m_current is', m_current)
+            dm = m_current*(np.exp(dv/v_e)-1)
+            self.vv.mass += dm
+            print('m_after back propagation is', self.vv.mass)
+
+        if forward_propagation == True:
+            m_current = self.vv.mass
+            print('m_current is', m_current)
+            dm = m_current*(np.exp(dv/v_e)-1)
+            self.vv.mass -= dm
+            print('m_after forward propagation is', self.vv.mass)
+        
+        return dm
+
+    def calc_thrust_sum(self, group):
+            """
+            Calculates thrust sum for a thruster group.
+
+            Parameters
+            ----------
+            group : string
+                Thruster group from flight plan.
+
+            Returns
+            -------
+            Thrust sum.
+        """
+            print('group is ', group)
+
+            # Grabbing the thruster type of the condensed group using rcs_groups.ini
+            if group == 'x':
+                group = 'pos_x'
+            elif group == 'y':
+                group = 'pos_y'
+            elif group =='z':
+                group = 'pos_z'
+            elif group == 'roll':
+                group = 'pos_roll'
+            elif group == 'pitch':
+                group = 'pos_pitch'
+            elif group == 'yaw':
+                group = 'pos_yaw'
+            
+            print('current group', self.vv.rcs_groups[group])
+
+            thrust_sum = 0
+            for thruster_name in self.vv.rcs_groups[group]:
+                thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
+                thrust = self.vv.thruster_metrics[thruster_type]['F']
+                thrust_sum += thrust
+            return thrust_sum
+
+    def calc_m_dot_sum(self, group):
+        """
+            Calculates mass flow rate sum for a thruster group.
+
+            Parameters
+            ----------
+            group : string
+                Thruster group from flight plan.
+
+            Returns
+            -------
+            Mass flow rate sum.
+        """
+        # Grabbing the thruster type of the condensed group using rcs_groups.ini
+        if group == 'x':
+            group = 'pos_x'
+        elif group == 'y':
+            group = 'pos_y'
+        elif group =='z':
+            group = 'pos_z'
+        elif group == 'roll':
+            group = 'pos_roll'
+        elif group == 'pitch':
+            group = 'pos_pitch'
+        elif group == 'yaw':
+            group = 'pos_yaw'
+
+        m_dot_sum = 0
+        for thruster_name in self.vv.rcs_groups[group]:
+            thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
+            m_dot = self.vv.thruster_metrics[thruster_type]['mdot']
+            m_dot_sum += m_dot
+        return m_dot_sum
+
+    def calc_v_e(self, group):
+        """
+            Calculates mean exhaust velocity for a thruster group.
+
+            Parameters
+            ----------
+            group : string
+                Thruster group from flight plan.
+
+            Returns
+            -------
+            Exhaust velocity.
+        """
+        # print(group, dv)
+        # print(self.vv.rcs_groups[group])
+
+        thrust_sum = 0
+        m_dot_sum = 0
+
+        # Grabbing the thruster type of the condensed group using rcs_groups.ini
+        if group == 'x':
+            group = 'pos_x'
+        elif group == 'y':
+            group = 'pos_y'
+        elif group =='z':
+            group = 'pos_z'
+        elif group == 'roll':
+            group = 'pos_roll'
+        elif group == 'pitch':
+            group = 'pos_pitch'
+        elif group == 'yaw':
+            group = 'pos_yaw'
+
+    
+        # old
+
+        # for thruster_name in self.vv.rcs_groups[group]:
+        #     print(thruster_name)
+
+        #     # Read the TCD to get the type of thruster_name
+        #     thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
+
+        #     # Grab the thruster characteristics, force and mass flow rate, for that type
+        #     print(self.vv.thruster_metrics[thruster_type])
+        #     thrust = self.vv.thruster_metrics[thruster_type]['F']
+        #     m_dot = self.vv.thruster_metrics[thruster_type]['mdot']
+
+        #     thrust_sum += thrust
+        #     print('thrust sum now is', thrust_sum)
+        #     m_dot_sum += m_dot
+        #     print('m_dot sum is now', m_dot_sum)
+
+        thrust_sum = self.calc_thrust_sum(group)
+        m_dot_sum = self.calc_m_dot_sum(group)
+
+        v_e = thrust_sum / m_dot_sum
+        print('v_e is', v_e)
+
+        return v_e
+
+    def calc_total_delta_mass(self, LogisticsModule):
+        """
+            Sums propellant expenditure.
+
+            Parameters
+            ----------
+            LogisticsModule : LogisticsModule
+                LM object containing specifics of thruster groups.
+            
+            Returns
+            -------
+            Total change in mass.
+        """
+        # Initialization
+        dm_total = 0
+        initial_masses = [self.vv.mass, self.vv.mass - 5400]
+        # print("len(initial_masses) is ", len(initial_masses))
+
+        # Loop to find LM mass before approach and after departure
+        for m in range(len(initial_masses)):
+            if m == 0:
+                print('Starting JFH backward propagation\n')
+            if m == 1:
+                print('Starting JFH forward propagation\n')
+            
+            # print("initial_masses[m] is ", initial_masses[m])
+            self.vv.mass = initial_masses[m]
+
+            # Read the JFH and add prop usage for each firing to a sum
+            for f in range(len(self.jfh.JFH)):
+                print('JFH firing number is ', f)
+                dm = 0
+                if m == 0:
+                    forward_propagation = False
+                if m == 1:
+                    forward_propagation = True
+                
+                # print('self.jfh.JFH is', self.jfh.JFH)
+                # print('range(len(self.jfh.JFH)) is', range(len(self.jfh.JFH)))
+                # print("self.jfh.JFH[0]['t'] is", self.jfh.JFH[0]['t'])
+                # print("self.jfh.JFH[0]['thrusters'] is", self.jfh.JFH[0]['thrusters'])
+                # print("len(self.jfh.JFH[0]['thrusters']) is ", len(self.jfh.JFH[0]['thrusters']))
+                # print("self.jfh.JFH[0]['thrusters'][0] is ", self.jfh.JFH[0]['thrusters'][0])
+
+                # Create the check list to match against groups in rcs_groups.ini
+                check_list = []
+                for i in range(len(self.jfh.JFH[0]['thrusters'])):
+                    if self.jfh.JFH[0]['thrusters'][i] == 10:
+                        check_list.append('P1T1')
+                    elif self.jfh.JFH[0]['thrusters'][i] == 11:
+                        check_list.append('P1T2')
+                    elif self.jfh.JFH[0]['thrusters'][i] == 14:
+                        check_list.append('P2T1')
+                    elif self.jfh.JFH[0]['thrusters'][i] == 15:
+                        check_list.append('P2T2')
+                    elif self.jfh.JFH[0]['thrusters'][i] == 18:
+                        check_list.append('P3T1')
+                    elif self.jfh.JFH[0]['thrusters'][i] == 19:
+                        check_list.append('P3T2')
+                    elif self.jfh.JFH[0]['thrusters'][i] == 22:
+                        check_list.append('P4T1')
+                    elif self.jfh.JFH[0]['thrusters'][i] == 23:
+                        check_list.append('P4T2')
+                # print('check_list is', check_list)
+
+                # print('len(LogisticsModule.rcs_groups) is', len(LogisticsModule.rcs_groups))
+                # print("LogisticsModule.rcs_groups['neg_x'] is", LogisticsModule.rcs_groups['neg_x'])
+
+                # Check if the active thrusters in the JFH for the current firing match a group in rcs_groups.ini
+                if LogisticsModule.rcs_groups['neg_x'] != check_list:
+                    print('ERROR: Active thrusters listed in JFH do not match a group in rcs_groups.ini')
+                    break
+
+                thruster_type = self.vv.thruster_data['P1T1']['type'][0]
+                m_dot = self.vv.thruster_metrics[thruster_type]['mdot'] * len(self.jfh.JFH[0]['thrusters'])
+                dt = int(self.jfh.JFH[0]['t'])
+                v_e = self.calc_v_e('neg_x')
+
+                # Change in x velocity (axial)
+                dv_x = self.calc_delta_v(dt, v_e, m_dot, initial_masses[m])
+                print("dv_x is ", dv_x)
+
+                # Calculate fuel usage
+                if dv_x > 0:
+                    dm = self.calc_delta_mass_v_e(dv_x, v_e, forward_propagation)
+                    print("dm is ", dm)
+                    print('\n')
+                    if m == 0:
+                        initial_masses[m] += dm
+                        # print("initial_masses[m] after adding dm is ", initial_masses[m])
+                        # print("len(self.jfh.JFH) - 1 is ", len(self.jfh.JFH) - 1)
+                        # print("f is ", f)
+                        if f == len(self.jfh.JFH) - 1:
+                            m_approach = initial_masses[m]
+                            print("m_approach is ", m_approach)
+                            print('\n\n')
+                    if m == 1:
+                        initial_masses[m] -= dm
+                        # print("initial_masses[m] after subtracting dm is ", initial_masses[m])
+                        if f == len(self.jfh.JFH) - 1:
+                            m_departure = initial_masses[m]
+                            print("m_departure is ", m_departure)
+                            print('\n')
+                
+                # print("m currently is ", m)
+
+                dm_total += dm
+        
+
+
+        
+        # Pandas dataframe for the flight plan
+        dataframe = pd.read_csv(self.case_dir + 'jfh/' + self.config['jfh']['flight_plan'])
+        firings_list = dataframe.to_dict(orient='records')
+
+        # print(firings_list[0]['firing'])
+        # print(firings_list[0])
+        # print(len(firings_list))
+        # print(range(len(firings_list)))
+        # for cur_firing in range(len(firings_list)):
+        #     print(cur_firing)
+        # for cur_firing in reversed(range(3)):
+        #     print(cur_firing)
+
+        
+        # Back propagate from pre approach, accounting for rendezvous, NRI, and flyby
+        self.vv.mass = m_approach
+        print("\n\n\nStarting flight plan back propagation\n")
+        for i in reversed(range(3)):
+            dm = 0
+            forward_propagation = False
+
+            # Re-naming to avoid indexing ten times in the method.
+            firing = firings_list[i]
+            # print(firing)
+
+            # for key,value in firing.items():
+            #     if key != 'firing':
+            #         dv = firing[key]
+            #         print(key)
+
+            # Read in and calculate required inertial state changes.
+            # Change in x velocity (axial)
+            dv_MAE = firing['mae']
+            dv_ME = firing['me']
+            dv_AE = firing['ae']
+            # Change in y velocity (lateral)
+            dv_y = firing['vy_pos'] + firing['vy_neg']
+            # Change in z velocity (vertical)
+            dv_z = firing['vz_pos'] + firing['vz_neg']
+            # Change in yaw angular velocity
+            dw_y = firing['wy_pos'] + firing['wy_neg']
+            # Change in pitch angular velocity
+            dw_p = firing['wp_pos'] + firing['wp_neg']
+            # Change in roll angular velocity
+            dw_r = firing['wr_pos'] + firing['wr_neg']
+
+            # Organize values to loop over.
+            inertial_state = [dv_MAE, dv_ME, dv_AE, dv_y, dv_z, dw_r, dw_p, dw_y]
+            groups = ['mae', 'me', 'ae', 'y', 'z', 'roll', 'pitch', 'yaw']
+
+            # Calculate fuel usage for each change in inertial state.
+            for i, state in enumerate(inertial_state):
+                # print(state, groups[i])
+                if state > 0:
+                    v_e = self.calc_v_e(groups[i])
+                    dm = self.calc_delta_mass_v_e(state, v_e, forward_propagation)
+
+            dm_total += dm
+            print('\n')
+
+
+        # Forward propagate from post departure, accounting for a 180 degree pitch maneuver and disposal
+        self.vv.mass = m_departure
+        print("\nStarting flight plan forward propagation\n")
+        for f in range(3, 5):
+            dm = 0
+            forward_propagation = True
+
+            # Re-naming to avoid indexing ten times in the method.
+            firing = firings_list[f]
+
+            # Read in and calculate required inertial state changes.
+            # Change in x velocity (axial)
+            dv_MAE = firing['mae']
+            dv_ME = firing['me']
+            dv_AE = firing['ae']
+            # Change in y velocity (lateral)
+            dv_y = firing['vy_pos'] + firing['vy_neg']
+            # Change in z velocity (vertical)
+            dv_z = firing['vz_pos'] + firing['vz_neg']
+            # Change in yaw angular velocity
+            dw_y = firing['wy_pos'] + firing['wy_neg']
+            # Change in pitch angular velocity
+            dw_p = firing['wp_pos'] + firing['wp_neg']
+            # Change in roll angular velocity
+            dw_r = firing['wr_pos'] + firing['wr_neg']
+
+            # Organize values to loop over.
+            inertial_state = [dv_MAE, dv_ME, dv_AE, dv_y, dv_z, dw_r, dw_p, dw_y]
+            groups = ['mae', 'me', 'ae', 'y', 'z', 'roll', 'pitch', 'yaw']
+
+            # Calculate fuel usage for each change in inertial state.
+            for i, state in enumerate(inertial_state):
+                if state > 0:
+                    if i < 5:
+                        v_e = self.calc_v_e(groups[i])
+                        dm = self.calc_delta_mass_v_e(state, v_e, forward_propagation)
+                    if i > 4:
+                        dm = self.calc_delta_mass_rotation(state, groups[i], forward_propagation)
+            
+            dm_total += dm
+            print('\n')
+
+        return dm_total

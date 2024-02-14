@@ -1,1 +1,8 @@
-firing, thruster group, +x, +y, +z, -x, -y, -z, +pitch, +roll, +yaw, -pitch, -roll, -yaw, idk, idk
+firing, mae, me, ae, +y, -y, +z, -z, +yaw, -yaw, +pitch, -pitch, +roll, -roll
+
+mae - Main and Auxiliary Engines
+me - Main Engines
+ae - Auxiliary Engines
+
+All translations in m/s
+All rotations in rad/s

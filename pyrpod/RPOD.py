@@ -80,13 +80,10 @@ class RPOD (MissionPlanner):
         plot_burn_time_flight_plan()
             Plots burn time for all dv maneuvers in the specified flight plan.
 
-        calc_delta_m(dv, isp)
-            Calculates propellant usage using expressions derived from the ideal rocket equation.
-
-        plot_delta_m(dv)
+        plot_dm(dv)
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
-        plot_delta_m_contour()
+        plot_dm_contour()
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
         calc_trans_performance(motion, dv)
@@ -272,6 +269,9 @@ class RPOD (MissionPlanner):
             Method doesn't currently return anything. Simply produces data as needed.
             Does the method need to return a status message? or pass similar data?
         """
+
+        # read config.ini and save here for the mesh to be initialized
+
         # Link JFH numbering of thrusters to thruster names.  
         link = {}
         i = 1
@@ -302,7 +302,7 @@ class RPOD (MissionPlanner):
             # print("thrusters", thrusters)
              
             # Load, transform, and, graph STLs of visiting vehicle.  
-            VVmesh = mesh.Mesh.from_file('../data/stl/cylinder.stl')
+            VVmesh = mesh.Mesh.from_file(self.config['stl']['vv'])
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm'])
             # print(vv_orientation.transpose())
             VVmesh.rotate_using_matrix(vv_orientation.transpose())
@@ -320,7 +320,7 @@ class RPOD (MissionPlanner):
                 thruster_id = link[str(thruster)][0]
 
                 # Load plume STL in initial configuration. 
-                plumeMesh = mesh.Mesh.from_file('../data/stl/mold_funnel.stl')
+                plumeMesh = mesh.Mesh.from_file(self.config['stl']['tc'])
                 plumeMesh.translate([0, 0, -54.342])            # nozzle throat (x, y, z) = (r_exit, r_exit, 0), 54.342 is distance b/w throat and exit
 
                 # Additional translations used for mold_funnel_centerline, 1000 is the length of the centerline and 39.728 is exit diameter

@@ -15,7 +15,7 @@ from pyrpod import Vehicle
 from pyrpod import MissionPlanner
 
 class STLtoVTKChecks(unittest.TestCase):
-    def test_delta_m_plots(self):
+    def test_dm_plots(self):
 
         # Path to directory holding data assets and results for a specific RPOD study.
         case_dir = '../case/stl_to_vtk/'

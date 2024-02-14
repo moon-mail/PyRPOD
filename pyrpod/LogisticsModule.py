@@ -139,6 +139,7 @@ class LogisticsModule(VisitingVehicle):
         # TODO: re-write method to read in data from CSV file. Do docstring after.
         # 1. mass, 2. chamber temp, 3. chamber pressure 4. velocity 5. impulse bit
         # 6. thruster id, 7. gas composition,
+
         self.thrust = thrust_val
         self.isp = isp
         return
@@ -235,6 +236,7 @@ class LogisticsModule(VisitingVehicle):
             Does the method need to return a status message? or pass similar data?
         """
         thruster_ids = self.rcs_group_str_to_list(group)
+        # print('thruster_ids', thruster_ids)
 
         self.rcs_groups[group] = []
 
@@ -247,7 +249,7 @@ class LogisticsModule(VisitingVehicle):
 
         # Read in grouping configuration file.
         config = configparser.ConfigParser()
-        config.read("example.ini")
+        config.read(self.case_dir + "/tcd/rcs_groups.ini") # add to config file?
         self.config = config
 
         #Instantiate dictionary to hold grouping info
@@ -255,17 +257,20 @@ class LogisticsModule(VisitingVehicle):
 
         # printer thruster data (for reference)
         # for thruster in self.thruster_data:
-        #     # print(self.thruster_data[thruster])
+        #     print(self.thruster_data[thruster])
 
 
         # Collect labels for rcs groups (x/y/z and roll/pitch/yaw rates)
         group_ids = []
         for item in self.config.items('thruster_groups'):
             group_ids.append(item[0])
+            # print('group_ids', item[0])
+        # print('\n')
 
         # Assign thruster groups according provided grouping data.
         for group in group_ids:
             self.assign_thrusters(group)
+        # print('\n')
 
     def plot_active_thrusters(self, active_thrusters, working_group, normals):
         """
