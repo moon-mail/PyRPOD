@@ -531,7 +531,7 @@ class RPOD (MissionPlanner):
                         cum_strikes[i] = cum_strikes[i] + 1
                         strikes[i] = 1
 
-                        if self.config['pm']['kinetcs'] == "Simplified":
+                        if self.config['pm']['kinetics'] == "Simplified":
                             T_w = self.config['tv']['surface_temp']
                             sigma = self.config['tv']['sigma']
                             thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
