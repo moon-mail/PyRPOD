@@ -499,12 +499,12 @@ class SimplifiedGasKinetics:
             None.
         '''
         
-        self.R_0 = thruster_characteristics['d'] / 2
-        self.U_0 = thruster_characteristics['ve']
-        self.R = thruster_characteristics['R']
-        self.gamma = thruster_characteristics['gamma']
-        self.T_0 = thruster_characteristics['Te']
-        self.n_0 = thruster_characteristics['n']
+        self.R_0 = float(thruster_characteristics['d'] / 2)
+        self.U_0 = float(thruster_characteristics['ve'])
+        self.R = float(thruster_characteristics['R'])
+        self.gamma = float(thruster_characteristics['gamma'])
+        self.T_0 = float(thruster_characteristics['Te'])
+        self.n_0 = float(thruster_characteristics['n'])
         self.molar_mass = GAS_CONSTANT / self.R # kg/mol
 
         self.beta_0 = self.get_beta(self.T_0)
