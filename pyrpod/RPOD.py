@@ -15,6 +15,7 @@ from pyrpod.RarefiedPlumeGasKinetics import SimplifiedGasKinetics
 
 from pyrpod.file_print import print_JFH
 from tqdm import tqdm
+from queue import Queue
 
 # Helper functions
 def rotation_matrix_from_vectors(vec1, vec2):
@@ -374,6 +375,12 @@ class RPOD (MissionPlanner):
             VVmesh.save(path_to_stl)
             # print()
 
+    def update_window_queue(window_queue, cur_window, firing_time, window_size):
+        window_queue.put(firing_time)
+        cur_window += firing_time
+        while cur_window > window_size:
+            old_firing_time = window_queue.get()
+            cur_window -= old_firing_time
 
     def jfh_plume_strikes(self):
         """
@@ -414,11 +421,29 @@ class RPOD (MissionPlanner):
         # Initiate array containing cummulative strikes. 
         cum_strikes = np.zeros(len(target.vectors))
 
-        # Initiate array containing cummulative strikes. 
-        cum_pressures = np.zeros(len(target.vectors))
+        # 
+        if self.config['pm']['kinetics'] != 'None':
 
-        # Initiate array containing cummulative heatflux. 
-        cum_heat_flux = np.zeros(len(target.vectors))
+            # Initiate array containing max pressures induced on each element. 
+            max_pressures = np.zeros(len(target.vectors))
+
+            # Initiate array containing cummulative heatflux. 
+            cum_heat_flux = np.zeros(len(target.vectors))
+
+            # if checking_constraints:
+            # Initiate array containing sum of pressures over a given window
+            # get the window size
+            pressure_window = np.zeros(len(target.vectors))
+            pressure_window_size = self.config['tv']['pressure_window_size']
+            pressure_window_queue = Queue()
+            pressure_cur_window = 0
+
+            # Initiate array containing sum of pressures over a given window
+            # get the window size
+            heat_flux_window = np.zeros(len(target.vectors))
+            heat_flux_window_size = self.config['tv']['heat_flux_window_size']
+            heat_flux_window_queue = Queue()
+            heat_flux_cur_window = 0
 
         # print(len(cum_strikes))
 
@@ -432,11 +457,17 @@ class RPOD (MissionPlanner):
             # reset strikes for each firing
             strikes = np.zeros(len(target.vectors))
 
-            # reset pressures for each firing
-            pressures = np.zeros(len(target.vectors))
+            if self.config['pm']['kinetics'] != 'None':
+                # reset pressures for each firing
+                pressures = np.zeros(len(target.vectors))
 
-            # reset pressures for each firing
-            heat_flux = np.zeros(len(target.vectors))
+                # reset pressures for each firing
+                heat_flux = np.zeros(len(target.vectors))
+
+                # if checking_constraints:
+                firing_time = self.jfh.JFH[firing]['t']
+                self.update_window_queue(pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
+                self.update_window_queue(heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size)
 
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
@@ -531,13 +562,17 @@ class RPOD (MissionPlanner):
                         cum_strikes[i] = cum_strikes[i] + 1
                         strikes[i] = 1
 
+                        # if Simplified gas kinetics model is enabled, get relevant parameters
+                        # pass parameters and thruster info to SimplifiedGasKinetics and record returns of pressures and heat flux
+                        # atm, gas_surface interaction model is not checked, as only one is supported
                         if self.config['pm']['kinetics'] == "Simplified":
                             T_w = self.config['tv']['surface_temp']
                             sigma = self.config['tv']['sigma']
                             thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
                             simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
                             pressures[i] = simple_plume.get_pressure()
-                            cum_pressures[i] += pressures[i]
+                            if pressures[i] > max_pressures[i]:
+                                max_pressures[i] = pressures[i]
 
                             heat_flux[i] = simple_plume.get_heat_flux()
                             cum_heat_flux[i] += heat_flux[i]
@@ -558,7 +593,7 @@ class RPOD (MissionPlanner):
 
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
-                cellData["cum_pressures"] = cum_pressures
+                cellData["max_pressures"] = max_pressures
                 cellData["heat_flux"] = heat_flux
                 cellData["cum_heat_flux"] = cum_heat_flux
 
