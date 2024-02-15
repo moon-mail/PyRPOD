@@ -816,7 +816,9 @@ class RPOD (MissionPlanner):
 
         # Save data of evaluated position and velocity functions. 
         x, y, z = [value_functions[0](t_values), value_functions[1](t_values), value_functions[2](t_values)]
-        dx, dy, dz = [tan_vector_functions[0](t_values), tan_vector_functions[1](t_values), tan_vector_functions[2](t_values)]
+        dx = np.array(tan_vector_functions[0](t_values))
+        dy = np.array(tan_vector_functions[1](t_values))
+        dz = np.array(tan_vector_functions[2](t_values))
 
         # print(type(dx), type(dy), type(dz))
 
@@ -829,7 +831,7 @@ class RPOD (MissionPlanner):
         if type(x) == int:
             x = np.full(t_values.size, x)
 
-        if type(dx) == int or dx.size == 1:
+        if dx.size == 1:
             # print('dx is contant')
             # print(dx)
             dx = np.full(t_values.size, dx)
@@ -837,7 +839,7 @@ class RPOD (MissionPlanner):
 
         if type(y) == int:
             y = np.full(t_values.size, y)
-        if type(dy) == int or dy.size == 1:
+        if dy.size == 1:
             # print('dy is contant')
             # print(dy)
             dy = np.full(t_values.size, dy)
@@ -845,7 +847,7 @@ class RPOD (MissionPlanner):
         if type(z) == int:
             z = np.full(t_values.size, z)
 
-        if type(dz) == int or dz.size == 1:
+        if dz.size == 1:
             # print('dz is contant')
             # print(dz)
             dz = np.full(t_values.size, dz)
