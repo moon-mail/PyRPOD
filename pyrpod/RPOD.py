@@ -437,7 +437,8 @@ class RPOD (MissionPlanner):
             max_pressures = np.zeros(len(target.vectors))
 
             # Initiate array containing cummulative heatflux. 
-            cum_heat_flux = np.zeros(len(target.vectors))
+            heat_flux_load = np.zeros(len(target.vectors))
+            cum_heat_flux_load = np.zeros(len(target.vectors))
 
             # if checking_constraints:
             pressure_constraint = float(self.config['tv']['normal_pressure'])
@@ -478,6 +479,7 @@ class RPOD (MissionPlanner):
             # reset strikes for each firing
             strikes = np.zeros(len(target.vectors))
 
+            firing_time = float(self.jfh.JFH[firing]['t'])
             if self.config['pm']['kinetics'] != 'None':
                 # reset pressures for each firing
                 pressures = np.zeros(len(target.vectors))
@@ -591,13 +593,14 @@ class RPOD (MissionPlanner):
                                 max_pressures[i] = pressures[i]
 
                             heat_flux[i] = simple_plume.get_heat_flux()
-                            cum_heat_flux[i] += heat_flux[i]
+                            heat_flux_load[i] = heat_flux[i] * firing_time
+                            cum_heat_flux_load[i] += heat_flux_load[i]
 
                             # if checking_constraints:
                             pressure_queues[i].put(pressures[i])
                             pressure_window_sums += pressures[i]
 
-                            heat_flux_queues[i].put(heat_flux[i])
+                            heat_flux_queues[i].put(heat_flux_load[i])
                             heat_flux_window_sums += heat_flux[i]
 
                             if pressures[i] > pressure_constraint:
@@ -625,8 +628,6 @@ class RPOD (MissionPlanner):
                         # input("strike!")
             
             # if checking_constraints:
-            firing_time = float(self.jfh.JFH[firing]['t'])
-
             pressure_window_queue, pressure_cur_window, pressure_get_counter = self.update_window_queue(
                 pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
 
@@ -647,8 +648,9 @@ class RPOD (MissionPlanner):
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
                 cellData["max_pressures"] = max_pressures
-                cellData["heat_flux"] = heat_flux
-                cellData["cum_heat_flux"] = cum_heat_flux
+                cellData["heat_flux_rate"] = heat_flux
+                cellData["heat_flux_load"] = heat_flux_load
+                cellData["cum_heat_flux_load"] = cum_heat_flux_load
 
             path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
 
