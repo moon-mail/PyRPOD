@@ -375,12 +375,14 @@ class RPOD (MissionPlanner):
             VVmesh.save(path_to_stl)
             # print()
 
-    def update_window_queue(window_queue, cur_window, firing_time, window_size):
+    def update_window_queue(self, window_queue, cur_window, firing_time, window_size, parameter_window):
         window_queue.put(firing_time)
         cur_window += firing_time
         while cur_window > window_size:
             old_firing_time = window_queue.get()
+            temp = parameter_window.get()
             cur_window -= old_firing_time
+        return window_queue, cur_window, parameter_window
 
     def jfh_plume_strikes(self):
         """
@@ -434,14 +436,14 @@ class RPOD (MissionPlanner):
             # Initiate array containing sum of pressures over a given window
             # get the window size
             pressure_window = np.zeros(len(target.vectors))
-            pressure_window_size = self.config['tv']['pressure_window_size']
+            pressure_window_size = float(self.config['tv']['pressure_window_size'])
             pressure_window_queue = Queue()
             pressure_cur_window = 0
 
             # Initiate array containing sum of pressures over a given window
             # get the window size
             heat_flux_window = np.zeros(len(target.vectors))
-            heat_flux_window_size = self.config['tv']['heat_flux_window_size']
+            heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
             heat_flux_window_queue = Queue()
             heat_flux_cur_window = 0
 
@@ -465,9 +467,14 @@ class RPOD (MissionPlanner):
                 heat_flux = np.zeros(len(target.vectors))
 
                 # if checking_constraints:
-                firing_time = self.jfh.JFH[firing]['t']
-                self.update_window_queue(pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
-                self.update_window_queue(heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size)
+                # firing_time = float(self.jfh.JFH[firing]['t'])
+
+                # pressure_window_queue, pressure_cur_window, pressure_window = self.update_window_queue(
+                #     pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size, pressure_window)
+
+                # heat_flux_window_queue, heat_flux_cur_window, heat_flux_window = self.update_window_queue(
+                #     heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size, heat_flux_window)
+
 
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
@@ -557,7 +564,7 @@ class RPOD (MissionPlanner):
                     within_distance = float(norm_distance) < float(self.config['plume']['radius'])
                     within_theta = float(theta) < float(self.config['plume']['wedge_theta'])
                     facing_thruster = surface_dot_plume < 0
-
+                    
                     if (within_distance and within_theta and facing_thruster):
                         cum_strikes[i] = cum_strikes[i] + 1
                         strikes[i] = 1
@@ -566,8 +573,8 @@ class RPOD (MissionPlanner):
                         # pass parameters and thruster info to SimplifiedGasKinetics and record returns of pressures and heat flux
                         # atm, gas_surface interaction model is not checked, as only one is supported
                         if self.config['pm']['kinetics'] == "Simplified":
-                            T_w = self.config['tv']['surface_temp']
-                            sigma = self.config['tv']['sigma']
+                            T_w = float(self.config['tv']['surface_temp'])
+                            sigma = float(self.config['tv']['sigma'])
                             thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
                             simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
                             pressures[i] = simple_plume.get_pressure()
