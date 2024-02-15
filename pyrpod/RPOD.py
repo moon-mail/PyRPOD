@@ -532,8 +532,8 @@ class RPOD (MissionPlanner):
                         strikes[i] = 1
 
                         if self.config['pm']['kinetics'] == "Simplified":
-                            T_w = self.config['tv']['surface_temp']
-                            sigma = self.config['tv']['sigma']
+                            T_w = float(self.config['tv']['surface_temp'])
+                            sigma = float(self.config['tv']['sigma'])
                             thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
                             simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
                             pressures[i] = simple_plume.get_pressure()
