@@ -375,14 +375,21 @@ class RPOD (MissionPlanner):
             VVmesh.save(path_to_stl)
             # print()
 
-    def update_window_queue(self, window_queue, cur_window, firing_time, window_size, parameter_window):
+    def update_window_queue(self, window_queue, cur_window, firing_time, window_size):
         window_queue.put(firing_time)
         cur_window += firing_time
+        get_counter = 0
         while cur_window > window_size:
             old_firing_time = window_queue.get()
-            temp = parameter_window.get()
             cur_window -= old_firing_time
-        return window_queue, cur_window, parameter_window
+            get_counter +=1
+        return window_queue, cur_window, get_counter
+    
+    def update_parameter_queue(self, param_queue, param_window_sum, get_counter):
+        for i in range(get_counter):
+            old_param = param_queue.get()
+            param_window_sum -= old_param
+        return param_queue, param_window_sum
 
     def jfh_plume_strikes(self):
         """
@@ -433,16 +440,28 @@ class RPOD (MissionPlanner):
             cum_heat_flux = np.zeros(len(target.vectors))
 
             # if checking_constraints:
+            pressure_constraint = float(self.config['tv']['normal_pressure'])
+            heat_flux_constraint = float(self.config['tv']['heat_flux'])
+
+            pressure_window_constraint = float('inf')
+            heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
+
             # Initiate array containing sum of pressures over a given window
             # get the window size
-            pressure_window = np.zeros(len(target.vectors))
-            pressure_window_size = float(self.config['tv']['pressure_window_size'])
+            pressure_window_sums = np.zeros(len(target.vectors))
+            pressure_queues = np.zeros(len(target.vectors))
+            for pressure_queue in pressure_queues:
+                pressure_queue = Queue()
+            pressure_window_size = float('inf')
             pressure_window_queue = Queue()
             pressure_cur_window = 0
 
             # Initiate array containing sum of pressures over a given window
             # get the window size
-            heat_flux_window = np.zeros(len(target.vectors))
+            heat_flux_window_sums = np.zeros(len(target.vectors))
+            heat_flux_queues = np.zeros(len(target.vectors))
+            for heat_flux_queue in heat_flux_queues:
+                heat_flux_queue = Queue()
             heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
             heat_flux_window_queue = Queue()
             heat_flux_cur_window = 0
@@ -465,16 +484,6 @@ class RPOD (MissionPlanner):
 
                 # reset pressures for each firing
                 heat_flux = np.zeros(len(target.vectors))
-
-                # if checking_constraints:
-                # firing_time = float(self.jfh.JFH[firing]['t'])
-
-                # pressure_window_queue, pressure_cur_window, pressure_window = self.update_window_queue(
-                #     pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size, pressure_window)
-
-                # heat_flux_window_queue, heat_flux_cur_window, heat_flux_window = self.update_window_queue(
-                #     heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size, heat_flux_window)
-
 
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
@@ -583,6 +592,30 @@ class RPOD (MissionPlanner):
 
                             heat_flux[i] = simple_plume.get_heat_flux()
                             cum_heat_flux[i] += heat_flux[i]
+
+                            # if checking_constraints:
+                            pressure_queues[i].put(pressures[i])
+                            pressure_window_sums += pressures[i]
+
+                            heat_flux_queues[i].put(heat_flux[i])
+                            heat_flux_window_sums += heat_flux[i]
+
+                            if pressures[i] > pressure_constraint:
+                                print(f'Pressure constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:')
+                                print(f'\tPressure = {pressures[i]}\n')
+
+                            if heat_flux[i] > heat_flux_constraint:
+                                print(f'Heat flux constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:')
+                                print(f'\tHeat flux = {heat_flux[i]}\n')
+
+                            if pressure_window_sums[i] > pressure_window_constraint:
+                                print(f'Pressure window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:')
+                                print(f'\tPressure sum = {pressure_window_sums[i]} over t = {pressure_cur_window}\n')
+                            
+                            if heat_flux_window_sums[i] > heat_flux_window_constraint:
+                                print(f'Heat flux window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:')
+                                print(f'\tHeat flux load = {heat_flux_window_sums[i]} over t = {heat_flux_cur_window}\n')
+
                         # print("unit plume normal", unit_plume_normal)
  
                         # print("unit distance", unit_distance)
@@ -591,7 +624,20 @@ class RPOD (MissionPlanner):
                         # print('centroid', centroid, 'distance', distance, 'norm distance', norm_distance)
                         # input("strike!")
             
-            
+            # if checking_constraints:
+            firing_time = float(self.jfh.JFH[firing]['t'])
+
+            pressure_window_queue, pressure_cur_window, pressure_get_counter = self.update_window_queue(
+                pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
+
+            heat_flux_window_queue, heat_flux_cur_window, heat_flux_get_counter = self.update_window_queue(
+                heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size)
+
+            for pressure_queue, pressure_window_sum, heat_flux_queue, heat_flux_window_sum \
+                    in zip(pressure_queues, pressure_window_sums, heat_flux_queues, heat_flux_window_sums):
+                pressure_queue, pressure_window_sum = self.update_parameter_queue(pressure_queue, pressure_window_sum, pressure_get_counter)
+                heat_flux_queue, heat_flux_window_sum = self.update_parameter_queue(heat_flux_queue, heat_flux_window_sum, heat_flux_get_counter)
+
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
                 "strikes": strikes,
