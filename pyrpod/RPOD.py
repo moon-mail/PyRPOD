@@ -443,8 +443,9 @@ class RPOD (MissionPlanner):
             # if checking_constraints:
             pressure_constraint = float(self.config['tv']['normal_pressure'])
             heat_flux_constraint = float(self.config['tv']['heat_flux'])
+            print(pressure_constraint, heat_flux_constraint)
 
-            pressure_window_constraint = float('inf')
+            pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
             heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
 
             # Initiate array containing sum of pressures over a given window
@@ -453,7 +454,7 @@ class RPOD (MissionPlanner):
             pressure_queues = np.zeros(len(target.vectors))
             for pressure_queue in pressure_queues:
                 pressure_queue = Queue()
-            pressure_window_size = float('inf')
+            pressure_window_size = float(self.config['tv']['normal_pressure_window_size'])
             pressure_window_queue = Queue()
             pressure_cur_window = 0
 
@@ -604,19 +605,19 @@ class RPOD (MissionPlanner):
                             heat_flux_window_sums += heat_flux[i]
 
                             if pressures[i] > pressure_constraint:
-                                print(f'Pressure constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:')
+                                print(f"Pressure constraint failed at elapsed time of: {self.jfh.JFH[firing]['dt']}")
                                 print(f'\tPressure = {pressures[i]}\n')
 
                             if heat_flux[i] > heat_flux_constraint:
-                                print(f'Heat flux constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:')
+                                print(f"Heat flux constraint failed at elapsed time of: {self.jfh.JFH[firing]['dt']}")
                                 print(f'\tHeat flux = {heat_flux[i]}\n')
 
                             if pressure_window_sums[i] > pressure_window_constraint:
-                                print(f'Pressure window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:')
+                                print(f"Pressure window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:")
                                 print(f'\tPressure sum = {pressure_window_sums[i]} over t = {pressure_cur_window}\n')
                             
                             if heat_flux_window_sums[i] > heat_flux_window_constraint:
-                                print(f'Heat flux window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:')
+                                print(f"Heat flux window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:")
                                 print(f'\tHeat flux load = {heat_flux_window_sums[i]} over t = {heat_flux_cur_window}\n')
 
                         # print("unit plume normal", unit_plume_normal)

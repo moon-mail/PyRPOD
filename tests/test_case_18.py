@@ -15,9 +15,8 @@ from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
 class LoadJFHChecks(unittest.TestCase):
     def test_plume_constraints(self):
 
-        '''
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/plume_case/'
+        case_dir = '../case/plume_constraint_case/'
 
         # Load JFH data.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)
@@ -36,7 +35,6 @@ class LoadJFHChecks(unittest.TestCase):
 
         rpod.graph_jfh()
         rpod.jfh_plume_strikes()
-        '''
 
 if __name__ == '__main__':
     unittest.main()
