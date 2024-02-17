@@ -387,8 +387,13 @@ class RPOD (MissionPlanner):
     
     def update_parameter_queue(self, param_queue, param_window_sum, get_counter):
         for i in range(get_counter):
+            print('loop')
+            print(param_queue.qsize())
             old_param = param_queue.get()
+            print(old_param)
             param_window_sum -= old_param
+            print(param_window_sum)
+        print('left loop')
         return param_queue, param_window_sum
 
     def jfh_plume_strikes(self):
@@ -600,9 +605,11 @@ class RPOD (MissionPlanner):
 
                             # if checking_constraints:
                             pressure_queues[i].put(float(pressures[i]))
+                            print(f"pressure_queues[{i}] = {pressure_queues[i].qsize()}")
                             pressure_window_sums += pressures[i]
 
                             heat_flux_queues[i].put(float(heat_flux_load[i]))
+                            print(f"heat_flux[i] = {heat_flux_queues[i].qsize()}")
                             heat_flux_window_sums += heat_flux[i]
 
                             if pressures[i] > pressure_constraint:
@@ -630,16 +637,19 @@ class RPOD (MissionPlanner):
                         # input("strike!")
             
             # if checking_constraints:
+            print(f'before update: pressure_queues[i] = {pressure_queues[1].qsize()}')
             pressure_window_queue, pressure_cur_window, pressure_get_counter = self.update_window_queue(
                 pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
 
             heat_flux_window_queue, heat_flux_cur_window, heat_flux_get_counter = self.update_window_queue(
                 heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size)
-
-            for pressure_queue, pressure_window_sum, heat_flux_queue, heat_flux_window_sum \
-                    in zip(pressure_queues, pressure_window_sums, heat_flux_queues, heat_flux_window_sums):
-                pressure_queue, pressure_window_sum = self.update_parameter_queue(pressure_queue, pressure_window_sum, pressure_get_counter)
-                heat_flux_queue, heat_flux_window_sum = self.update_parameter_queue(heat_flux_queue, heat_flux_window_sum, heat_flux_get_counter)
+            print(f"p_get_counter ={pressure_get_counter}, h_get_counter = {heat_flux_get_counter}")
+            print(f'after update: pressure_queues[i] = {pressure_queues[1].qsize()}')
+            for queue_index in range(len(pressure_queues)):
+                if not pressure_queues[queue_index].empty():
+                    pressure_queues[queue_index], pressure_window_sums[queue_index] = self.update_parameter_queue(pressure_queues[queue_index], pressure_window_sums[queue_index], pressure_get_counter)
+                if not heat_flux_queues[queue_index].empty():
+                    heat_flux_queues[queue_index], heat_flux_window_sums[queue_index] = self.update_parameter_queue(heat_flux_queues[queue_index], heat_flux_window_sums[queue_index], heat_flux_get_counter)
 
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
