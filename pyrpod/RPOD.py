@@ -443,7 +443,6 @@ class RPOD (MissionPlanner):
             # if checking_constraints:
             pressure_constraint = float(self.config['tv']['normal_pressure'])
             heat_flux_constraint = float(self.config['tv']['heat_flux'])
-            print(pressure_constraint, heat_flux_constraint)
 
             pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
             heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
@@ -451,9 +450,9 @@ class RPOD (MissionPlanner):
             # Initiate array containing sum of pressures over a given window
             # get the window size
             pressure_window_sums = np.zeros(len(target.vectors))
-            pressure_queues = np.zeros(len(target.vectors))
-            for pressure_queue in pressure_queues:
-                pressure_queue = Queue()
+            pressure_queues = np.empty(len(target.vectors), dtype=object)
+            for i in range(len(pressure_queues)):
+                pressure_queues[i] = Queue()
             pressure_window_size = float(self.config['tv']['normal_pressure_window_size'])
             pressure_window_queue = Queue()
             pressure_cur_window = 0
@@ -461,9 +460,11 @@ class RPOD (MissionPlanner):
             # Initiate array containing sum of pressures over a given window
             # get the window size
             heat_flux_window_sums = np.zeros(len(target.vectors))
-            heat_flux_queues = np.zeros(len(target.vectors))
-            for heat_flux_queue in heat_flux_queues:
-                heat_flux_queue = Queue()
+            # Initialize an array of queues
+            heat_flux_queues = np.empty(len(target.vectors), dtype=object)
+            # Populate the array with Queue objects
+            for i in range(len(heat_flux_queues)):
+                heat_flux_queues[i] = Queue()
             heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
             heat_flux_window_queue = Queue()
             heat_flux_cur_window = 0
@@ -594,14 +595,14 @@ class RPOD (MissionPlanner):
                                 max_pressures[i] = pressures[i]
 
                             heat_flux[i] = simple_plume.get_heat_flux()
-                            heat_flux_load[i] = heat_flux[i] * firing_time
+                            heat_flux_load[i] += heat_flux[i] * firing_time
                             cum_heat_flux_load[i] += heat_flux_load[i]
 
                             # if checking_constraints:
-                            pressure_queues[i].put(pressures[i])
+                            pressure_queues[i].put(float(pressures[i]))
                             pressure_window_sums += pressures[i]
 
-                            heat_flux_queues[i].put(heat_flux_load[i])
+                            heat_flux_queues[i].put(float(heat_flux_load[i]))
                             heat_flux_window_sums += heat_flux[i]
 
                             if pressures[i] > pressure_constraint:
