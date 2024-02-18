@@ -28,7 +28,7 @@ import unittest, os, sys
 from pyrpod import LogisticsModule, MissionPlanner
 
 class DeltaMassChecks(unittest.TestCase):
-    def test_dm_plots(self):
+    def test_delta_mass_plots(self):
 
         # set case directory
         case_dir = '../case/flight_envelopes/'
