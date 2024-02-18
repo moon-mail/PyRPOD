@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 import os
 import math
-import sympy as sp
 import matplotlib.pyplot as plt
 from mpl_toolkits import mplot3d
 import configparser
@@ -13,27 +12,30 @@ from pyrpod.LogisticsModule import LogisticsModule
 from pyrpod.MissionPlanner import MissionPlanner
 from pyrpod.RarefiedPlumeGasKinetics import SimplifiedGasKinetics
 
-from pyrpod.file_print import print_JFH
+from pyrpod.file_print import print_1d_JFH
+
 from tqdm import tqdm
 
-# Helper functions
 def rotation_matrix_from_vectors(vec1, vec2):
     """ Find the rotation matrix that aligns vec1 to vec2
     :param vec1: A 3d "source" vector
     :param vec2: A 3d "destination" vector
     :return mat: A transform matrix (3x3) which when applied to vec1, aligns it with vec2.
     """
+    if vec1 == vec2:
+        x = [1, 0, 0]
+        y = [0, 1, 0]
+        z = [0, 0, 1]
+        id_matrix = np.array([x, y, z])
+        return id_matrix
+
     a, b = (vec1 / np.linalg.norm(vec1)).reshape(3), (vec2 / np.linalg.norm(vec2)).reshape(3)
     v = np.cross(a, b)
     c = np.dot(a, b)
     s = np.linalg.norm(v)
     kmat = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
-    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2))
+    rotation_matrix = np.eye(3) + kmat + kmat.dot(kmat) * ((1 - c) / (s ** 2)) 
     return rotation_matrix
-
-def make_norm(vector_value_function):
-    """Calculate vector norm/magnitude using the Pythagoream Theorem."""
-    return sp.sqrt(sp.Pow(vector_value_function[0],2) + sp.Pow(vector_value_function[1],2))
 
 class RPOD (MissionPlanner):
     """
@@ -569,224 +571,139 @@ class RPOD (MissionPlanner):
             self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData, target)
             # print()
 
+    def print_jfh_1d_approach(self, v_ida, v_o, r_o):
+        """
+            Method creates JFH data for axial approach using simpified physics calculations.
 
-    def graph_param_curve(self, t, r_of_t):
-        ''' Used to quickly prototype and visualize a proposed approach path.
-            Calculates the unit tangent vector at a given timestep and 
-            rotates the STL file accordingly. Data is plotted using matlab
+            This approach models one continuous firing.
 
-            Current method is old and needs updating.
-
-            Parameters
-            ----------
-            t : sp.symbol
-                Time (t) is the independent variable used to evaulte the position vector equation.
-
-            r_of_t : list<expressions?>
-                List containing position vector expression for trajectory.
-                X/Y/Z positions are de-coupled and only dependent on time.
-
-            Returns
-            -------
-            Method doesn't currently return anything. Simply sets class members as needed.
-            Does the method need to return a status message? or pass similar data?
-        '''
-
-        t_values = np.linspace(0,2*np.pi,50)
-
-        # Symbolic Calculations of tangent and normal unit vectors
-        r = r_of_t
-        rprime = [diff(r[0],t), diff(r[1],t), diff(r[2],t)]
-        tanvector = [rprime[0]/make_norm(rprime), rprime[1]/make_norm(rprime), rprime[2]/make_norm(rprime)]
-        tanprime = [diff(tanvector[0],t), diff(tanvector[1],t), diff(tanvector[2],t)]
-        normalvector = [tanprime[0]/make_norm(tanprime), tanprime[1]/make_norm(tanprime), tanprime[1]/make_norm(tanprime)]
-        tan_vector_functions = [lambdify(t, tanvector[0]),lambdify(t, tanvector[1]), lambdify(t, tanvector[2])]
-        normal_vector_functions = [lambdify(t, normalvector[0]),lambdify(t, normalvector[1]), lambdify(t, normalvector[2])]
-        value_functions = [lambdify(t, r[0]), lambdify(t, r[1]), lambdify(t, r[2])]
-
-        # Save data of evaluated position and velocity functions. 
-        x, y, z = [value_functions[0](t_values), value_functions[1](t_values), value_functions[2](t_values)]
-        dx, dy, dz = [tan_vector_functions[0](t_values), tan_vector_functions[1](t_values), tan_vector_functions[2](t_values)]
-
-        # draw the vectors along the curve and Graph STL.
-        for i in range(len(t_values)):
-            # Graph path
-            # ax = plt.figure().add_subplot(projection='3d')
-            figure = plt.figure()
-            ax = mplot3d.Axes3D(figure)
-            ax.plot(x, y, z, label='position curve')
-            ax.legend()
-            normal_location = t_values[i]
-
-            # Load, Transform, and Graph STL
-            VV = mesh.Mesh.from_file('../stl/cylinder.stl')
-            VV.points = 0.2 * VV.points
-
-            r = [x[i], y[i], z[i]]
-            dr = [dx, dy, dz[i]]
-
-            # Calculate require rotation matrix from initial orientation.
-            x1 = [1, 0, 0]
-            rot = np.matrix(rotation_matrix_from_vectors(x1, dr))
-
-            VV.rotate_using_matrix(rot.transpose())
-            VV.translate(r)
-
-            ax.add_collection3d(
-                mplot3d.art3d.Poly3DCollection(VV.vectors)
-            )
-
-            # print(
-            # tan_vector_functions[0](normal_location),
-            # tan_vector_functions[1](normal_location),
-            # tan_vector_functions[2](normal_location)
-            # )
-            # print()
-            length = 1
-            ax.quiver(
-                value_functions[0](normal_location),
-                value_functions[1](normal_location),
-                value_functions[2](normal_location),
-                tan_vector_functions[0](normal_location),
-                tan_vector_functions[1](normal_location),
-                tan_vector_functions[2](normal_location),
-                color='g',
-                length = length 
-            )
-
-            # ax.quiver(
-            #     value_functions[0](normal_location),
-            #     value_functions[1](normal_location),
-            #     value_functions[2](normal_location),
-            #     normal_vector_functions[0](normal_location),
-            #     normal_vector_functions[1](normal_location),
-            #     normal_vector_functions[2](normal_location),
-            #     color='r'
-            # )
-            print(i)
-
-            ax.set_xlabel('X')
-            ax.set_ylabel('Y')
-            ax.set_zlabel('Z')
-
-            if i < 10:
-                index = '00' + str(i)
-            elif i < 100:
-                index = '0' + str(i)
-            else:
-                index = str(i)
-
-            plt.savefig('img/observer-a-' + str(index) + '.png')
-
-            plt.close() 
-
-    def print_JFH_param_curve(self, jfh_path, t, r_of_t, align = False):
-        ''' Used to produce JFH data for a proposed approach path.
-            Calculates the unit tangent vector at a given timestep and DCMs for
-            STL file rotations. Data is then saved to a text file.
-
+            Kinematics and mass changes are discretized according to the thruster's minimum firing time.
 
             Parameters
             ----------
-            jfh_path : str
-                Path to file for saving JFH data.
+            v_ida : float
+                VisitingVehicle docking velocity (determined by international docking adapter)
 
-            t : sp.symbol
-                Time (t) is the independent variable used to evaulte the position vector equation.
+            v_o : float
+                VisitingVehicle incoming axial velocity.
 
-            r_of_t : list<expressions?>
-                List containing position vector expression for trajectory.
-                X/Y/Z positions are de-coupled and only dependent on time.
-
-            aligh : Boolean
-                Determines whether or not STL surface is rotated according to unit tangent vector.
+            r_o : float
+                Initial distance to docking port.
 
             Returns
             -------
-            Method doesn't currently return anything. Simply sets class members as needed.
+            Method doesn't currently return anything. Simply prints data to a files as needed.
             Does the method need to return a status message? or pass similar data?
-        '''
 
-        # t_values = np.linspace(0,2*np.pi,100)
-        t_values = np.linspace(0, 25, 100)
+        """
 
-        # Symbolic Calculations of tangent and normal unit vectors
-        r = r_of_t
-        rprime = [sp.diff(r[0],t), sp.diff(r[1],t), sp.diff(r[2],t)]
+        # Calculate required change in velocity.
+        dv_req = v_o - v_ida
 
-        # print('1', rprime[0]/make_norm(rprime))
-        # print('2', rprime[1]/make_norm(rprime))
-        # print('3', rprime[2]/make_norm(rprime))
-        # tanvector = [rprime[0]/make_norm(rprime), rprime[1]/make_norm(rprime), rprime[2]/make_norm(rprime)]
-        tanvector = [0, 0, -0.25]
+        # Determin thruster configuration characterstics. WIP.
+        total_thrust = [500, 500, 500, 500] # N
+        total_m_dot = [0.5, 0.5, 0.5, 0.5] # kg/s
+        dt = 0.025
+        dm_firing = sum(total_m_dot) * dt
+        v_e  = sum(total_thrust) / sum(total_m_dot)
 
-        tanprime = [sp.diff(tanvector[0],t), sp.diff(tanvector[1],t), sp.diff(tanvector[2],t)]
-        normalvector = [tanprime[0]/make_norm(tanprime), tanprime[1]/make_norm(tanprime), tanprime[1]/make_norm(tanprime)]
-        tan_vector_functions = [sp.lambdify(t, tanvector[0]),sp.lambdify(t, tanvector[1]), sp.lambdify(t, tanvector[2])]
-        normal_vector_functions = [sp.lambdify(t, normalvector[0]),sp.lambdify(t, normalvector[1]), sp.lambdify(t, normalvector[2])]
-        value_functions = [sp.lambdify(t, r[0]), sp.lambdify(t, r[1]), sp.lambdify(t, r[2])]
+        # Calculate propellant used for docking and changes in mass.
+        delta_m_docking = round(self.calc_delta_mass_v_e(dv_req, v_e), 0)
+        docking_dry_mass = self.vv.mass
+        docking_wet_mass = self.vv.mass + delta_m_docking
+        print('docking dry mass', docking_dry_mass)
+        print('docking wet mass', docking_wet_mass)
 
-        # Save data of evaluated position and velocity functions. 
-        x, y, z = [value_functions[0](t_values), value_functions[1](t_values), value_functions[2](t_values)]
-        dx = np.array(tan_vector_functions[0](t_values))
-        dy = np.array(tan_vector_functions[1](t_values))
-        dz = np.array(tan_vector_functions[2](t_values))
 
-        # print(type(dx), type(dy), type(dz))
+        # Instantiate data structure to hold JFH data + physics data.
+        # First values are initial conditions.
+        x = [r_o]
+        y = [0]
+        z = [0]
+        dx = [0]
 
-        # print(dx.size, dy.size, dz.size)
+        dt_vals = [dt]
+        t = [0]
 
-        # When derivatives reduce to constant value the lambda function will reutrn a float 
-        # instead of np.array. These if statements are here fill an array with that float value.
-        # print(type(dx), dx) 
-        # print(type(dy), dy) 
-        if type(x) == int:
-            x = np.full(t_values.size, x)
+        dv = [0]
+        dxdt = [v_o]
+        mass = [docking_wet_mass]
+        dm_total = [dm_firing]
 
-        if dx.size == 1:
-            # print('dx is contant')
-            # print(dx)
-            dx = np.full(t_values.size, dx)
-            # x = np.full(t_values.size, )
+        n = [1]
 
-        if type(y) == int:
-            y = np.full(t_values.size, y)
-        if dy.size == 1:
-            # print('dy is contant')
-            # print(dy)
-            dy = np.full(t_values.size, dy)
-        
-        if type(z) == int:
-            z = np.full(t_values.size, z)
+        # Create dummy rotation matrices.
+        y1 = [1, 0, 0]
+        x1 = [1, 0, 0]
 
-        if dz.size == 1:
-            # print('dz is contant')
-            # print(dz)
-            dz = np.full(t_values.size, dz)
+        rot = [np.matrix(rotation_matrix_from_vectors(x1, y1))]
 
-        # print(type(dx), type(dy), type(dz))
-        # print(type(x), type(y), type(z))
+        # Calculate JFH and 1D physics data for required firings.
+        i = 0 # ugly but useful
+        while (dv_req > 0):
+            print('dv_req', round(dv_req, 4), 'n firings', n[i])
 
-        # Save rotation matrix for each time step
-        rot = []
-        if align:
-            for i in range(len(t_values)):
-                dr = [dx[i], dy[i], dz[i]]
 
-                # Calculate required rotation matrix from initial orientation.
-                x1 = [1, 0, 0]
-                rot.append(np.matrix(rotation_matrix_from_vectors(x1, dr)))
-        else:
-            for i in range(len(t_values)):
-                # Calculate required rotation matrix from initial orientation.
-                y1 = [0, 0, -1]
-                x1 = [1, 0, 0]
-                rot.append(np.matrix(rotation_matrix_from_vectors(x1, y1)))
+            # Grab last value in the JFH arrays (initial conditions for current time step)
+            print('x, dx, dt, t, dxdt, mass, dm_total')
+            print(x[-1], dx[-1], dt_vals[-1], t[-1], dxdt[-1], mass[-1], dm_total[-1])
+
+            # Update VV mass per firing
+            mass_o = mass[-1]
+            mass.append(mass_o - dm_firing)
+            mass_f = mass[-1]
+
+            # Caclulate velocioty change per firing.
+            dv_firing = self.calc_dv(v_e, mass_o, mass_f)
+            dv.append(dv_firing)
+            # print(dv_firing)
+            # print(round(dxdt[-1] - dv_firing, 2))
+            # input()
+            dxdt.append(dxdt[-1] - dv_firing)
+
+            # Calculate distance traveled per firing
+            # print(dxdt[-1], dxdt[-2]) # last and second to last element.
+            v_avg = 0.5 * (dxdt[-1] + dxdt[-2])
+            dx.append(v_avg * dt)
+            x.append(x[-1] - v_avg*dt)
+            y.append(0)
+            z.append(0)
+
+            # Calculate left over v_req (TERMINATES LOOP)
+            dv_req -= dv_firing
+
+            # Calculate mass expanded up to thois point.
+            dm_total.append(dm_total[-1] + dm_firing)
+
+            # Calculate current firing.
+            n.append(n[-1]+1)
+            i += 1
+
+            # Add time data.
+            t.append(t[-1] + dt)
+
+
+            rot.append(np.matrix(rotation_matrix_from_vectors(x1, y1)))
+
+        # one_d_results = {
+        #     'n_firings': n,
+        #     'x': x,
+        #     'dx': dx,
+        #     't': t,
+        #     'dv': dv,
+        #     'v': dxdt,
+        #     'mass': mass,
+        #     'delta_mass': dm_total
+        # }
+
+        # print(one_d_results)
 
         r = [x, y, z]
-        # dr = [dx, dy, dz]
-        print_JFH(t_values, r,  rot, jfh_path)
 
-def make_test_jfh():
+        print_1d_JFH(t, r, rot, 'JFH_1d.A')
+        return
 
-    return
+
+    def make_test_jfh():
+
+        return

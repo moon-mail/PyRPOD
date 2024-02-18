@@ -13,19 +13,29 @@ import test_header
 import unittest, os, sys
 from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
 
-import sympy as sp
-
-class ProduceJFHChecks(unittest.TestCase):
+class LoadJFHChecks(unittest.TestCase):
     def test_jfh_reader(self):
 
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/base_case/'
+        case_dir = '../case/1d_approach/'
 
-        t = sp.symbols('t')
-
+        # Load JFH data.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)
-        jfh.print_JFH_param_curve('JFH05.A', t, [25-t, 0, 20], align = False)
+        jfh.read_jfh()
 
-        
+        tv = TargetVehicle.TargetVehicle(case_dir)
+        tv.set_stl()
+
+        vv = VisitingVehicle.VisitingVehicle(case_dir)
+        vv.set_stl()
+        vv.set_thruster_config()
+
+        rpod = RPOD.RPOD(case_dir)
+        rpod.study_init(jfh, tv, vv)
+        # # rpod = RPOD.RPOD(jfh, tv, vv)
+
+        rpod.graph_jfh()
+        rpod.jfh_plume_strikes()
+
 if __name__ == '__main__':
     unittest.main()
