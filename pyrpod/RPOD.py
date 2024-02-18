@@ -592,13 +592,14 @@ class RPOD (MissionPlanner):
                             sigma = float(self.config['tv']['sigma'])
                             thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
                             simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
-                            pressures[i] = simple_plume.get_pressure()
+                            pressures[i] += simple_plume.get_pressure()
                             if pressures[i] > max_pressures[i]:
                                 max_pressures[i] = pressures[i]
 
-                            heat_flux[i] = simple_plume.get_heat_flux()
-                            heat_flux_load[i] = heat_flux[i] * firing_time
-                            cum_heat_flux_load[i] += heat_flux_load[i]
+                            heat_flux_cur = simple_plume.get_heat_flux()
+                            heat_flux[i] += heat_flux_cur
+                            heat_flux_load[i] += heat_flux_cur * firing_time
+                            cum_heat_flux_load[i] += heat_flux_cur * firing_time
 
                             # if checking_constraints:
                             pressure_queues[i].put(float(pressures[i]))
