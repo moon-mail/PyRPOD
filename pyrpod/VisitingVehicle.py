@@ -137,7 +137,7 @@ class VisitingVehicle(Vehicle):
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
-        path_to_stl = self.case_dir + 'stl/' + self.config['stl']['vv']
+        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['stl']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
         self.path_to_stl = path_to_stl
         return
@@ -179,8 +179,57 @@ class VisitingVehicle(Vehicle):
 
             # Parse through strings and save data in a dictionary
             self.thruster_data = process_str_thrusters(str_thrusters)
+
             self.jet_interactions = lines.pop(0)
         return
+
+    def set_thruster_metrics(self):
+        """
+            Read in performance data specific to thruster types.
+
+            Gathers thruster-specific performance parameters for the configuration from a .csv file
+            and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.
+
+            Parameters
+            ----------
+            path_to_tcd : str
+                file location for thruster configuration data file.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+
+        # TODO determine path.. possbily move to configuraition file.
+        path_to_thruster_metrics = self.case_dir + 'tcd/' + self.config['tcd']['tdf']
+
+        # specify columns to be read as strings.
+        str_cols = ['#']
+        dict_types = {x: 'str' for x in str_cols}
+
+        # read csv into a pd dataframe
+        thruster_metrics = pd.read_csv(path_to_thruster_metrics, dtype=dict_types)
+        # print(thruster_characteristics)
+
+        # convert the dataframe into a list of dictionaries
+        thruster_metrics_list = thruster_metrics.to_dict(orient='records')
+
+        self.thruster_metrics = {}
+
+        for thruster in thruster_metrics_list:
+
+            # Seperate thruster metrics to form new key value pairs.
+            thruster_id = thruster['#']
+            thruster_metrics = thruster.pop('#')
+
+            # Save thruster metrics
+            self.thruster_metrics[thruster_id] = thruster
+
+        # print(self.thruster_metrics)
+
+        return
+
 
     def print_info(self):
         """Simple method to format printing of vehicle info."""

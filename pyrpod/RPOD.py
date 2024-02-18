@@ -10,6 +10,7 @@ from stl import mesh
 
 from pyrpod.LogisticsModule import LogisticsModule
 from pyrpod.MissionPlanner import MissionPlanner
+from pyrpod.RarefiedPlumeGasKinetics import SimplifiedGasKinetics
 
 from pyrpod.file_print import print_1d_JFH
 
@@ -366,6 +367,7 @@ class RPOD (MissionPlanner):
                 )
             
             # print(self.vv.mesh)
+
             # print(self.case_dir + self.config['stl']['vv'])
 
             path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
@@ -413,16 +415,30 @@ class RPOD (MissionPlanner):
 
         # Initiate array containing cummulative strikes. 
         cum_strikes = np.zeros(len(target.vectors))
+
+        # Initiate array containing cummulative strikes. 
+        cum_pressures = np.zeros(len(target.vectors))
+
+        # Initiate array containing cummulative heatflux. 
+        cum_heat_flux = np.zeros(len(target.vectors))
+
         # print(len(cum_strikes))
 
 
         # Loop through each firing in the JFH.
         for firing in range(len(self.jfh.JFH)):
+
         # for firing in tqdm(range(len(self.jfh.JFH)), desc='Processing firings'):
             # print('firing =', firing+1)
 
             # reset strikes for each firing
             strikes = np.zeros(len(target.vectors))
+
+            # reset pressures for each firing
+            pressures = np.zeros(len(target.vectors))
+
+            # reset pressures for each firing
+            heat_flux = np.zeros(len(target.vectors))
 
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
@@ -430,6 +446,7 @@ class RPOD (MissionPlanner):
              
             # Load visiting vehicle position and orientation
             vv_pos = self.jfh.JFH[firing]['xyz']
+
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm']).transpose()
 
             # Calculate strikes for active thrusters. 
@@ -516,6 +533,16 @@ class RPOD (MissionPlanner):
                         cum_strikes[i] = cum_strikes[i] + 1
                         strikes[i] = 1
 
+                        if self.config['pm']['kinetics'] == "Simplified":
+                            T_w = float(self.config['tv']['surface_temp'])
+                            sigma = float(self.config['tv']['sigma'])
+                            thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
+                            simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
+                            pressures[i] = simple_plume.get_pressure()
+                            cum_pressures[i] += pressures[i]
+
+                            heat_flux[i] = simple_plume.get_heat_flux()
+                            cum_heat_flux[i] += heat_flux[i]
                         # print("unit plume normal", unit_plume_normal)
  
                         # print("unit distance", unit_distance)
@@ -530,6 +557,12 @@ class RPOD (MissionPlanner):
                 "strikes": strikes,
                 "cum_strikes": cum_strikes
             }
+
+            if self.config['pm']['kinetics'] != 'None':
+                cellData["pressures"] = pressures
+                cellData["cum_pressures"] = cum_pressures
+                cellData["heat_flux"] = heat_flux
+                cellData["cum_heat_flux"] = cum_heat_flux
 
             path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
 
@@ -594,7 +627,6 @@ class RPOD (MissionPlanner):
 
         dv = [0]
         dxdt = [v_o]
-
         mass = [docking_wet_mass]
         dm_total = [dm_firing]
 
