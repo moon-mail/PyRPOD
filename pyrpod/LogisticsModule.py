@@ -139,7 +139,6 @@ class LogisticsModule(VisitingVehicle):
         # TODO: re-write method to read in data from CSV file. Do docstring after.
         # 1. mass, 2. chamber temp, 3. chamber pressure 4. velocity 5. impulse bit
         # 6. thruster id, 7. gas composition,
-
         self.thrust = thrust_val
         self.isp = isp
         return
@@ -227,9 +226,6 @@ class LogisticsModule(VisitingVehicle):
             group : str
                 RCS working group. Needs better name?
 
-            normals: 2d list
-                Normal vectors for plume cone center line. WIP not being used as of now.
-
             Returns
             -------
             Method doesn't currently return anything. Simply assigns class members as needed.
@@ -249,7 +245,7 @@ class LogisticsModule(VisitingVehicle):
 
         # Read in grouping configuration file.
         config = configparser.ConfigParser()
-        config.read(self.case_dir + "/tcd/rcs_groups.ini") # add to config file?
+        config.read(self.case_dir + 'tcd/' + self.config['tcd']['tgf'])
         self.config = config
 
         #Instantiate dictionary to hold grouping info

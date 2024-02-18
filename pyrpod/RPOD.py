@@ -254,6 +254,61 @@ class RPOD (MissionPlanner):
                 index = str(i)
             plt.savefig('img/frame' + str(index) + '.png')
 
+    def graph_clusters(self, firing, vv_orientation):
+        """
+            Creates visualization data for the cluster
+
+            Parameters
+            ----------
+            firing : int
+                Loop iterable over the length of the number of thrusters firing in the JFH.
+            
+            vv_orientation : np.array
+                DCM from the JFH.
+
+            Returns
+            -------
+            active_clusters : mesh
+                Cluster of the current thruster firing.
+        """
+        active_clusters = None
+        clusters_list = []
+        for number in range(len(self.vv.cluster_data)):
+            cluster_name = 'P' + str(number + 1)
+            # print(cluster_name)
+            clusters_list.append(cluster_name)
+
+        # Load and graph STLs of active clusters. 
+        for cluster in clusters_list:
+
+            # Load plume STL in initial configuration. 
+            clusterMesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['cluster'])
+
+            # Transform cluster
+            
+            # First, according to DCM of current cluster in CCF
+            cluster_orientation = np.array(
+                self.vv.cluster_data[cluster]['dcm']
+            )
+            clusterMesh.rotate_using_matrix(cluster_orientation.transpose())
+
+            # Second, according to DCM of VV in JFH
+            clusterMesh.rotate_using_matrix(vv_orientation.transpose())
+
+            # Third, according to position vector of the VV in JFH
+            clusterMesh.translate(self.jfh.JFH[firing]['xyz'])
+            
+            # Fourth, according to position of current cluster in CCF
+            clusterMesh.translate(self.vv.cluster_data[cluster]['exit'][0])
+            # print(self.vv.cluster_data[cluster]['exit'][0])
+
+            if active_clusters == None:
+                active_clusters = clusterMesh
+            else:
+                active_clusters = mesh.Mesh(
+                    np.concatenate([active_clusters.data, clusterMesh.data])
+                )
+        return active_clusters
 
     def graph_jfh(self): 
         """
@@ -301,8 +356,8 @@ class RPOD (MissionPlanner):
             thrusters = self.jfh.JFH[firing]['thrusters']
             # print("thrusters", thrusters)
              
-            # Load, transform, and, graph STLs of visiting vehicle.  
-            VVmesh = mesh.Mesh.from_file(self.config['stl']['vv'])
+            # Load, transform, and, graph STLs of visiting vehicle.
+            VVmesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['lm'])
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm'])
             # print(vv_orientation.transpose())
             VVmesh.rotate_using_matrix(vv_orientation.transpose())
@@ -310,6 +365,10 @@ class RPOD (MissionPlanner):
 
             active_cones = None
 
+            # Load and graph STLs of active clusters.
+            if self.vv.use_clusters == True:
+                active_clusters = self.graph_clusters(firing, vv_orientation)
+                
             # Load and graph STLs of active thrusters. 
             for thruster in thrusters:
 
@@ -320,18 +379,11 @@ class RPOD (MissionPlanner):
                 thruster_id = link[str(thruster)][0]
 
                 # Load plume STL in initial configuration. 
-                plumeMesh = mesh.Mesh.from_file(self.config['stl']['tc'])
-                plumeMesh.translate([0, 0, -54.342])            # nozzle throat (x, y, z) = (r_exit, r_exit, 0), 54.342 is distance b/w throat and exit
-
-                # Additional translations used for mold_funnel_centerline, 1000 is the length of the centerline and 39.728 is exit diameter
-                # plumeMesh.translate([-39.728/2, -39.728/2, -1000])    # nozzle throat (x, y, z) = (0, 0, 0)
-
-                plumeMesh.rotate([1, 0, 0], math.radians(180))  # align nozzle exit with +z direction, which the TCD is wrt
-                plumeMesh.points = 0.05 * plumeMesh.points
+                plumeMesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['thruster'])
 
                 # Transform plume
                 
-                # First, according to DCM of current thruster id in TCD
+                # First, according to DCM of current thruster id in TCF
                 thruster_orientation = np.array(
                     self.vv.thruster_data[thruster_id]['dcm']
                 )
@@ -343,10 +395,14 @@ class RPOD (MissionPlanner):
                 # Third, according to position vector of the VV in JFH
                 plumeMesh.translate(self.jfh.JFH[firing]['xyz'])
                 
-                # Fourth, according to exit vector of current thruster id in TCD
+                # Fourth, according to position of current cluster in CCF
+                if self.vv.use_clusters == True:
+                    plumeMesh.translate(self.vv.cluster_data[thruster_id[0] + thruster_id[1]]['exit'][0])
+
+                # Fifth, according to exit vector of current thruster id in TCF
                 plumeMesh.translate(self.vv.thruster_data[thruster_id]['exit'][0])
 
-                # Takeaway: Do rotations before translating away from the rotation axes!   
+                # Takeaway: Do rotations before translating away from the rotation axes!
 
 
                 if active_cones == None:
@@ -359,10 +415,16 @@ class RPOD (MissionPlanner):
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
                 # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
 
-            if not active_cones == None:
-                VVmesh = mesh.Mesh(
-                    np.concatenate([VVmesh.data, active_cones.data])
-                )
+            if self.vv.use_clusters != True:
+                if not active_cones == None:
+                    VVmesh = mesh.Mesh(
+                        np.concatenate([VVmesh.data, active_cones.data])
+                    )
+            if self.vv.use_clusters == True:
+                if not active_cones == None:
+                    VVmesh = mesh.Mesh(
+                        np.concatenate([VVmesh.data, active_cones.data, active_clusters.data])
+                    )
             
             # print(self.vv.mesh)
 
@@ -424,9 +486,9 @@ class RPOD (MissionPlanner):
 
 
         # Loop through each firing in the JFH.
-        for firing in range(len(self.jfh.JFH)):
+        # for firing in range(len(self.jfh.JFH)):
 
-        # for firing in tqdm(range(len(self.jfh.JFH)), desc='Processing firings'):
+        for firing in tqdm(range(len(self.jfh.JFH)), desc='All firings'):
             # print('firing =', firing+1)
 
             # reset strikes for each firing
@@ -448,7 +510,7 @@ class RPOD (MissionPlanner):
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm']).transpose()
 
             # Calculate strikes for active thrusters. 
-            for thruster in thrusters:
+            for thruster in tqdm(thrusters, desc='Current firing'):
 
 
                 # Save thruster id using indexed thruster value.
@@ -467,13 +529,15 @@ class RPOD (MissionPlanner):
                 thruster_orientation =   thruster_orientation.dot(vv_orientation)
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
                 # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
-                plume_normal = np.array(thruster_orientation[2])
+                plume_normal = np.array(thruster_orientation[0])
                 # print("plume normal: ", plume_normal)
                 
                 # calculate thruster exit coordinate with respect to the Target Vehicle.
                 
                 # print(self.vv.thruster_data[thruster_id])
                 thruster_pos = vv_pos + np.array(self.vv.thruster_data[thruster_id]['exit'])
+                if self.vv.use_clusters == True:
+                    thruster_pos += (self.vv.cluster_data[thruster_id[0] + thruster_id[1]]['exit'][0])
                 thruster_pos = thruster_pos[0]
                 # print('thruster position', thruster_pos)
 
@@ -536,11 +600,13 @@ class RPOD (MissionPlanner):
                             sigma = float(self.config['tv']['sigma'])
                             thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
                             simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
-                            pressures[i] = simple_plume.get_pressure()
-                            cum_pressures[i] += pressures[i]
+                            pressure = simple_plume.get_pressure()
+                            pressures[i] += pressure
+                            cum_pressures[i] += pressure
 
-                            heat_flux[i] = simple_plume.get_heat_flux()
-                            cum_heat_flux[i] += heat_flux[i]
+                            heat_flux_cur = simple_plume.get_heat_flux()
+                            heat_flux[i] += heat_flux_cur
+                            cum_heat_flux[i] += heat_flux_cur
                         # print("unit plume normal", unit_plume_normal)
  
                         # print("unit distance", unit_distance)

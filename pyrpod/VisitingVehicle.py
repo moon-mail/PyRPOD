@@ -71,6 +71,41 @@ def process_str_thrusters(str_thrusters):
 
     return thrusters_data
 
+# Process definition of an individual cluster.
+def process_cluster_def(str_cluster):
+    columns = ['name', 'exit', 'dcm']
+    cluster = {}
+    # Remove new line char (last char) and split at any space char.    
+    str_list = str_cluster[:-1].split(' ')
+    # Save name of cluster
+    cluster["name"] = [str_list.pop(0)]
+    # Save coordinate for center of cluster.
+    coord = []
+    for i in range(3):
+        coord.append(float(str_list.pop(0)))
+    cluster['exit'] = [coord]
+
+    # Save direction cosine matrix of cluster relative to the vehicle    
+    drm = []
+    for i in range(3):
+        row = []
+        for j in range(3):
+            row.append(float(str_list.pop(0)))
+        drm.append(row)
+    cluster['dcm'] = drm
+    return cluster
+
+# Wrapper function
+def process_str_clusters(str_clusters):
+    # dcm = direction cosine matrix
+    columns = ['name', 'exit', 'dcm']
+    clusters_data = {}
+    for cluster in str_clusters:
+        name = str(cluster.split(' ')[0])
+        clusters_data[name] = process_cluster_def(cluster)
+
+    return clusters_data
+
 class VisitingVehicle(Vehicle):
     """
         Class responsible for handling visiting vehicle data.
@@ -94,19 +129,25 @@ class VisitingVehicle(Vehicle):
         thruster_data : dictionary
             Dictionary holding the main thruster configuration data.
 
+        cluster_data : dictionary
+            Dictionary holding the main cluster configuration data.
+
         jet_interactions : float
             Can be ignored for now.
 
         Methods
         -------
-        add_thruster_config(path_to_tcd)
-            Read in thruster configuration data from the provided file path.
-
         print_info()
             Simple method to format printing of vehicle info.
 
         set_stl()
             Reads in Vehicle surface mesh from STL file.
+
+        set_thruster_config()
+            Read in thruster configuration data from the provided file path.
+
+        set_cluster_config()
+            Read in cluster configuration data from the provided file path.
 
         initiate_plume_mesh()
             Reads in surface mesh for plume clone.
@@ -123,6 +164,16 @@ class VisitingVehicle(Vehicle):
         check_thruster_configuration()
             Plots visiting vehicle and all thrusters in RCS configuration.
     """
+    def print_info(self):
+        """Simple method to format printing of vehicle info."""
+
+        print('number of thrusters:', self.num_thrusters)
+        print('thruster units:', self.thruster_units)
+        print('center of gravity:', self.cog)
+        print('grapple coordinate:', self.grapple)
+        print('number of dual jet interactions:', self.jet_interactions)
+        return
+
     def set_stl(self):
         """
             Reads in Vehicle surface mesh from STL file.
@@ -137,7 +188,7 @@ class VisitingVehicle(Vehicle):
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
-        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['stl']
+        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['lm']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
         self.path_to_stl = path_to_stl
         return
@@ -146,13 +197,8 @@ class VisitingVehicle(Vehicle):
         """
             Read in thruster configuration data from the provided file path.
 
-            Gathers RCS configuration data for the Visiting Vehicle from a .dat file
+            Gathers thruster configuration data for the Visiting Vehicle from a .dat file
             and saves it as class members.
-
-            Parameters
-            ----------
-            path_to_tcd : str
-                file location for thruster configuration data file.
 
             Returns
             -------
@@ -160,10 +206,10 @@ class VisitingVehicle(Vehicle):
             Does the method need to return a status message? or pass similar data?
         """
 
-        path_to_tcd = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+        path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
 
         # Simple program, reading text from a file.
-        with open(path_to_tcd, 'r') as f:
+        with open(path_to_tcf, 'r') as f:
             lines = f.readlines()
 
             # Parse through first few lines, save relevant information. 
@@ -181,6 +227,42 @@ class VisitingVehicle(Vehicle):
             self.thruster_data = process_str_thrusters(str_thrusters)
 
             self.jet_interactions = lines.pop(0)
+
+        self.use_clusters = False
+        return
+    
+    def set_cluster_config(self):
+        """
+            Read in cluster configuration data from the provided file path.
+
+            Gathers cluster configuration data for the Visiting Vehicle from a .dat file
+            and saves it as class members.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+        """
+
+        path_to_ccf = self.case_dir + 'tcd/' + self.config['tcd']['ccf']
+
+        # Simple program, reading text from a file.
+        with open(path_to_ccf, 'r') as f:
+            lines = f.readlines()
+
+            # Parse through first few lines, save relevant information. 
+            self.num_clusters = int(lines.pop(0))
+            self.cluster_units = lines.pop(0)[0] # dont want '\n'
+
+            # Save all strings containing cluster data in a list
+            str_clusters = []
+            for i in range(self.num_clusters):
+                str_clusters.append(lines.pop(0))
+
+            # Parse through strings and save data in a dictionary
+            self.cluster_data = process_str_clusters(str_clusters)
+
+        self.use_clusters = True
+
         return
 
     def set_thruster_metrics(self):
@@ -189,11 +271,6 @@ class VisitingVehicle(Vehicle):
 
             Gathers thruster-specific performance parameters for the configuration from a .csv file
             and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.
-
-            Parameters
-            ----------
-            path_to_tcd : str
-                file location for thruster configuration data file.
 
             Returns
             -------
@@ -228,17 +305,6 @@ class VisitingVehicle(Vehicle):
 
         # print(self.thruster_metrics)
 
-        return
-
-
-    def print_info(self):
-        """Simple method to format printing of vehicle info."""
-
-        print('number of thrusters:', self.num_thrusters)
-        print('thruster units:', self.thruster_units)
-        print('center of gravity:', self.cog)
-        print('grapple coordinate:', self.grapple)
-        print('number of dual jet interactions:', self.jet_interactions)
         return
 
     def initiate_plume_mesh(self):
