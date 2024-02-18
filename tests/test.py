@@ -50,7 +50,7 @@ mp.set_jfh(jfh)
 mp.set_lm(lm)
 mp.read_flight_plan()
 # Calculate the fuel required for all maneuvers
-dm_total = mp.calc_total_delta_mass(lm)
+dm_total = mp.calc_total_delta_mass()
 print("dm_total is ", dm_total)
 
 
