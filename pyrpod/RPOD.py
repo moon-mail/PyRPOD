@@ -536,10 +536,10 @@ class RPOD (MissionPlanner):
                             sigma = float(self.config['tv']['sigma'])
                             thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
                             simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
-                            pressures[i] = simple_plume.get_pressure()
+                            pressures[i] += simple_plume.get_pressure()
                             cum_pressures[i] += pressures[i]
 
-                            heat_flux[i] = simple_plume.get_heat_flux()
+                            heat_flux[i] += simple_plume.get_heat_flux()
                             cum_heat_flux[i] += heat_flux[i]
                         # print("unit plume normal", unit_plume_normal)
  
