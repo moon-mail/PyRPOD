@@ -386,14 +386,11 @@ class RPOD (MissionPlanner):
         return window_queue, cur_window, get_counter
     
     def update_parameter_queue(self, param_queue, param_window_sum, get_counter):
+        print(f'in-before {param_window_sum}')
         for i in range(get_counter):
-            print('loop')
-            print(param_queue.qsize())
             old_param = param_queue.get()
-            print(old_param)
             param_window_sum -= old_param
-            print(param_window_sum)
-        print('left loop')
+        print(f'in-after {param_window_sum}')
         return param_queue, param_window_sum
 
     def jfh_plume_strikes(self):
@@ -600,33 +597,31 @@ class RPOD (MissionPlanner):
                                 max_pressures[i] = pressures[i]
 
                             heat_flux[i] = simple_plume.get_heat_flux()
-                            heat_flux_load[i] += heat_flux[i] * firing_time
+                            heat_flux_load[i] = heat_flux[i] * firing_time
                             cum_heat_flux_load[i] += heat_flux_load[i]
 
                             # if checking_constraints:
                             pressure_queues[i].put(float(pressures[i]))
-                            print(f"pressure_queues[{i}] = {pressure_queues[i].qsize()}")
                             pressure_window_sums += pressures[i]
 
                             heat_flux_queues[i].put(float(heat_flux_load[i]))
-                            print(f"heat_flux[i] = {heat_flux_queues[i].qsize()}")
                             heat_flux_window_sums += heat_flux[i]
 
-                            if pressures[i] > pressure_constraint:
-                                print(f"Pressure constraint failed at elapsed time of: {self.jfh.JFH[firing]['dt']}")
-                                print(f'\tPressure = {pressures[i]}\n')
+                            # if pressures[i] > pressure_constraint:
+                            #     print(f"Pressure constraint failed at elapsed time of: {self.jfh.JFH[firing]['dt']}")
+                            #     print(f'\tPressure = {pressures[i]}\n')
 
-                            if heat_flux[i] > heat_flux_constraint:
-                                print(f"Heat flux constraint failed at elapsed time of: {self.jfh.JFH[firing]['dt']}")
-                                print(f'\tHeat flux = {heat_flux[i]}\n')
+                            # if heat_flux[i] > heat_flux_constraint:
+                            #     print(f"Heat flux constraint failed at elapsed time of: {self.jfh.JFH[firing]['dt']}")
+                            #     print(f'\tHeat flux = {heat_flux[i]}\n')
 
-                            if pressure_window_sums[i] > pressure_window_constraint:
-                                print(f"Pressure window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:")
-                                print(f'\tPressure sum = {pressure_window_sums[i]} over t = {pressure_cur_window}\n')
+                            # if pressure_window_sums[i] > pressure_window_constraint:
+                            #     print(f"Pressure window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:")
+                            #     print(f'\tPressure sum = {pressure_window_sums[i]} over t = {pressure_cur_window}\n')
                             
-                            if heat_flux_window_sums[i] > heat_flux_window_constraint:
-                                print(f"Heat flux window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:")
-                                print(f'\tHeat flux load = {heat_flux_window_sums[i]} over t = {heat_flux_cur_window}\n')
+                            # if heat_flux_window_sums[i] > heat_flux_window_constraint:
+                            #     print(f"Heat flux window constraint failed at elapsed time of {self.jfh.JFH[firing]['dt']}:")
+                            #     print(f'\tHeat flux load = {heat_flux_window_sums[i]} over t = {heat_flux_cur_window}\n')
 
                         # print("unit plume normal", unit_plume_normal)
  
@@ -637,19 +632,19 @@ class RPOD (MissionPlanner):
                         # input("strike!")
             
             # if checking_constraints:
-            print(f'before update: pressure_queues[i] = {pressure_queues[1].qsize()}')
             pressure_window_queue, pressure_cur_window, pressure_get_counter = self.update_window_queue(
                 pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
 
             heat_flux_window_queue, heat_flux_cur_window, heat_flux_get_counter = self.update_window_queue(
                 heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size)
-            print(f"p_get_counter ={pressure_get_counter}, h_get_counter = {heat_flux_get_counter}")
-            print(f'after update: pressure_queues[i] = {pressure_queues[1].qsize()}')
+
             for queue_index in range(len(pressure_queues)):
-                if not pressure_queues[queue_index].empty():
-                    pressure_queues[queue_index], pressure_window_sums[queue_index] = self.update_parameter_queue(pressure_queues[queue_index], pressure_window_sums[queue_index], pressure_get_counter)
+                # if not pressure_queues[queue_index].empty():
+                #     pressure_queues[queue_index], pressure_window_sums[queue_index] = self.update_parameter_queue(pressure_queues[queue_index], pressure_window_sums[queue_index], pressure_get_counter)
+                #print(f'before update heat_flux_window_sum = {heat_flux_window_sums[queue_index]}')
                 if not heat_flux_queues[queue_index].empty():
                     heat_flux_queues[queue_index], heat_flux_window_sums[queue_index] = self.update_parameter_queue(heat_flux_queues[queue_index], heat_flux_window_sums[queue_index], heat_flux_get_counter)
+                #print(f'after update heat_flux_window_sum = {heat_flux_window_sums[queue_index]}\n\n')
 
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
