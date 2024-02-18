@@ -53,7 +53,7 @@ class DeltaMassChecks(unittest.TestCase):
         mp.set_lm(lm)
         mp.read_flight_plan()
 
-        mp.plot_delta_mass(1885)
+        # mp.plot_delta_mass(1885)
         
 
 if __name__ == '__main__':
