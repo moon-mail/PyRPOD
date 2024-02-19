@@ -486,9 +486,9 @@ class RPOD (MissionPlanner):
 
 
         # Loop through each firing in the JFH.
-        # for firing in range(len(self.jfh.JFH)):
+        for firing in range(len(self.jfh.JFH)):
+        # for firing in tqdm(range(len(self.jfh.JFH)), desc='All firings'):
 
-        for firing in tqdm(range(len(self.jfh.JFH)), desc='All firings'):
             # print('firing =', firing+1)
 
             # reset strikes for each firing
@@ -510,7 +510,8 @@ class RPOD (MissionPlanner):
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm']).transpose()
 
             # Calculate strikes for active thrusters. 
-            for thruster in tqdm(thrusters, desc='Current firing'):
+            for thruster in thrusters:
+            # for thruster in tqdm(thrusters, desc='Current firing'):
 
 
                 # Save thruster id using indexed thruster value.
