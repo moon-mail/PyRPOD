@@ -16,15 +16,35 @@
 
 import test_header
 import unittest, os, sys
-def run_tests():
+def run_tests(group):
+    # Run test suite of suplied group.
     test_loader = unittest.TestLoader()
-    test_suite = test_loader.discover(os.getcwd(), pattern='test_case_*.py')
+    test_suite = test_loader.discover(os.getcwd(), pattern='test_' + group + '_*.py')
     test_runner = unittest.TextTestRunner(verbosity = 2)
     result = test_runner.run(test_suite)
-    return result
 
-if __name__ == '__main__':
-    result = run_tests()
-    # print(result)
+    # Report results, exit if there is an error.
     if not result.wasSuccessful():
         sys.exit(1)
+
+    # Return number of tests ran and errors encountered.
+    result_str = str(result)
+    tests_run = int(result_str.split()[1][-1])
+    errors = int(result_str.split()[2][-1])
+    # errors = int(result_str)
+    return tests_run, errors
+
+if __name__ == '__main__':
+
+    test_groups = ['plume', 'rpod', 'mission', 'mdao']
+
+    # Run all tests in their groups.
+    total_tests = 0
+    total_errors = 0
+    for group in test_groups:
+        tests_run, errors = run_tests(group)
+        total_tests += tests_run
+        total_errors += errors
+
+    # Report cummulative results.
+    print(total_tests, "tests ran", total_errors, "total errors")
