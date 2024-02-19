@@ -12,10 +12,10 @@
 import test_header
 import unittest
 
-class PlumeTest(unittest.TestCase):
-    def test_plume(self):
+class MDAOTest(unittest.TestCase):
+    def test_mdao(self):
 
-        print("plume test")
+        print("mdao unit test")
 
 if __name__ == '__main__':
     unittest.main()

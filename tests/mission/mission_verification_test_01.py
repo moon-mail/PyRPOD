@@ -12,10 +12,10 @@
 import test_header
 import unittest
 
-class RPODTest(unittest.TestCase):
-    def test_rpod(self):
+class MDAOTest(unittest.TestCase):
+    def test_mdao(self):
 
-        print("rpod test")
+        print("plume verification test")
 
 if __name__ == '__main__':
     unittest.main()
