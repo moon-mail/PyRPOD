@@ -1,12 +1,10 @@
 from stl import mesh
-from math import pi
-plate = mesh.Mesh.from_file('square_plate_refined.stl')
+import math
 
-plate.translate([-2.5, 0, -2.5])
-theta = (pi/180) * 90
-plate.rotate([1, 0, 0], theta = theta)
-plate.points = 5 * plate.points
+mesh = mesh.Mesh.from_file('square_plate_refinedx2.stl')
 
+mesh.points = 0.001 * mesh.points
 
-plate.save('square_plate_transformed.stl')
-print(plate)
+mesh.translate([-1/2, -12, -12])
+
+mesh.save('square_plate_refinedx2_transformed.stl')

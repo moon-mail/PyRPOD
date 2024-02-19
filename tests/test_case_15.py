@@ -16,7 +16,7 @@ class LoadJFHChecks(unittest.TestCase):
     def test_plume_kinetics(self):
 
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/plume_case/'
+        case_dir = '../case/plume_sq_plate/'
 
         # Load JFH data.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)
