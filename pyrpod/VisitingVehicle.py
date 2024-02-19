@@ -99,14 +99,18 @@ class VisitingVehicle(Vehicle):
 
         Methods
         -------
-        add_thruster_config(path_to_tcd)
-            Read in thruster configuration data from the provided file path.
 
         print_info()
             Simple method to format printing of vehicle info.
 
         set_stl()
             Reads in Vehicle surface mesh from STL file.
+
+        set_thruster_config()
+            Reads in thruster configuration data from the provided file path.
+        
+        change_thruster_config()
+            Alters thruster configuration data using OpenMDAO inputs.
 
         initiate_plume_mesh()
             Reads in surface mesh for plume clone.
@@ -123,6 +127,17 @@ class VisitingVehicle(Vehicle):
         check_thruster_configuration()
             Plots visiting vehicle and all thrusters in RCS configuration.
     """
+
+    def print_info(self):
+        """Simple method to format printing of vehicle info."""
+
+        print('number of thrusters:', self.num_thrusters)
+        print('thruster units:', self.thruster_units)
+        print('center of gravity:', self.cog)
+        print('grapple coordinate:', self.grapple)
+        print('number of dual jet interactions:', self.jet_interactions)
+        return
+    
     def set_stl(self):
         """
             Reads in Vehicle surface mesh from STL file.
@@ -137,14 +152,14 @@ class VisitingVehicle(Vehicle):
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
-        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['stl']
+        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['lm']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
         self.path_to_stl = path_to_stl
         return
 
     def set_thruster_config(self):
         """
-            Read in thruster configuration data from the provided file path.
+            Reads in thruster configuration data from the provided file path.
 
             Gathers RCS configuration data for the Visiting Vehicle from a .dat file
             and saves it as class members.
@@ -182,6 +197,23 @@ class VisitingVehicle(Vehicle):
 
             self.jet_interactions = lines.pop(0)
         return
+    
+    def change_thruster_config(self, x):
+        """
+            Alters thruster configuration data using OpenMDAO inputs.
+
+            Parameters
+            ----------
+            x : int
+                Axial position (along the x axis) of the nozzle exit with respect to the LM's docking adapter.
+            
+            Returns
+            -------
+            Method doesn't currently return anything.
+        """
+        # print(f"x is {x} mm")
+        for thruster in self.thruster_data:
+            self.thruster_data[thruster]["exit"][0][0] = x
 
     def set_thruster_metrics(self):
         """
