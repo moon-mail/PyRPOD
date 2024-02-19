@@ -386,11 +386,10 @@ class RPOD (MissionPlanner):
         return window_queue, cur_window, get_counter
     
     def update_parameter_queue(self, param_queue, param_window_sum, get_counter):
-        print(f'in-before {param_window_sum}')
         for i in range(get_counter):
             old_param = param_queue.get()
+            print(f'got {old_param}')
             param_window_sum -= old_param
-        print(f'in-after {param_window_sum}')
         return param_queue, param_window_sum
 
     def jfh_plume_strikes(self):
@@ -439,7 +438,6 @@ class RPOD (MissionPlanner):
             max_pressures = np.zeros(len(target.vectors))
 
             # Initiate array containing cummulative heatflux. 
-            heat_flux_load = np.zeros(len(target.vectors))
             cum_heat_flux_load = np.zeros(len(target.vectors))
 
             # if checking_constraints:
@@ -483,6 +481,7 @@ class RPOD (MissionPlanner):
             # reset strikes for each firing
             strikes = np.zeros(len(target.vectors))
 
+            print(f'firing #{firing}')
             firing_time = float(self.jfh.JFH[firing]['t'])
             if self.config['pm']['kinetics'] != 'None':
                 # reset pressures for each firing
@@ -490,6 +489,7 @@ class RPOD (MissionPlanner):
 
                 # reset pressures for each firing
                 heat_flux = np.zeros(len(target.vectors))
+                heat_flux_load = np.zeros(len(target.vectors))
 
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
@@ -600,13 +600,19 @@ class RPOD (MissionPlanner):
                             heat_flux[i] += heat_flux_cur
                             heat_flux_load[i] += heat_flux_cur * firing_time
                             cum_heat_flux_load[i] += heat_flux_cur * firing_time
+                            print(f'here:\nheat_flux_cur = {heat_flux_cur}')
+                            print(f'heat_flux[i] = {heat_flux[i]}')
+                            print(f'heat_flux_load[i] = {heat_flux_load[i]}')
+                            print(f'cum_heat_flux_load[i] = {cum_heat_flux_load[i]}')
 
-                            # if checking_constraints:
-                            pressure_queues[i].put(float(pressures[i]))
-                            pressure_window_sums += pressures[i]
+            # if checking_constraints:
+            print(heat_flux_load[20460])
+            for i in range(len(pressures)):
+                pressure_queues[i].put(float(pressures[i]))
+                pressure_window_sums[i] += pressures[i]
 
-                            heat_flux_queues[i].put(float(heat_flux_load[i]))
-                            heat_flux_window_sums += heat_flux[i]
+                heat_flux_queues[i].put(float(heat_flux_load[i]))
+                heat_flux_window_sums[i] += heat_flux_load[i]
 
                             # if pressures[i] > pressure_constraint:
                             #     print(f"Pressure constraint failed at elapsed time of: {self.jfh.JFH[firing]['dt']}")
@@ -643,8 +649,12 @@ class RPOD (MissionPlanner):
                 # if not pressure_queues[queue_index].empty():
                 #     pressure_queues[queue_index], pressure_window_sums[queue_index] = self.update_parameter_queue(pressure_queues[queue_index], pressure_window_sums[queue_index], pressure_get_counter)
                 #print(f'before update heat_flux_window_sum = {heat_flux_window_sums[queue_index]}')
-                if not heat_flux_queues[queue_index].empty():
+                if not heat_flux_queues[queue_index].empty() and heat_flux_window_sums[queue_index] != 0:
+                    print(f"queue length: {heat_flux_queues[queue_index].qsize()}")
+                    print(f"sum: {heat_flux_window_sums[queue_index]}")
                     heat_flux_queues[queue_index], heat_flux_window_sums[queue_index] = self.update_parameter_queue(heat_flux_queues[queue_index], heat_flux_window_sums[queue_index], heat_flux_get_counter)
+                    print(f"queue length: {heat_flux_queues[queue_index].qsize()}")
+                    print(f"sum: {heat_flux_window_sums[queue_index]}")
                 #print(f'after update heat_flux_window_sum = {heat_flux_window_sums[queue_index]}\n\n')
 
             # Save surface data to be saved at each cell of the STL mesh.  
