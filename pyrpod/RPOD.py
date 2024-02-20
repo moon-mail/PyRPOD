@@ -544,7 +544,7 @@ class RPOD (MissionPlanner):
                             cum_pressures[i] += pressure
 
                             shear_pressure = simple_plume.get_shear_pressure()
-                            shear_pressures[i] += shear_pressure
+                            shear_pressures[i] += abs(shear_pressure)
 
                             heat_flux_cur = simple_plume.get_heat_flux()
                             heat_flux[i] += heat_flux_cur

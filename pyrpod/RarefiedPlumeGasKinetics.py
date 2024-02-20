@@ -113,7 +113,7 @@ def get_maxwellian_shear_pressure(rho_inf, U, S, sigma, theta):
     tau2 = np.sqrt(np.pi) * S * np.cos(theta)
     tau2 *= (1 + sp.erf(S * np.cos(theta)))
     tau = tau1 + tau2
-    tau *= (sigma * rho_inf * np.sin(theta) * U ** 2) / (2 * np.sqrt(np.pi) * S)
+    tau *= -(sigma * rho_inf * np.sin(theta) * U ** 2) / (2 * np.sqrt(np.pi) * S)
     return tau
 
 def get_maxwellian_heat_transfer(rho_inf, S, sigma, theta, T, T_r, R, gamma):
