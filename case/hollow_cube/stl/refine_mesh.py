@@ -50,6 +50,6 @@ def increase_mesh_fidelity(input_file, output_file, refinement_levels=2):
     print(f"New mesh with increased fidelity saved to '{output_file}'")
 
 # Run
-input_stl = 'hollow_cube_transformed_refined.stl'
-output_stl = 'hollow_cube_transformed_refinedx2.stl'
+input_stl = 'hollow_cube_transformed_refinedx2.stl'
+output_stl = 'hollow_cube_transformed_refinedx3.stl'
 increase_mesh_fidelity(input_stl, output_stl)
