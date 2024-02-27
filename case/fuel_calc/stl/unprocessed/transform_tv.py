@@ -3,8 +3,6 @@ import math
 
 mesh = mesh.Mesh.from_file('convex_tv.stl')
 
-mesh.points = 0.001 * mesh.points
-
 # center on origin
 # mesh.translate([-64,-64,-64]) # KoS
 
