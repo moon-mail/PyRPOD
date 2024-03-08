@@ -470,7 +470,7 @@ class RPOD (MissionPlanner):
                 thruster_orientation =   thruster_orientation.dot(vv_orientation)
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
                 # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
-                plume_normal = np.array(thruster_orientation[2])
+                plume_normal = np.array(thruster_orientation[0])
                 # print("plume normal: ", plume_normal)
                 
                 # calculate thruster exit coordinate with respect to the Target Vehicle.
