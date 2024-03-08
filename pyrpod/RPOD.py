@@ -324,7 +324,7 @@ class RPOD (MissionPlanner):
 
                 # Transform plume
                 
-                # First, according to DCM of current thruster id in TCD
+                # First, according to DCM of current thruster id in TCF
                 thruster_orientation = np.array(
                     self.vv.thruster_data[thruster_id]['dcm']
                 )
