@@ -540,7 +540,10 @@ class RPOD (MissionPlanner):
                 # reset pressures for each firing
                 pressures = np.zeros(len(target.vectors))
 
-                # reset pressures for each firing
+                # reset shear pressures for each firing
+                shear_pressures = np.zeros(len(target.vectors))
+
+                # reset heat fluxes for each firing
                 heat_flux = np.zeros(len(target.vectors))
                 heat_flux_load = np.zeros(len(target.vectors))
 
@@ -649,6 +652,9 @@ class RPOD (MissionPlanner):
                             if pressures[i] > max_pressures[i]:
                                 max_pressures[i] = pressures[i]
 
+                            shear_pressure = simple_plume.get_shear_pressure()
+                            shear_pressures[i] += abs(shear_pressure)
+
                             heat_flux_cur = simple_plume.get_heat_flux()
                             heat_flux[i] += heat_flux_cur
                             heat_flux_load[i] += heat_flux_cur * firing_time
@@ -689,6 +695,7 @@ class RPOD (MissionPlanner):
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
                 cellData["max_pressures"] = max_pressures
+                cellData["shear_pressures"] = shear_pressures
                 cellData["heat_flux_rate"] = heat_flux
                 cellData["heat_flux_load"] = heat_flux_load
                 cellData["cum_heat_flux_load"] = cum_heat_flux_load

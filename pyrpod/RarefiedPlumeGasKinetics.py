@@ -84,6 +84,38 @@ def get_maxwellian_pressure(rho_inf, U, S, sigma, theta, T, T_w):
     p *= (rho_inf * U ** 2) / (2 * S ** 2)
     return p
 
+def get_maxwellian_shear_pressure(rho_inf, U, S, sigma, theta):
+    '''
+        Rarefied Gas Dynamics - Shen - eq. 4.20
+        Gas-surface interaction model for shear pressure based on Maxwell's model.
+        Sigma is the fraction of reflections which are diffusive as opposed to specular.
+
+        Parameters
+        ----------
+        rho_inf : float
+                macroscopic density of the flowfield (kg / m^3)
+        U : float
+                gas velocity relative to the surface element (m / s)
+        S : float
+                speed ratio of the gas relative to the surface element
+        sigma : float
+                [0, 1], portion of molecules reflected diffusely
+        theta : float
+                plume centerline off-angle of current position (rad)
+        
+        Returns
+        -------
+        float
+            the shear pressure exerted on the surface element (N / m^2)
+    '''
+
+    tau1 = np.exp(- (S * np.cos(theta)) ** 2)
+    tau2 = np.sqrt(np.pi) * S * np.cos(theta)
+    tau2 *= (1 + sp.erf(S * np.cos(theta)))
+    tau = tau1 + tau2
+    tau *= -(sigma * rho_inf * np.sin(theta) * U ** 2) / (2 * np.sqrt(np.pi) * S)
+    return tau
+
 def get_maxwellian_heat_transfer(rho_inf, S, sigma, theta, T, T_r, R, gamma):
     '''
         Rarefied Gas Dynamics - Shen - eq. 4.45'
@@ -833,6 +865,46 @@ class SimplifiedGasKinetics:
 
             pressure = get_maxwellian_pressure(rho_inf, U, S, self.sigma, self.theta, T, self.T_w)
         return pressure
+    
+    def get_shear_pressure(self):
+        '''
+            Method to call gas-surface interaction model. Passes thruster characteristics and
+            normalized plume parameters to the Maxwell model to solve for shear pressre.
+
+            Parameters
+            ----------
+            None.
+
+            Returns
+            -------
+            float
+                shear pressure on the surface outside of the nozzle exit (N / m^2)
+        '''
+        if self.theta != 0: # not on centerline
+            n_inf = self.n_0 * self.get_num_density_ratio()
+            rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
+            T = self.T_0 * self.get_temp_ratio()
+
+            u = self.get_U_normalized() / self.beta_0
+            w = self.get_W_normalized() / self.beta_0
+            U = np.sqrt(u ** 2 + w ** 2)
+            beta = self.get_beta(T)
+            S = U * beta
+
+            shear_pressure = get_maxwellian_shear_pressure(rho_inf, U, S, self.sigma, self.theta)
+            return shear_pressure
+        else: # on centerline
+            n_inf = self.n_0 * self.get_num_density_centerline()
+            rho_inf = n_inf * self.molar_mass / AVOGADROS_NUMBER
+
+            T = self.T_0 * self.get_temp_centerline()
+
+            U = self.get_velocity_centerline() / self.beta_0
+            beta = self.get_beta(T)
+            S = U * beta
+
+            shear_pressure = get_maxwellian_shear_pressure(rho_inf, U, S, self.sigma, self.theta)
+        return shear_pressure
     
     def get_heat_flux(self):
         '''
