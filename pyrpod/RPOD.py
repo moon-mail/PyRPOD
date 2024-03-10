@@ -495,9 +495,15 @@ class RPOD (MissionPlanner):
                 # grab constraint values from configuration file
                 pressure_constraint = float(self.config['tv']['normal_pressure'])
                 heat_flux_constraint = float(self.config['tv']['heat_flux'])
+                shear_constraint = float(self.config['tv']['shear_pressure'])
 
                 pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
                 heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
+
+                # open an output file to record if constraints are passed or failed
+                report_dir = results_dir.replace('strikes', '')
+                constraint_file = open(report_dir + 'impingement_report.txt', 'w')
+                failed_constraints = 0
 
                 # Initiate array containing sum of pressures over a given window
                 pressure_window_sums = np.zeros(len(target.vectors))
@@ -690,6 +696,30 @@ class RPOD (MissionPlanner):
 
                     if not heat_flux_queues[queue_index].empty() and heat_flux_window_sums[queue_index] != 0:
                         heat_flux_queues[queue_index], heat_flux_window_sums[queue_index] = self.update_parameter_queue(heat_flux_queues[queue_index], heat_flux_window_sums[queue_index], heat_flux_get_counter)
+                
+                    #check if instantaneous constraints are broken
+                    if pressures[queue_index] > pressure_constraint and not failed_constraints:
+                        constraint_file.write(f"Pressure constraint failed at cell #{i}.\n")
+                        constraint_file.write(f"Pressure reached {pressures[queue_index]}.\n\n")
+                        failed_constraints = 1
+                    if shear_stresses[queue_index] > shear_constraint and not failed_constraints:
+                        constraint_file.write(f"Shear constraint failed at cell #{i}.\n")
+                        constraint_file.write(f"Shear reached {shear_stresses[queue_index]}.\n\n")
+                        failed_constraints = 1
+                    if heat_flux[queue_index] > heat_flux_constraint and not failed_constraints:
+                        constraint_file.write(f"Heat flux constraint failed at cell #{i}.\n")
+                        constraint_file.write(f"Heat flux reached {heat_flux[queue_index]}.\n\n")
+                        failed_constraints = 1
+
+                    # check if window constraints are broken, and report
+                    if pressure_window_sums[queue_index] > pressure_window_constraint and not failed_constraints:
+                        constraint_file.write(f"Pressure window constraint failed at cell #{queue_index}.\n")
+                        constraint_file.write(f"Pressure winodw reached {pressure_window_sums[queue_index]}.\n\n")
+                        failed_constraints = 1
+                    if heat_flux_window_sums[queue_index] > heat_flux_window_constraint and not failed_constraints:
+                        constraint_file.write(f"Heat flux window constraint failed at cell #{queue_index}.\n")
+                        constraint_file.write(f"Heat flux load reached {heat_flux_window_sums[queue_index]}.\n\n")
+                        failed_constraints = 1
 
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
@@ -711,7 +741,11 @@ class RPOD (MissionPlanner):
             # print(cellData)
             # input()
             self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData, target)
-            # print()
+    
+        if self.config['pm']['kinetics'] != 'None' and checking_constraints:
+            if not failed_constraints:
+                constraint_file.write(f"All impingement constraints met.")
+            constraint_file.close()
 
 
     def graph_param_curve(self, t, r_of_t):
