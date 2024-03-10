@@ -32,9 +32,7 @@ class LoadJFHChecks(unittest.TestCase):
 
         rpod = RPOD.RPOD(case_dir)
         rpod.study_init(jfh, tv, vv)
-        # # rpod = RPOD.RPOD(jfh, tv, vv)
-
-        # rpod.graph_jfh()
+        rpod.graph_jfh()
         rpod.jfh_plume_strikes()
 
 if __name__ == '__main__':
