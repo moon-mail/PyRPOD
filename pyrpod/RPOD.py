@@ -483,6 +483,9 @@ class RPOD (MissionPlanner):
             # Initiate array containing max pressures induced on each element. 
             max_pressures = np.zeros(len(target.vectors))
 
+            # Initiate array containing max shears induced on each element. 
+            max_shears = np.zeros(len(target.vectors))
+
             # Initiate array containing cummulative heatflux. 
             cum_heat_flux_load = np.zeros(len(target.vectors))
 
@@ -541,7 +544,7 @@ class RPOD (MissionPlanner):
                 pressures = np.zeros(len(target.vectors))
 
                 # reset shear pressures for each firing
-                shear_pressures = np.zeros(len(target.vectors))
+                shear_stresses = np.zeros(len(target.vectors))
 
                 # reset heat fluxes for each firing
                 heat_flux = np.zeros(len(target.vectors))
@@ -652,8 +655,10 @@ class RPOD (MissionPlanner):
                             if pressures[i] > max_pressures[i]:
                                 max_pressures[i] = pressures[i]
 
-                            shear_pressure = simple_plume.get_shear_pressure()
-                            shear_pressures[i] += abs(shear_pressure)
+                            shear_stress = simple_plume.get_shear_pressure()
+                            shear_stresses[i] += abs(shear_stress)
+                            if shear_stresses[i] > max_shears[i]:
+                                max_shears[i] = shear_stresses[i]
 
                             heat_flux_cur = simple_plume.get_heat_flux()
                             heat_flux[i] += heat_flux_cur
@@ -695,7 +700,8 @@ class RPOD (MissionPlanner):
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
                 cellData["max_pressures"] = max_pressures
-                cellData["shear_pressures"] = shear_pressures
+                cellData["shear_stress"] = shear_stresses
+                cellData["max_shears"] = max_shears
                 cellData["heat_flux_rate"] = heat_flux
                 cellData["heat_flux_load"] = heat_flux_load
                 cellData["cum_heat_flux_load"] = cum_heat_flux_load
