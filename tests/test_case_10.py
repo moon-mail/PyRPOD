@@ -25,8 +25,8 @@ class IsentropicExpansionCheck(unittest.TestCase):
 
         # Plot isentropic expansion curves.
         isen_plume = IsentropicExpansion.IsentropicExpansion()
-        # isen_plume.plot_number_density_ratios_vs_radius(M1, M2, gamma, r_star)
-        # isen_plume.plot_temp_ratios_vs_radius(M1, M2, gamma, r_star)
+        isen_plume.plot_number_density_ratios_vs_radius(M1, M2, gamma, r_star)
+        isen_plume.plot_temp_ratios_vs_radius(M1, M2, gamma, r_star)
 
 if __name__ == '__main__':
     unittest.main()
