@@ -15,6 +15,7 @@ from pyrpod.RarefiedPlumeGasKinetics import SimplifiedGasKinetics
 
 from pyrpod.file_print import print_JFH
 from tqdm import tqdm
+from queue import Queue
 
 # Helper functions
 def rotation_matrix_from_vectors(vec1, vec2):
@@ -367,6 +368,68 @@ class RPOD (MissionPlanner):
             VVmesh.save(path_to_stl)
             # print()
 
+    def update_window_queue(self, window_queue, cur_window, firing_time, window_size):
+        """
+            Takes the most recent window of time size, and adds the new firing time to the sum, and the window_queue.
+            If the new window is larger than the allowed window_size, then earleist firing times are removed
+            from the queue and subtracted from the cur_window sum, until the sum fits within the window size.
+            A counter for how many firing times are removed and subtracted is recorded.
+
+            Parameters
+            ----------
+            window_queue : Queue
+                    Queue holding the tracked firing times
+            cur_window : float
+                    sum of the tracked firing times (s)
+            firing_time : float
+                    length of current firing (s)
+            window_size : float
+                    max length of a window of time to track (s)
+
+            Returns
+            -------
+            Queue
+                Stores tracked firing times after update
+            float
+                sum of tracked firing times after update
+            int
+                number of firings removed from the queue 
+        """
+        window_queue.put(firing_time)
+        cur_window += firing_time
+        get_counter = 0
+        while cur_window > window_size:
+            old_firing_time = window_queue.get()
+            cur_window -= old_firing_time
+            get_counter +=1
+        return window_queue, cur_window, get_counter
+    
+    def update_parameter_queue(self, param_queue, param_window_sum, get_counter):
+        """
+            Takes the current parameter_queue, and removes the earliest tracked parameters from the front of the queue.
+            This occurs "get_counter" times. Each time a parameter is popped from the queue, the sum is also updated,
+            as to not track the removed parameter (ie. subtract the value)
+
+            Parameters
+            ----------
+            param_queue : Queue
+                    Queue holding the tracked parameters per firing
+            param_window_sum : float
+                    sum of the parameters in all the tracked firings
+            get_counter : int
+                    number of times to remove a tracked parameter from the front of the queue
+
+            Returns
+            -------
+            Queue
+                stores tracked paramters per firing after update
+            float
+                sum of tracked parameter after update
+        """
+        for i in range(get_counter):
+            old_param = param_queue.get()
+            param_window_sum -= old_param
+        return param_queue, param_window_sum
 
     def jfh_plume_strikes(self):
         """
@@ -407,11 +470,60 @@ class RPOD (MissionPlanner):
         # Initiate array containing cummulative strikes. 
         cum_strikes = np.zeros(len(target.vectors))
 
-        # Initiate array containing cummulative strikes. 
-        cum_pressures = np.zeros(len(target.vectors))
+        # using plume physics?
+        if self.config['pm']['kinetics'] != 'None':
 
-        # Initiate array containing cummulative heatflux. 
-        cum_heat_flux = np.zeros(len(target.vectors))
+            # Initiate array containing max pressures induced on each element. 
+            max_pressures = np.zeros(len(target.vectors))
+
+            # Initiate array containing max shears induced on each element. 
+            max_shears = np.zeros(len(target.vectors))
+
+            # Initiate array containing cummulative heatflux. 
+            cum_heat_flux_load = np.zeros(len(target.vectors))
+
+            checking_constraints = int(self.config['tv']['check_constraints'])
+
+            if checking_constraints:
+                # grab constraint values from configuration file
+                pressure_constraint = float(self.config['tv']['normal_pressure'])
+                heat_flux_constraint = float(self.config['tv']['heat_flux'])
+                shear_constraint = float(self.config['tv']['shear_pressure'])
+
+                pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
+                heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
+
+                # open an output file to record if constraints are passed or failed
+                report_dir = results_dir.replace('strikes', '')
+                constraint_file = open(report_dir + 'impingement_report.txt', 'w')
+                failed_constraints = 0
+
+                # Initiate array containing sum of pressures over a given window
+                pressure_window_sums = np.zeros(len(target.vectors))
+                # hold a queue of pressure values per cell
+                pressure_queues = np.empty(len(target.vectors), dtype=object)
+                for i in range(len(pressure_queues)):
+                    pressure_queues[i] = Queue()
+                # save size of pressure window in seconds
+                pressure_window_size = float(self.config['tv']['normal_pressure_window_size'])
+                # save a queue of firing times for pressure
+                pressure_window_queue = Queue()
+                # keep track of current window size for pressure
+                pressure_cur_window = 0
+
+                # Initiate array containing sum of heat_flux over a given window
+                heat_flux_window_sums = np.zeros(len(target.vectors))
+                # Initialize an array of queues
+                heat_flux_queues = np.empty(len(target.vectors), dtype=object)
+                # Populate the array with a queue per cell
+                for i in range(len(heat_flux_queues)):
+                    heat_flux_queues[i] = Queue()
+                # save size of heat_flux queue (s)
+                heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
+                # save a queue of firing times for heat_flux
+                heat_flux_window_queue = Queue()
+                # keep track of current window size for heatflux
+                heat_flux_cur_window = 0
 
         # print(len(cum_strikes))
 
@@ -425,14 +537,17 @@ class RPOD (MissionPlanner):
             # reset strikes for each firing
             strikes = np.zeros(len(target.vectors))
 
-            # reset pressures for each firing
-            pressures = np.zeros(len(target.vectors))
+            firing_time = float(self.jfh.JFH[firing]['t'])
+            if self.config['pm']['kinetics'] != 'None':
+                # reset pressures for each firing
+                pressures = np.zeros(len(target.vectors))
 
-            # reset shear pressures for each firing
-            shear_pressures = np.zeros(len(target.vectors))
+                # reset shear pressures for each firing
+                shear_stresses = np.zeros(len(target.vectors))
 
-            # reset heat fluxes for each firing
-            heat_flux = np.zeros(len(target.vectors))
+                # reset heat fluxes for each firing
+                heat_flux = np.zeros(len(target.vectors))
+                heat_flux_load = np.zeros(len(target.vectors))
 
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
@@ -523,35 +638,83 @@ class RPOD (MissionPlanner):
                     within_distance = float(norm_distance) < float(self.config['plume']['radius'])
                     within_theta = float(theta) < float(self.config['plume']['wedge_theta'])
                     facing_thruster = surface_dot_plume < 0
-
+                    
                     if (within_distance and within_theta and facing_thruster):
                         cum_strikes[i] = cum_strikes[i] + 1
                         strikes[i] = 1
 
+                        # if Simplified gas kinetics model is enabled, get relevant parameters
+                        # pass parameters and thruster info to SimplifiedGasKinetics and record returns of pressures and heat flux
+                        # atm, gas_surface interaction model is not checked, as only one is supported
                         if self.config['pm']['kinetics'] == "Simplified":
                             T_w = float(self.config['tv']['surface_temp'])
                             sigma = float(self.config['tv']['sigma'])
                             thruster_metrics = self.vv.thruster_metrics[self.vv.thruster_data[thruster_id]['type'][0]]
                             simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
-                            pressure = simple_plume.get_pressure()
-                            pressures[i] += pressure
-                            cum_pressures[i] += pressure
+                            pressures[i] += simple_plume.get_pressure()
+                            if pressures[i] > max_pressures[i]:
+                                max_pressures[i] = pressures[i]
 
-                            shear_pressure = simple_plume.get_shear_pressure()
-                            shear_pressures[i] += abs(shear_pressure)
+                            shear_stress = simple_plume.get_shear_pressure()
+                            shear_stresses[i] += abs(shear_stress)
+                            if shear_stresses[i] > max_shears[i]:
+                                max_shears[i] = shear_stresses[i]
 
                             heat_flux_cur = simple_plume.get_heat_flux()
                             heat_flux[i] += heat_flux_cur
-                            cum_heat_flux[i] += heat_flux_cur
-                        # print("unit plume normal", unit_plume_normal)
- 
-                        # print("unit distance", unit_distance)
-                        # print("theta", theta)
-                        # input()
-                        # print('centroid', centroid, 'distance', distance, 'norm distance', norm_distance)
-                        # input("strike!")
+                            heat_flux_load[i] += heat_flux_cur * firing_time
+                            cum_heat_flux_load[i] += heat_flux_cur * firing_time
+
+            # if checking constraints:
+            # save all new pressure and heat flux values into each cell's respective queue
+            # add pressure and heat_flux into each cell's window sum
+            # update the window queues based on their max sizes, and the firing times
+            # update the parameter queues based on the updates made on the window queues 
+            if self.config['pm']['kinetics'] != 'None' and checking_constraints:
+                for i in range(len(pressures)):
+                    pressure_queues[i].put(float(pressures[i]))
+                    pressure_window_sums[i] += pressures[i]
+
+                    heat_flux_queues[i].put(float(heat_flux_load[i]))
+                    heat_flux_window_sums[i] += heat_flux_load[i]
             
-            
+                pressure_window_queue, pressure_cur_window, pressure_get_counter = self.update_window_queue(
+                    pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
+
+                heat_flux_window_queue, heat_flux_cur_window, heat_flux_get_counter = self.update_window_queue(
+                    heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size)
+
+                for queue_index in range(len(pressure_queues)):
+                    if not pressure_queues[queue_index].empty():
+                        pressure_queues[queue_index], pressure_window_sums[queue_index] = self.update_parameter_queue(pressure_queues[queue_index], pressure_window_sums[queue_index], pressure_get_counter)
+
+                    if not heat_flux_queues[queue_index].empty() and heat_flux_window_sums[queue_index] != 0:
+                        heat_flux_queues[queue_index], heat_flux_window_sums[queue_index] = self.update_parameter_queue(heat_flux_queues[queue_index], heat_flux_window_sums[queue_index], heat_flux_get_counter)
+                
+                    #check if instantaneous constraints are broken
+                    if pressures[queue_index] > pressure_constraint and not failed_constraints:
+                        constraint_file.write(f"Pressure constraint failed at cell #{i}.\n")
+                        constraint_file.write(f"Pressure reached {pressures[queue_index]}.\n\n")
+                        failed_constraints = 1
+                    if shear_stresses[queue_index] > shear_constraint and not failed_constraints:
+                        constraint_file.write(f"Shear constraint failed at cell #{i}.\n")
+                        constraint_file.write(f"Shear reached {shear_stresses[queue_index]}.\n\n")
+                        failed_constraints = 1
+                    if heat_flux[queue_index] > heat_flux_constraint and not failed_constraints:
+                        constraint_file.write(f"Heat flux constraint failed at cell #{i}.\n")
+                        constraint_file.write(f"Heat flux reached {heat_flux[queue_index]}.\n\n")
+                        failed_constraints = 1
+
+                    # check if window constraints are broken, and report
+                    if pressure_window_sums[queue_index] > pressure_window_constraint and not failed_constraints:
+                        constraint_file.write(f"Pressure window constraint failed at cell #{queue_index}.\n")
+                        constraint_file.write(f"Pressure winodw reached {pressure_window_sums[queue_index]}.\n\n")
+                        failed_constraints = 1
+                    if heat_flux_window_sums[queue_index] > heat_flux_window_constraint and not failed_constraints:
+                        constraint_file.write(f"Heat flux window constraint failed at cell #{queue_index}.\n")
+                        constraint_file.write(f"Heat flux load reached {heat_flux_window_sums[queue_index]}.\n\n")
+                        failed_constraints = 1
+
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
                 "strikes": strikes,
@@ -560,17 +723,23 @@ class RPOD (MissionPlanner):
 
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
-                cellData["cum_pressures"] = cum_pressures
-                cellData["shear_pressures"] = shear_pressures
-                cellData["heat_flux"] = heat_flux
-                cellData["cum_heat_flux"] = cum_heat_flux
+                cellData["max_pressures"] = max_pressures
+                cellData["shear_stress"] = shear_stresses
+                cellData["max_shears"] = max_shears
+                cellData["heat_flux_rate"] = heat_flux
+                cellData["heat_flux_load"] = heat_flux_load
+                cellData["cum_heat_flux_load"] = cum_heat_flux_load
 
             path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
 
             # print(cellData)
             # input()
             self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData, target)
-            # print()
+    
+        if self.config['pm']['kinetics'] != 'None' and checking_constraints:
+            if not failed_constraints:
+                constraint_file.write(f"All impingement constraints met.")
+            constraint_file.close()
 
 
     def graph_param_curve(self, t, r_of_t):
