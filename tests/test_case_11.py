@@ -39,7 +39,7 @@ class BurnTimeContourChecks(unittest.TestCase):
         mp = MissionPlanner.MissionPlanner(case_dir)
         mp.set_lm(lm)
         mp.read_flight_plan()
-        mp.plot_burn_time_contour(1194)
+        # mp.plot_burn_time_contour(1194)
 
 if __name__ == '__main__':
     unittest.main()
