@@ -303,7 +303,7 @@ class RPOD (MissionPlanner):
             # print("thrusters", thrusters)
              
             # Load, transform, and, graph STLs of visiting vehicle.  
-            VVmesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['lm'])
+            VVmesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['stl_lm'])
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm'])
             # print(vv_orientation.transpose())
             VVmesh.rotate_using_matrix(vv_orientation.transpose())
@@ -321,7 +321,7 @@ class RPOD (MissionPlanner):
                 thruster_id = link[str(thruster)][0]
 
                 # Load plume STL in initial configuration. 
-                plumeMesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['thruster'])
+                plumeMesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['stl_thruster'])
 
                 # Transform plume
                 
