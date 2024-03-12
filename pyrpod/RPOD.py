@@ -63,47 +63,46 @@ class RPOD (MissionPlanner):
 
         Methods
         -------
-        set_current_6dof_state(v = [0, 0, 0], w = [0,0,0])
-            Sets VV current inertial state. Can be done manually for read from flight plan.
+        study_init(self, JetFiringHistory, Target, Vehicle)
+            Designates assets for RPOD analysis.
+        
+        graph_init_config(self)
+            Creates visualization data for initiial configuration of RPOD analysis.
 
-        set_desired_6dof_state(v = [0, 0, 0], w = [0,0,0])
-            Sets VV desired inertial state. Can be done manually for read from flight plan.
+        graph_jfh_thruster_check(self)
+            Creates visualization data for initiial configuration of RPOD analysis.    
+        
+        graph_jfh(self)
+            Creates visualization data for the trajectory of the proposed RPOD analysis.
 
-        calc_burn_time(dv, isp, T)
-            Calculates burn time when given change in velocity (dv), specific impulse (isp), and thrust (T)
+        update_window_queue(self, window_queue, cur_window, firing_time, window_size)
+            Takes the most recent window of time size, and adds the new firing time to the sum, and the window_queue.
+            If the new window is larger than the allowed window_size, then earleist firing times are removed
+            from the queue and subtracted from the cur_window sum, until the sum fits within the window size.
+            A counter for how many firing times are removed and subtracted is recorded.
 
-        plot_burn_time(dv)
-            Plots burn time for a given dv and isp value. Varries thrust according the inputs.
+        update_parameter_queue(self, param_queue, param_window_sum, get_counter)
+            Takes the current parameter_queue, and removes the earliest tracked parameters from the front of the queue.
+            This occurs "get_counter" times. Each time a parameter is popped from the queue, the sum is also updated,
+            as to not track the removed parameter (ie. subtract the value)
 
-        plot_burn_time_contour(dv)
-            Plots burn time for a given dv by varrying thrust values. Graph is contoured using ISP values.
+        jfh_plume_strikes(self)
+            Calculates number of plume strikes according to data provided for RPOD analysis.
+            Method does not take any parameters but assumes that study assets are correctly configured.
+            These assets include one JetFiringHistory, one TargetVehicle, and one VisitingVehicle.
+            A Simple plume model is used. It does not calculate plume physics, only strikes. which
+            are determined with a user defined "plume cone" geometry. Simple vector mathematics is
+            used to determine if an VTK surface elements is struck by the "plume cone".
 
-        plot_burn_time_flight_plan()
-            Plots burn time for all dv maneuvers in the specified flight plan.
+        graph_param_curve(self, t, r_of_t)
+            Used to quickly prototype and visualize a proposed approach path.
+            Calculates the unit tangent vector at a given timestep and 
+            rotates the STL file accordingly. Data is plotted using matlab
 
-        calc_delta_m(dv, isp)
-            Calculates propellant usage using expressions derived from the ideal rocket equation.
-
-        plot_delta_m(dv)
-            Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
-
-        plot_delta_m_contour()
-            Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
-
-        calc_trans_performance(motion, dv)
-            Calculates RCS performance according to thruster working groups for a direction of 3DOF motion .
-
-        calc_6dof_performance()
-            Calculates performance for translation and rotational maneuvers.
-
-        read_flight_plan(path_to_file)
-            Reads in VV flight as specified using CSV format.
-
-        calc_flight_performance()
-            Calculates 6DOF performance for all firings specified in the flight plan.
-
-        plot_thrust_envelope()
-            Plots operational envelope relating burn time to thrust required for all firings in the flight plan.
+        print_JFH_param_curve(self, jfh_path, t, r_of_t, align = False)
+            Used to produce JFH data for a proposed approach path.
+            Calculates the unit tangent vector at a given timestep and DCMs for
+            STL file rotations. Data is then saved to a text file.
     """
     # def __init__(self):
     #     print("Initialized Approach Visualizer")
