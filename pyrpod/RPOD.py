@@ -303,7 +303,7 @@ class RPOD (MissionPlanner):
             # print("thrusters", thrusters)
              
             # Load, transform, and, graph STLs of visiting vehicle.  
-            VVmesh = mesh.Mesh.from_file('../data/stl/cylinder.stl')
+            VVmesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['stl_lm'])
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm'])
             # print(vv_orientation.transpose())
             VVmesh.rotate_using_matrix(vv_orientation.transpose())
@@ -321,18 +321,11 @@ class RPOD (MissionPlanner):
                 thruster_id = link[str(thruster)][0]
 
                 # Load plume STL in initial configuration. 
-                plumeMesh = mesh.Mesh.from_file('../data/stl/mold_funnel.stl')
-                plumeMesh.translate([0, 0, -54.342])            # nozzle throat (x, y, z) = (r_exit, r_exit, 0), 54.342 is distance b/w throat and exit
-
-                # Additional translations used for mold_funnel_centerline, 1000 is the length of the centerline and 39.728 is exit diameter
-                # plumeMesh.translate([-39.728/2, -39.728/2, -1000])    # nozzle throat (x, y, z) = (0, 0, 0)
-
-                plumeMesh.rotate([1, 0, 0], math.radians(180))  # align nozzle exit with +z direction, which the TCD is wrt
-                plumeMesh.points = 0.05 * plumeMesh.points
+                plumeMesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['stl_thruster'])
 
                 # Transform plume
                 
-                # First, according to DCM of current thruster id in TCD
+                # First, according to DCM of current thruster id in TCF
                 thruster_orientation = np.array(
                     self.vv.thruster_data[thruster_id]['dcm']
                 )
@@ -537,8 +530,8 @@ class RPOD (MissionPlanner):
 
         # Loop through each firing in the JFH.
         for firing in range(len(self.jfh.JFH)):
+        # for firing in tqdm(range(len(self.jfh.JFH)), desc='All firings'):
 
-        # for firing in tqdm(range(len(self.jfh.JFH)), desc='Processing firings'):
             # print('firing =', firing+1)
 
             # reset strikes for each firing
@@ -567,6 +560,7 @@ class RPOD (MissionPlanner):
 
             # Calculate strikes for active thrusters. 
             for thruster in thrusters:
+            # for thruster in tqdm(thrusters, desc='Current firing'):
 
 
                 # Save thruster id using indexed thruster value.
@@ -585,7 +579,7 @@ class RPOD (MissionPlanner):
                 thruster_orientation =   thruster_orientation.dot(vv_orientation)
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
                 # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
-                plume_normal = np.array(thruster_orientation[2])
+                plume_normal = np.array(thruster_orientation[0])
                 # print("plume normal: ", plume_normal)
                 
                 # calculate thruster exit coordinate with respect to the Target Vehicle.
