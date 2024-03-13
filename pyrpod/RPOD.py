@@ -262,7 +262,7 @@ class RPOD (MissionPlanner):
 
     def graph_clusters(self, firing, vv_orientation):
         """
-            Creates visualization data for the cluster
+            Creates visualization data for the cluster.
             Parameters
             ----------
             firing : int
