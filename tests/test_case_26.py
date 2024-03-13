@@ -31,10 +31,12 @@ class LoadJFHChecks(unittest.TestCase):
         vv = VisitingVehicle.VisitingVehicle(case_dir)
         # Load Visiting Vehicle.
         vv.set_stl()
-        # Load in cluster configuration data from text file.
-        vv.set_cluster_config()
-        # Load in thruster configuration data from text file.
+        # Load in thruster configuration file.
         vv.set_thruster_config()
+        # Load in cluster configuration file.
+        vv.set_cluster_config()
+        # Load in thruster data file
+        vv.set_thruster_metrics()
 
         # Instantiate RPOD object.
         rpod = RPOD.RPOD(case_dir)
