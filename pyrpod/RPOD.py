@@ -70,7 +70,10 @@ class RPOD (MissionPlanner):
             Creates visualization data for initiial configuration of RPOD analysis.
 
         graph_jfh_thruster_check(self)
-            Creates visualization data for initiial configuration of RPOD analysis.    
+            Creates visualization data for initiial configuration of RPOD analysis.
+        
+        graph_clusters(self, firing, vv_orientation)
+            Creates visualization data for the cluster.
         
         graph_jfh(self)
             Creates visualization data for the trajectory of the proposed RPOD analysis.
@@ -257,6 +260,59 @@ class RPOD (MissionPlanner):
                 index = str(i)
             plt.savefig('img/frame' + str(index) + '.png')
 
+    def graph_clusters(self, firing, vv_orientation):
+        """
+            Creates visualization data for the cluster
+            Parameters
+            ----------
+            firing : int
+                Loop iterable over the length of the number of thrusters firing in the JFH.
+            
+            vv_orientation : np.array
+                DCM from the JFH.
+            Returns
+            -------
+            active_clusters : mesh
+                Cluster of the current thruster firing.
+        """
+        active_clusters = None
+        clusters_list = []
+        for number in range(len(self.vv.cluster_data)):
+            cluster_name = 'P' + str(number + 1)
+            # print(cluster_name)
+            clusters_list.append(cluster_name)
+
+        # Load and graph STLs of active clusters. 
+        for cluster in clusters_list:
+
+            # Load plume STL in initial configuration. 
+            clusterMesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['stl_cluster'])
+
+            # Transform cluster
+
+            # First, according to DCM of current cluster in CCF
+            cluster_orientation = np.array(
+                self.vv.cluster_data[cluster]['dcm']
+            )
+            clusterMesh.rotate_using_matrix(cluster_orientation.transpose())
+
+            # Second, according to DCM of VV in JFH
+            clusterMesh.rotate_using_matrix(vv_orientation.transpose())
+
+            # Third, according to position vector of the VV in JFH
+            clusterMesh.translate(self.jfh.JFH[firing]['xyz'])
+
+            # Fourth, according to position of current cluster in CCF
+            clusterMesh.translate(self.vv.cluster_data[cluster]['exit'][0])
+            # print(self.vv.cluster_data[cluster]['exit'][0])
+
+            if active_clusters == None:
+                active_clusters = clusterMesh
+            else:
+                active_clusters = mesh.Mesh(
+                    np.concatenate([active_clusters.data, clusterMesh.data])
+                )
+        return active_clusters
 
     def graph_jfh(self): 
         """
@@ -310,6 +366,10 @@ class RPOD (MissionPlanner):
 
             active_cones = None
 
+            # Load and graph STLs of active clusters.
+            if self.vv.use_clusters == True:
+                active_clusters = self.graph_clusters(firing, vv_orientation)
+
             # Load and graph STLs of active thrusters. 
             for thruster in thrusters:
 
@@ -336,7 +396,12 @@ class RPOD (MissionPlanner):
                 # Third, according to position vector of the VV in JFH
                 plumeMesh.translate(self.jfh.JFH[firing]['xyz'])
                 
-                # Fourth, according to exit vector of current thruster id in TCD
+                # Fourth, according to position of current cluster in CCF
+                if self.vv.use_clusters == True:
+                    # thruster_id[0] = "P" and thruster_id[1] = "#", adding these gives the cluster identifier
+                    plumeMesh.translate(self.vv.cluster_data[thruster_id[0] + thruster_id[1]]['exit'][0])
+
+                # Fifth, according to exit vector of current thruster id in TCD
                 plumeMesh.translate(self.vv.thruster_data[thruster_id]['exit'][0])
 
                 # Takeaway: Do rotations before translating away from the rotation axes!   
@@ -352,10 +417,16 @@ class RPOD (MissionPlanner):
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
                 # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
 
-            if not active_cones == None:
-                VVmesh = mesh.Mesh(
-                    np.concatenate([VVmesh.data, active_cones.data])
-                )
+            if self.vv.use_clusters != True:
+                if not active_cones == None:
+                    VVmesh = mesh.Mesh(
+                        np.concatenate([VVmesh.data, active_cones.data])
+                    )
+            if self.vv.use_clusters == True:
+                if not active_cones == None:
+                    VVmesh = mesh.Mesh(
+                        np.concatenate([VVmesh.data, active_cones.data, active_clusters.data])
+                    )
             
             # print(self.vv.mesh)
 
@@ -585,6 +656,8 @@ class RPOD (MissionPlanner):
                 
                 # print(self.vv.thruster_data[thruster_id])
                 thruster_pos = vv_pos + np.array(self.vv.thruster_data[thruster_id]['exit'])
+                if self.vv.use_clusters == True:
+                    thruster_pos += (self.vv.cluster_data[thruster_id[0] + thruster_id[1]]['exit'][0])
                 thruster_pos = thruster_pos[0]
                 # print('thruster position', thruster_pos)
 
