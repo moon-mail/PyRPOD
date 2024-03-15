@@ -151,8 +151,7 @@ class VisitingVehicle(Vehicle):
 
             Parameters
             ----------
-            path_to_tcd : str
-                file location for thruster configuration data file.
+            None
 
             Returns
             -------
@@ -192,8 +191,7 @@ class VisitingVehicle(Vehicle):
 
             Parameters
             ----------
-            path_to_tcd : str
-                file location for thruster configuration data file.
+            None
 
             Returns
             -------
