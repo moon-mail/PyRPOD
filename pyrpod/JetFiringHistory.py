@@ -48,7 +48,7 @@ class JetFiringHistory:
             Method responsible for reading and parsing through JFH data.
 
             NOTE: Methods does not take any parameters. It assumes that self.case_dir
-            and self.config are instatiated correctly. Potential defensive programming statements?
+            and self.config are instantiated correctly. Potential defensive programming statements?
 
             Parameters
             ----------
