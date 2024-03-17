@@ -10,7 +10,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import JetFiringHistory, TargetVehicle, LogisticsModule, RPOD
+from pyrpod import JetFiringHistory, MissionPlanner, LogisticsModule
 
 class LoadJFHChecks(unittest.TestCase):
     def test_decoupled_tcd(self):
