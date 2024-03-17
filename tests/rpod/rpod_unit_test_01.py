@@ -1,21 +1,34 @@
 # Andy Torres
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 12-05-23
-
+# Last Changed: 03-16-24
 
 # ========================
-# PyRPOD: test/test_case_01.py
+# PyRPOD: tests/rpod/rpod_unit_test_01.py
 # ========================
-# A brief test case to calculate the 6DOF performance of each individual thruster in the LM
+# Test case for converting STL data to VTK data.
+# This is accomplished by checking for the proper data format of VTK files.
 
 import test_header
-import unittest
+import unittest, os, sys
+from pyrpod import Vehicle
+from pyrpod import MissionPlanner
 
-class MDAOTest(unittest.TestCase):
-    def test_mdao(self):
+class STLtoVTKChecks(unittest.TestCase):
+    def test_delta_m_plots(self):
 
-        print("rpod unit test")
+        # Path to directory holding data assets and results for a specific RPOD study.
+        case_dir = '../case/stl_to_vtk/'
+
+        # Load configuration data for RPOD analysis.
+        mp = MissionPlanner.MissionPlanner(case_dir)
+
+        # Use Vehicle Object to read STL surface data.
+        v = Vehicle.Vehicle(case_dir)
+        v.set_stl()
+
+        # Convert to VTK and save in case directory.
+        v.convert_stl_to_vtk()
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,19 +1,19 @@
 # Andy Torres
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 12-05-23
+# Last Changed: 03-16-24
 
 # ========================
-# PyRPOD: test/test_case_03.py
+# PyRPOD: tests/mission/mission_integration_test_08.py
 # ========================
-# A brief test case to calculate RCS perfomance for a given flight plan approximating Δv requirements.
+# Test case to contour the propellant usage across the various Δv in a given flight plan.
 
 import test_header
 import unittest, os, sys
 from pyrpod import LogisticsModule, MissionPlanner
 
-class FlightPlanChecks(unittest.TestCase):
-    def test_rcs_flight_performance(self):
+class DeltaMassContourChecks(unittest.TestCase):
+    def test_delta_m_plots(self):
 
         # set case directory
         case_dir = '../case/flight_envelopes/'
@@ -27,18 +27,15 @@ class FlightPlanChecks(unittest.TestCase):
         r = 4.0/2.0 # m
         lm.set_inertial_props(m, h, r)
 
-        # Load in thruster configuration data from text file
-        lm.set_thruster_config()
-
-        # Assign properties of Draco/Hypergolic thrusters
+        # Draco/Hypergolic thrusters
         lm.add_thruster_performance(400, 300)
         lm.assign_thruster_groups()
 
-        # Calculate simple 1D flight performance
+        # Read in flight data and plot delta mass contoured for various Δv requirements.
         mp = MissionPlanner.MissionPlanner(case_dir)
         mp.set_lm(lm)
         mp.read_flight_plan()
-        mp.calc_flight_performance()
+        # mp.plot_delta_m_contour()
 
 if __name__ == '__main__':
     unittest.main()

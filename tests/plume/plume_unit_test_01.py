@@ -14,8 +14,8 @@ import unittest
 
 class PlumeTest(unittest.TestCase):
     def test_plume(self):
-
-        print("plume unit test")
+        return
+        # print("plume unit test")
 
 if __name__ == '__main__':
     unittest.main()

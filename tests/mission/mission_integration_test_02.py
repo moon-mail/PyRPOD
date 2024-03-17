@@ -1,10 +1,10 @@
 # Andy Torres
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 12-05-23
+# Last Changed: 03-16-24
 
 # ========================
-# PyRPOD: test/test_case_02.py
+# PyRPOD: tests/mission/mission_integration_test_02.py
 # ========================
 # A brief test case to calculate the 6DOF performance of thruster working groups
 

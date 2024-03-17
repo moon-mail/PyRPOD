@@ -21,8 +21,8 @@ def run_tests(cat, group):
     test_loader = unittest.TestLoader()
     cwd = os.getcwd() + '/' + group
     pattern = group + '_'+ cat + '_test_*.py'
-    print('cwd', cwd)
-    print('pattern', pattern)
+    # print('cwd', cwd)
+    # print('pattern', pattern)
  #   input()
     test_suite = test_loader.discover(cwd, pattern= pattern)
     test_runner = unittest.TextTestRunner(verbosity = 2)
@@ -54,4 +54,6 @@ if __name__ == '__main__':
             total_errors += errors
 
     # Report cummulative results.
-    print(total_tests, "tests ran", total_errors, "total errors")
+    with open('results.txt', 'a') as f:
+        message = str(total_tests) + " tests ran, " + str(total_errors) +  " total errors\n"
+        f.write(message)

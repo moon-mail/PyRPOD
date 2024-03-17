@@ -15,7 +15,8 @@ import unittest
 class MDAOTest(unittest.TestCase):
     def test_mdao(self):
 
-        print("mdao unit test")
+        # print("mdao unit test")
+        return
 
 if __name__ == '__main__':
     unittest.main()
