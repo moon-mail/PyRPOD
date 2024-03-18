@@ -15,7 +15,7 @@ from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
 import sympy as sp
 
 class ProduceJFHChecks(unittest.TestCase):
-    def test_jfh_reader(self):
+    def test_jfh_setter(self):
 
         # Path to directory holding data assets and results for a specific RPOD study.
         case_dir = '../case/base_case/'

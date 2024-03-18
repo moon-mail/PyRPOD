@@ -5,7 +5,7 @@
 
 
 # ========================
-# PyRPOD: test/plume/plume_integration_test_01.py
+# PyRPOD: test/plume/plume_unit_test_01.py
 # ========================
 # Write test case description.
 
@@ -14,8 +14,8 @@ import unittest
 
 class PlumeTest(unittest.TestCase):
     def test_plume(self):
-        return
         # print("plume unit test")
+        return
 
 if __name__ == '__main__':
     unittest.main()

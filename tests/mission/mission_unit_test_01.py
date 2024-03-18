@@ -13,9 +13,9 @@ import test_header
 import unittest
 
 class MDAOTest(unittest.TestCase):
-    def test_mdao(self):
+    def test_mission(self):
+        # print("mission unit test")
         return
-        # print("plume unit test")
 
 if __name__ == '__main__':
     unittest.main()

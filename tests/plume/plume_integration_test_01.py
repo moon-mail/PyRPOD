@@ -14,8 +14,8 @@ import unittest
 
 class MDAOTest(unittest.TestCase):
     def test_mdao(self):
-
-        print("plume integration test")
+        # print("plume integration test")
+        return
 
 if __name__ == '__main__':
     unittest.main()

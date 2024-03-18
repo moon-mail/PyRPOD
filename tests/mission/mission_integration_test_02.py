@@ -13,7 +13,7 @@ import unittest, os, sys
 from pyrpod import LogisticsModule
 
 class ThrusterGroupingChecks(unittest.TestCase):
-    def test_performance_per_thruster(self):
+    def test_performance_per_thruster_group(self):
 
         # Define LM mass distrubtion properties.
         m = 0.45*30000 # lb converted to kg
