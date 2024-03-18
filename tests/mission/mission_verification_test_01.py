@@ -5,9 +5,10 @@
 
 
 # ========================
-# PyRPOD: test/test_case_01.py
+# PyRPOD: test/mission/mission_verification_test_01.py
 # ========================
-# A brief test case to calculate the 6DOF performance of each individual thruster in the LM
+# Write test case description.
+
 
 import test_header
 import unittest
