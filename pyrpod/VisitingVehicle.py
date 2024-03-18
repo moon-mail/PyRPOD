@@ -137,7 +137,7 @@ class VisitingVehicle(Vehicle):
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
-        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['stl']
+        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['stl_lm']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
         self.path_to_stl = path_to_stl
         return
@@ -146,7 +146,7 @@ class VisitingVehicle(Vehicle):
         """
             Read in thruster configuration data from the provided file path.
 
-            Gathers RCS configuration data for the Visiting Vehicle from a .dat file
+            Gathers thruster configuration data for the Visiting Vehicle from a .dat file
             and saves it as class members.
 
             Parameters
@@ -160,10 +160,10 @@ class VisitingVehicle(Vehicle):
             Does the method need to return a status message? or pass similar data?
         """
 
-        path_to_tcd = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+        path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
 
         # Simple program, reading text from a file.
-        with open(path_to_tcd, 'r') as f:
+        with open(path_to_tcf, 'r') as f:
             lines = f.readlines()
 
             # Parse through first few lines, save relevant information. 
