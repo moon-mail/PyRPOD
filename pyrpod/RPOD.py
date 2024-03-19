@@ -782,8 +782,8 @@ class RPOD (MissionPlanner):
         delta_m_docking = round(self.calc_delta_mass_v_e(dv_req, v_e), 0)
         docking_dry_mass = self.vv.mass
         docking_wet_mass = self.vv.mass + delta_m_docking
-        print('docking dry mass', docking_dry_mass)
-        print('docking wet mass', docking_wet_mass)
+        # print('docking dry mass', docking_dry_mass)
+        # print('docking wet mass', docking_wet_mass)
 
 
         # Instantiate data structure to hold JFH data + physics data.
@@ -812,12 +812,12 @@ class RPOD (MissionPlanner):
         # Calculate JFH and 1D physics data for required firings.
         i = 0 # ugly but useful
         while (dv_req > 0):
-            print('dv_req', round(dv_req, 4), 'n firings', n[i])
+            # print('dv_req', round(dv_req, 4), 'n firings', n[i])
 
 
             # Grab last value in the JFH arrays (initial conditions for current time step)
-            print('x, dx, dt, t, dxdt, mass, dm_total')
-            print(x[-1], dx[-1], dt_vals[-1], t[-1], dxdt[-1], mass[-1], dm_total[-1])
+            # print('x, dx, dt, t, dxdt, mass, dm_total')
+            # print(x[-1], dx[-1], dt_vals[-1], t[-1], dxdt[-1], mass[-1], dm_total[-1])
 
             # Update VV mass per firing
             mass_o = mass[-1]
@@ -871,7 +871,9 @@ class RPOD (MissionPlanner):
 
         r = [x, y, z]
 
-        print_1d_JFH(t, r, rot, 'JFH_1d.A')
+        jfh_path = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        # print(jfh_path)
+        print_1d_JFH(t, r, rot, jfh_path)
         return
 
 

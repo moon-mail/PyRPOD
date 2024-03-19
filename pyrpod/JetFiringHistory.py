@@ -88,8 +88,13 @@ class JetFiringHistory:
         with open(path_to_jfh, 'r') as f:
             lines = f.readlines()
 
-            # print(lines.pop(0).split(' '))
-            self.nt = int(lines.pop(0).split(' ')[4])
+            # Save number of firings in JFH. 
+            try:
+                self.nt = int(lines.pop(0).split(' ')[4])
+            except IndexError:
+                print("WARNING: supplied JFH file is empty")
+                self.JFH = None
+                return
 
             # Throw away second line
             lines.pop(0)
