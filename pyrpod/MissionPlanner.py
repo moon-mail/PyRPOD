@@ -103,7 +103,8 @@ class MissionPlanner:
 
             Parameters
             ----------
-            None
+            LogisticsModule : LogisticsModule
+                LogisticsModule Object containing inertial properties.
 
             Returns
             -------
