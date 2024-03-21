@@ -1,19 +1,19 @@
 # Andy Torres
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 12-05-23
+# Last Changed: 03-16-24
 
 # ========================
-# PyRPOD: test/test_case_04.py
+# PyRPOD: tests/mission/mission_integration_test_01.py
 # ========================
-# Test case to analyze notional 1DOF approach. (WIP)
+# A brief test case to calculate the 6DOF performance of each individual thruster in the LM
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, MissionPlanner
+from pyrpod import LogisticsModule
 
-class OneDimTransApproachChecks(unittest.TestCase):
-    def test_1d_approach_performance(self):
+class IndividualThrusterChecks(unittest.TestCase):
+    def test_performance_per_thruster(self):
 
         # set case directory
         case_dir = '../case/flight_envelopes/'
@@ -32,12 +32,7 @@ class OneDimTransApproachChecks(unittest.TestCase):
 
         # Draco/Hypergolic thrusters
         lm.add_thruster_performance(400, 300)
-        lm.assign_thruster_groups()
-
-        mp = MissionPlanner.MissionPlanner(case_dir)
-        mp.set_lm(lm)
-        mp.read_flight_plan()
-        
+        lm.calc_thruster_performance()
 
 if __name__ == '__main__':
     unittest.main()

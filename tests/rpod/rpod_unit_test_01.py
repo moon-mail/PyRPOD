@@ -1,10 +1,10 @@
 # Andy Torres
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 12-14-23
+# Last Changed: 03-16-24
 
 # ========================
-# PyRPOD: test/test_case_13.py
+# PyRPOD: tests/rpod/rpod_unit_test_01.py
 # ========================
 # Test case for converting STL data to VTK data.
 # This is accomplished by checking for the proper data format of VTK files.
@@ -15,7 +15,7 @@ from pyrpod import Vehicle
 from pyrpod import MissionPlanner
 
 class STLtoVTKChecks(unittest.TestCase):
-    def test_delta_m_plots(self):
+    def test_stl_to_vtk(self):
 
         # Path to directory holding data assets and results for a specific RPOD study.
         case_dir = '../case/stl_to_vtk/'
