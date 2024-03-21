@@ -26,6 +26,9 @@ class MissionPlanner:
 
         Methods
         -------
+        set_jfh(JetFiringHistory)
+            Simple setter method to set JFH used in propellant usage calculations.
+        
         set_current_6dof_state(v = [0, 0, 0], w = [0,0,0])
             Sets VV current inertial state. Can be done manually or read from flight plan.
 
@@ -99,6 +102,21 @@ class MissionPlanner:
             require research into how Python handles inheritance including "container classes".
         """
         self.vv = LogisticsModule
+    
+    def set_jfh(self, JetFiringHistory):
+        """
+            Simple setter method to set JFH used in propellant usage calculations.
+
+            Parameters
+            ----------
+            JetFiringHistory : JetFiringHistory
+                JFH Object containing specifics of each firing.
+
+            Returns
+            -------
+            None
+        """
+        self.jfh = JetFiringHistory
 
     def set_current_6dof_state(self, v = [0, 0, 0], w = [0,0,0]):
         """
