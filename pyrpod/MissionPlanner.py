@@ -26,6 +26,9 @@ class MissionPlanner:
 
         Methods
         -------
+        set_lm(LogisticsModule)
+            Simple setter method to set VV/LM used in analysis.
+        
         set_current_6dof_state(v = [0, 0, 0], w = [0,0,0])
             Sets VV current inertial state. Can be done manually or read from flight plan.
 
@@ -59,7 +62,7 @@ class MissionPlanner:
         calc_6dof_performance()
             Calculates performance for translation and rotational maneuvers.
 
-        read_flight_plan(path_to_file)
+        read_flight_plan()
             Reads in VV flight as specified using CSV format.
 
         calc_flight_performance()
@@ -97,6 +100,14 @@ class MissionPlanner:
             If so, how do we handle inheritance between them? Previous efforts have broken
             the code. This is due to "hacky/minimal" effort. A follow up attempt would
             require research into how Python handles inheritance including "container classes".
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         self.vv = LogisticsModule
 
@@ -151,18 +162,18 @@ class MissionPlanner:
             Parameters
             ----------
             dv : float
-                Speficied change in velocity value.
+                Specified change in velocity value.
 
             isp : float
-                Speficied specific impulse value.
+                Specified specific impulse value.
 
             T : float
-                Speficied thrust value.
+                Specified thrust value.
 
             Returns
             -------
             t_burn : float
-                Required burn time is seconds/
+                Required burn time is seconds.
         """
         g_0=9.81
         m_f=self.vv.mass
@@ -172,9 +183,9 @@ class MissionPlanner:
 
     def plot_burn_time(self, dv):
         """
-            Plots burn time for a given dv and isp value. Varries thrust according to user inputs.
+            Plots burn time for a given dv and isp value. Varies thrust according to user inputs.
 
-            TODO: Add ISP value as a parameter. Remove isp_vals, add isp as a paramter to the function.
+            TODO: Add ISP value as a parameter. Remove isp_vals, add isp as a parameter to the function.
             Test code.
 
             TODO: Integrate with establsihed configuration file framework.
@@ -182,10 +193,10 @@ class MissionPlanner:
             Parameters
             ----------
             dv : float
-                Speficied change in velocity value.
+                Specified change in velocity value.
 
             isp : float
-                Speficied specific impulse value.
+                Specified specific impulse value.
 
             Returns
             -------
@@ -223,8 +234,7 @@ class MissionPlanner:
             Parameters
             ----------
             dv : float
-                Speficied change in velocity value.
-
+                Specified change in velocity value.
 
             Returns
             -------
@@ -258,6 +268,7 @@ class MissionPlanner:
 
             Parameters
             ----------
+            None
 
             Returns
             -------
@@ -366,7 +377,15 @@ class MissionPlanner:
         """
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
-             TODO: Add isp_range as a parameter. Integrate with configuration file framework. Test Code.
+            TODO: Add isp_range as a parameter. Integrate with configuration file framework. Test Code.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         #creat plotting object.
         fig, ax = plt.subplots()
@@ -445,9 +464,9 @@ class MissionPlanner:
             Returns
             -------
             time : float
-                Burn time ellapsed.
+                Burn time elapsed.
 
-            destance : float
+            distance : float
                 Distance covered during burn time.
 
             propellant_used : float
@@ -479,6 +498,14 @@ class MissionPlanner:
     def calc_6dof_performance(self):
         """
             Wrapper method used to calculate performance for translation and rotational maneuvers.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         # Wrapper function that sets up data for 6DOF performance
         dv = self.v_desired - self.v_current
@@ -520,9 +547,16 @@ class MissionPlanner:
         """
             Reads in VV flight as specified using CSV format.
 
+            NOTE: Method assumes that self.case_dir and self.config are instantiated
+            correctly. Potential defensive programming statements?
 
-            NOTE: Methods does not take any parameters. It assumes that self.case_dir
-            and self.config are instatiated correctly. Potential defensive programming statements?
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         # Reads and parses through flight plan CSV file.
         path_to_file = self.case_dir + 'jfh/' + self.config['jfh']['flight_plan']
@@ -534,6 +568,14 @@ class MissionPlanner:
     def calc_flight_performance(self):
         """
             Calculates 6DOF performance for all firings specified in the flight plan.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         for firing in self.flight_plan.iterrows():
 
@@ -565,6 +607,14 @@ class MissionPlanner:
     def plot_thrust_envelope(self):
         """
             Plots operational envelope relating burn time to thrust required for all firings in the flight plan.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         # print(self.vv)
         # print(self.flight_plan)
