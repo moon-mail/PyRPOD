@@ -16,7 +16,7 @@ class CalculatePropellantUsage(unittest.TestCase):
     def test_mission_planner(self):
 
         # Set case directory.
-        case_dir = '../case/fuel_calc/'
+        case_dir = '../../case/fuel_calc/'
 
         # Instantiate LogisticModule object.
         lm = LogisticsModule.LogisticsModule(case_dir)
