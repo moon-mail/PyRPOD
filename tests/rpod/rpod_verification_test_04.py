@@ -6,7 +6,7 @@
 # ========================
 # PyRPOD: tests/rpod_verification_test_04.py
 # ========================
-# Tests the decoupled TCD in Paraview
+# Visualizes STLs after decoupling the TCD and verifies that the plume strikes line up with the thrusters.
 
 import test_header
 import unittest, os, sys
