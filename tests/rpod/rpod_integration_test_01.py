@@ -1,19 +1,19 @@
 # Andy Torres
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 12-05-23
+# Last Changed: 03-16-24
 
 # ========================
-# PyRPOD: test/test_case_03.py
+# PyRPOD: tests/rpod/rpod_integration_test_01.py
 # ========================
-# A brief test case to calculate RCS perfomance for a given flight plan approximating Δv requirements.
+# Test case to analyze notional 1DOF approach. (WIP)
 
 import test_header
 import unittest, os, sys
 from pyrpod import LogisticsModule, MissionPlanner
 
-class FlightPlanChecks(unittest.TestCase):
-    def test_rcs_flight_performance(self):
+class OneDimTransApproachChecks(unittest.TestCase):
+    def test_1d_approach_performance(self):
 
         # set case directory
         case_dir = '../case/flight_envelopes/'
@@ -30,15 +30,14 @@ class FlightPlanChecks(unittest.TestCase):
         # Load in thruster configuration data from text file
         lm.set_thruster_config()
 
-        # Assign properties of Draco/Hypergolic thrusters
+        # Draco/Hypergolic thrusters
         lm.add_thruster_performance(400, 300)
         lm.assign_thruster_groups()
 
-        # Calculate simple 1D flight performance
         mp = MissionPlanner.MissionPlanner(case_dir)
         mp.set_lm(lm)
         mp.read_flight_plan()
-        mp.calc_flight_performance()
+        
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,19 +1,31 @@
 # Andy Torres
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 12-05-23
+# Last Changed: 03-16-24
 
 # ========================
-# PyRPOD: test/test_case_11.py
+# PyRPOD: tests/mission/mission_integration_test_05.py
 # ========================
-# Test case to contour the burn plot graph across various thrust and ISP values. (NEEDS TLC)
+# Test case to graph a thrust vs time or distance required given design requirements
+# and create a flight envelope to establish thrust requirements.
+
+# Given Reuirements
+# 1. Change in velocity (dV and /or dw)
+# 2. System mass properties
+# 3. Time or distance limits
+
+# Desired outputs
+# 1. Graph Thrust vs Time reuired.
+# 2. Graph Thrust vs Distance required.
+# 3. Use time and distance limits to create flight envelope data.
+# 4. Add data points for relevant thruster technologies.
 
 import test_header
 import unittest, os, sys
 from pyrpod import LogisticsModule, MissionPlanner
 
-class BurnTimeContourChecks(unittest.TestCase):
-    def test_burn_time_contour_plots(self):
+class ThrustEnvelopeChecks(unittest.TestCase):
+    def test_thrust_envelope_plot(self):
 
         # set case directory
         case_dir = '../case/flight_envelopes/'
@@ -34,12 +46,12 @@ class BurnTimeContourChecks(unittest.TestCase):
         lm.add_thruster_performance(400, 300)
         lm.assign_thruster_groups()
 
-        # Read in flight data and plot burntime for a given Δv requirement.
-        # Graph is contoured according to various ISP values.
+        # Read in flight data and plot delta mass contoured for various Δv requirements.
         mp = MissionPlanner.MissionPlanner(case_dir)
         mp.set_lm(lm)
         mp.read_flight_plan()
-        # mp.plot_burn_time_contour(1194)
+        # mp.plot_thrust_envelope()
+        
 
 if __name__ == '__main__':
     unittest.main()
