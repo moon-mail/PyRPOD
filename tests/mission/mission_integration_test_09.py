@@ -12,8 +12,8 @@ import test_header
 import unittest, os, sys
 from pyrpod import JetFiringHistory, MissionPlanner, LogisticsModule
 
-class LoadJFHChecks(unittest.TestCase):
-    def test_decoupled_tcd(self):
+class CalculatePropellantUsage(unittest.TestCase):
+    def test_mission_planner(self):
 
         # Set case directory.
         case_dir = '../case/fuel_calc/'
