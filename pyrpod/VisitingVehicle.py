@@ -184,7 +184,7 @@ class VisitingVehicle(Vehicle):
 
     def set_thruster_metrics(self):
         """
-            Reads the thruster data file to gather thruster-specific performance parameters for the configuration from a .csv file
+            Reads the csv thruster data file to gather thruster-specific performance parameters for the configuration
             and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.
 
             Parameters
