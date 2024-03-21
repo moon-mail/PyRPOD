@@ -12,11 +12,11 @@ import test_header
 import unittest, os, sys
 from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
 
-class LoadJFHChecks(unittest.TestCase):
+class LoadSTLModels(unittest.TestCase):
     def test_decoupled_tcd(self):
 
         # Set case directory.
-        case_dir = '../case/tcd_decoupling/'
+        case_dir = '../../case/tcd_decoupling/'
 
         # Instantiate JetFiringHistory object.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)
