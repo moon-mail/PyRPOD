@@ -807,7 +807,7 @@ class RPOD (MissionPlanner):
         y1 = [1, 0, 0]
         x1 = [1, 0, 0]
 
-        rot = [np.matrix(rotation_matrix_from_vectors(x1, y1))]
+        rot = [np.array(rotation_matrix_from_vectors(x1, y1))]
 
         # Calculate JFH and 1D physics data for required firings.
         i = 0 # ugly but useful
@@ -854,7 +854,7 @@ class RPOD (MissionPlanner):
             t.append(t[-1] + dt)
 
 
-            rot.append(np.matrix(rotation_matrix_from_vectors(x1, y1)))
+            rot.append(np.array(rotation_matrix_from_vectors(x1, y1)))
 
         # one_d_results = {
         #     'n_firings': n,
