@@ -183,6 +183,46 @@ class VisitingVehicle(Vehicle):
             self.jet_interactions = lines.pop(0)
         return
 
+    def set_thruster_config_over(self, thruster_data):
+        """
+            Read in thruster configuration data from the provided file path.
+
+            Gathers RCS configuration data for the Visiting Vehicle from a .dat file
+            and saves it as class members.
+
+            Parameters
+            ----------
+            path_to_tcd : str
+                file location for thruster configuration data file.
+
+            Returns
+            -------
+            Method doesn't currently return anything. Simply sets class members as needed.
+            Does the method need to return a status message? or pass similar data?
+        """
+
+        path_to_tcd = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+
+        # Simple program, reading text from a file.
+        with open(path_to_tcd, 'r') as f:
+            lines = f.readlines()
+
+            # Parse through first few lines, save relevant information. 
+            self.num_thrusters = int(lines.pop(0))
+            self.thruster_units = lines.pop(0)[0] # dont want '\n'
+            self.cog = process_coordinates(lines.pop(0))
+            self.grapple = process_coordinates(lines.pop(0))
+
+            # Save all strings containing thruster data in a list
+            str_thrusters = []
+            for i in range(self.num_thrusters):
+                str_thrusters.append(lines.pop(0))
+
+            # Parse through strings and save data in a dictionary
+            self.thruster_data = thruster_data
+            self.jet_interactions = lines.pop(0)
+        return
+
     def set_thruster_metrics(self):
         """
             Read in performance data specific to thruster types.
