@@ -26,11 +26,11 @@ class Produce1DJFHChecks(unittest.TestCase):
         tv = TargetVehicle.TargetVehicle(case_dir)
         tv.set_stl()
 
-        # Define LM  and mass properties.
+        # Define LM and mass properties.
         lm = LogisticsModule.LogisticsModule(case_dir)
-        m = 0.45*30000 # lb converted to kg
-        h = 14 # m
-        r = 4.0/2.0 # m
+        m = 14000 # kg
+        h = 11 # m
+        r = 1.65 # m
         lm.set_inertial_props(m, h, r)
 
         # Initiate RPOD study.
