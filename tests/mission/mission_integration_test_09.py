@@ -1,7 +1,7 @@
 # Nicholas A. Palumbo
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 3-20-24
+# Last Changed: 3-26-24
 
 # ========================
 # PyRPOD: test/test_case_09.py
@@ -45,7 +45,7 @@ class CalculatePropellantUsage(unittest.TestCase):
         mp.read_flight_plan()
         # Calculate the propellant mass required for all maneuvers
         dm_total = mp.calc_total_delta_mass()
-        print("dm_total is ", dm_total)
+        print("The total propellant expended over the flight plan is", dm_total, 'kg')
 
 if __name__ == '__main__':
     unittest.main()
