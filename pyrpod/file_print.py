@@ -221,16 +221,16 @@ def print_1d_JFH(t_values, r,  rot, file_name):
             # Print elements of rotation matrix
             for j in range(3):
                 for k in range(3):
-                    print(round(rot[i].A[j][k], p), end = ' ')
+                    print(round(rot[i][j][k], p), end = ' ')
 
             # Print position values.
-            print(round(x[i], p), round(y[i], p), round(z[i], p), end = '   ')
+            print(-round(x[i], p), -round(y[i], p), -round(z[i], p), end = '   ')
 
             # Print uncertainty factor
             print('1.000', end = ' ')
 
             # thruster = i%16+1
-            thruster = '2 6 10 14'
+            thruster = '1 5 9 13'
             print('4  ', thruster, end = ' ')
 
 
