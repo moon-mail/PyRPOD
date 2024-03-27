@@ -22,8 +22,8 @@ class ProduceJFHChecks(unittest.TestCase):
 
         t = sp.symbols('t')
 
-        rpod = RPOD.RPOD(case_dir)
-        rpod.print_JFH_param_curve('JFH05.A', t, [25-t, 0, 20], align = False)
+        jfh = JetFiringHistory.JetFiringHistory(case_dir)
+        jfh.print_JFH_param_curve('JFH05.A', t, [25-t, 0, 20], align = False)
 
         
 if __name__ == '__main__':
