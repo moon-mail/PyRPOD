@@ -18,7 +18,7 @@
 import test_header
 import unittest, os, sys
 import numpy as np
-from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD, CantDebug
+from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD, SweepConfig
 
 class CoordinateSweepCheck(unittest.TestCase):
     def test_cant_sweep(self):
@@ -56,10 +56,10 @@ class CoordinateSweepCheck(unittest.TestCase):
         dyaw = 10 # deg
 
         # create SweepAngles object
-        angle_sweep = CantDebug.AngleDebug(r, config, thruster_groups)
+        angle_sweep = SweepConfig.SweepDecelAngles(r, config, thruster_groups)
         
         # call sweep_long_thruster on the configuration and print the DCM's
-        config_swept_array = angle_sweep.sweep_long_thrusters(config, dpitch, dyaw)
+        config_swept_array = angle_sweep.sweep_decel_thrusters(config, dpitch, dyaw)
         # angle_sweep.read_swept_angles(config_swept_array)
 
         for i, config in enumerate(config_swept_array):
