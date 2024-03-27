@@ -258,7 +258,7 @@ class RPOD (MissionPlanner):
             plt.savefig('img/frame' + str(index) + '.png')
 
 
-    def graph_jfh(self): 
+    def graph_jfh(self, config_iter=None): 
         """
             Creates visualization data for the trajectory of the proposed RPOD analysis.
 
@@ -362,114 +362,10 @@ class RPOD (MissionPlanner):
             # print(self.case_dir + self.config['stl']['vv'])
 
             path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
-            path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl" 
-            # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
-            VVmesh.save(path_to_stl)
-            # print()
-    
-    def graph_jfh_over(self, config_iter): 
-        """
-            Creates visualization data for the trajectory of the proposed RPOD analysis.
-
-            This method does NOT calculate plume strikes.
-
-            This utilities allows engineers to visualize the trajectory in the JFH before running
-            the full simulation and wasting computation time.
-
-            Returns
-            -------
-            Method doesn't currently return anything. Simply produces data as needed.
-            Does the method need to return a status message? or pass similar data?
-        """
-        # Link JFH numbering of thrusters to thruster names.  
-        link = {}
-        i = 1
-        for thruster in self.vv.thruster_data:
-            link[str(i)] = self.vv.thruster_data[thruster]['name']
-            i = i + 1
-
-        # Create results directory if it doesn't already exist.
-        results_dir = self.case_dir + 'results'
-        if not os.path.isdir(results_dir):
-            # print("results dir doesn't exist")
-            os.mkdir(results_dir)
-
-        results_dir = results_dir + "/jfh"
-        if not os.path.isdir(results_dir):
-            # print("results dir doesn't exist")
-            os.mkdir(results_dir)
-
-        # Save STL surface of target vehicle to local variable.
-        target = self.target.mesh
-
-        # Loop through each firing in the JFH.
-        for firing in range(len(self.jfh.JFH)):
-            # print('firing =', firing+1)
-
-            # Save active thrusters for current firing. 
-            thrusters = self.jfh.JFH[firing]['thrusters']
-            # print("thrusters", thrusters)
-             
-            # Load, transform, and, graph STLs of visiting vehicle.  
-            VVmesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['stl_lm'])
-            vv_orientation = np.array(self.jfh.JFH[firing]['dcm'])
-            # print(vv_orientation.transpose())
-            VVmesh.rotate_using_matrix(vv_orientation.transpose())
-            VVmesh.translate(self.jfh.JFH[firing]['xyz'])
-
-            active_cones = None
-
-            # Load and graph STLs of active thrusters. 
-            for thruster in thrusters:
-
-
-                # Save thruster id using indexed thruster value.
-                # Could naming/code be more clear?
-                # print('thruster num', thruster, 'thruster id', link[str(thruster)][0])
-                thruster_id = link[str(thruster)][0]
-
-                # Load plume STL in initial configuration. 
-                plumeMesh = mesh.Mesh.from_file(self.case_dir + 'stl/' + self.config['vv']['stl_thruster'])
-
-                # Transform plume
-                
-                # First, according to DCM of current thruster id in TCF
-                thruster_orientation = np.array(
-                    self.vv.thruster_data[thruster_id]['dcm']
-                )
-                plumeMesh.rotate_using_matrix(thruster_orientation.transpose())
-
-                # Second, according to DCM of VV in JFH
-                plumeMesh.rotate_using_matrix(vv_orientation.transpose())
-
-                # Third, according to position vector of the VV in JFH
-                plumeMesh.translate(self.jfh.JFH[firing]['xyz'])
-                
-                # Fourth, according to exit vector of current thruster id in TCD
-                plumeMesh.translate(self.vv.thruster_data[thruster_id]['exit'][0])
-
-                # Takeaway: Do rotations before translating away from the rotation axes!   
-
-
-                if active_cones == None:
-                    active_cones = plumeMesh
-                else:
-                    active_cones = mesh.Mesh(
-                        np.concatenate([active_cones.data, plumeMesh.data])
-                    )
-
-                # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
-                # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
-
-            if not active_cones == None:
-                VVmesh = mesh.Mesh(
-                    np.concatenate([VVmesh.data, active_cones.data])
-                )
-            
-            # print(self.vv.mesh)
-
-            path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
-            path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + str(config_iter)+ ".stl" 
+            if config_iter is None:
+                path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl"
+            else:
+                path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + str(config_iter)+ ".stl"
             # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
             VVmesh.save(path_to_stl)
 

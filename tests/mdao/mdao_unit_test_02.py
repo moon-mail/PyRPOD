@@ -25,7 +25,6 @@ class CoordinateSweepCheck(unittest.TestCase):
 
         # creating an example configuration
         dcm = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-        # dcm = dcm[::-1]
 
         config = {
             'P1T1': {'name': ['P1T1'], 'type': ['001'], 'exit': [[0, 0, 2.07544]], 'dcm': dcm}, 
@@ -60,11 +59,10 @@ class CoordinateSweepCheck(unittest.TestCase):
         
         # call sweep_long_thruster on the configuration and print the DCM's
         config_swept_array = angle_sweep.sweep_decel_thrusters(config, dpitch, dyaw)
-        # angle_sweep.read_swept_angles(config_swept_array)
 
         for i, config in enumerate(config_swept_array):
             # Path to directory holding data assets and results for a specific RPOD study.
-            case_dir = '../case/cant_debug/'
+            case_dir = '../case/cant_sweep/'
 
             # Load JFH data.
             jfh = JetFiringHistory.JetFiringHistory(case_dir)
@@ -75,13 +73,13 @@ class CoordinateSweepCheck(unittest.TestCase):
 
             vv = VisitingVehicle.VisitingVehicle(case_dir)
             vv.set_stl()
-            vv.set_thruster_config_over(config)
+            vv.set_thruster_config(config)
             #vv.set_thruster_metrics()
 
             rpod = RPOD.RPOD(case_dir)
             rpod.study_init(jfh, tv, vv)
 
-            rpod.graph_jfh_over(i)
+            rpod.graph_jfh(i)
             #rpod.jfh_plume_strikes()
 
 if __name__ == '__main__':

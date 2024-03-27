@@ -293,8 +293,7 @@ class SweepDecelAngles:
             [np.sin(pitch) * np.cos(yaw), np.cos(pitch), np.sin(pitch) * np.sin(yaw)],
             [-np.sin(yaw), 0, np.cos(yaw)]
         ])
-
-        print(f'{thruster_name}: {DCM}')
+        
         return DCM.tolist()
 
     #probably should move this method to another file? call this from RPOD.py?
