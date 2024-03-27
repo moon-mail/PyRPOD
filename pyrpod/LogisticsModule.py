@@ -247,7 +247,14 @@ class LogisticsModule(VisitingVehicle):
 
         # Read in grouping configuration file.
         config = configparser.ConfigParser()
-        config.read(self.case_dir + 'tcd/' + self.config['tcd']['tgf'])
+        try:
+            config.read(self.case_dir + 'tcd/' + self.config['tcd']['tgf'])
+        except KeyError:
+            # print("WARNING: Thruster Grouping File Not Set")
+            self.rcs_groups = None
+            return
+
+
         self.config = config
 
         #Instantiate dictionary to hold grouping info

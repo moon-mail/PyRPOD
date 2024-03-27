@@ -61,7 +61,13 @@ class JetFiringHistory:
 
         """
 
-        path_to_jfh = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        try:
+            path_to_jfh = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        except KeyError:
+            # print("WARNING: Jet Firing History not set")
+            self.JFH = None
+            return
+
         with open(path_to_jfh, 'r') as f:
             lines = f.readlines()
 

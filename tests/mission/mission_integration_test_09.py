@@ -45,7 +45,7 @@ class CalculatePropellantUsage(unittest.TestCase):
         mp.read_flight_plan()
         # Calculate the propellant mass required for all maneuvers
         dm_total = mp.calc_total_delta_mass()
-        print("The total propellant expended over the flight plan is", dm_total, 'kg')
+        # print("The total propellant expended over the flight plan is", dm_total, 'kg')
 
 if __name__ == '__main__':
     unittest.main()

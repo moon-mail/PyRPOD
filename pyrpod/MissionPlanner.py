@@ -497,6 +497,10 @@ class MissionPlanner:
         # WIP: Initial code executes simple 1DOF calculations
         # print(type(self.vv))
         # print(self.vv)
+        if self.vv.rcs_groups == None:
+            # print("WARNING: Thruster Grouping File not Set")
+            return
+
         n_thrusters = len(self.vv.rcs_groups[motion])
         total_thrust = n_thrusters * self.vv.thrust
         acceleration = total_thrust / self.vv.mass
@@ -565,7 +569,12 @@ class MissionPlanner:
             and self.config are instatiated correctly. Potential defensive programming statements?
         """
         # Reads and parses through flight plan CSV file.
-        path_to_file = self.case_dir + 'jfh/' + self.config['jfh']['flight_plan']
+        try:
+            path_to_file = self.case_dir + 'jfh/' + self.config['jfh']['flight_plan']
+        except KeyError:
+            # print("WARNING: flight plan not set")
+            self.flight_plan = None
+            return
         self.flight_plan = pd.read_csv(path_to_file)
         # print(self.flight_plan)
 
@@ -831,47 +840,54 @@ class MissionPlanner:
 
             self.vv.mass = initial_masses[m]
 
-            # Read the JFH and add propellant expended for each firing to a sum
-            for f in range(len(self.jfh.JFH)):
-                dm = 0
-                # Backpropagate with a vv.mass of 14,000 kg to find the vv.mass pre-approach
-                if m == 0:
-                    forward_propagation = False
-                # Forward propagate with a vv.mass of 8,600 kg to find the vv.mass post-departure
-                if m == 1:
-                    forward_propagation = True
-
-                # The JFH only contains firings done by the neg_x group
-                thruster_type = self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]
-                m_dot_sum = self.calc_m_dot_sum('neg_x')
-                v_e = self.calc_v_e('neg_x')
-                dt = int(self.jfh.JFH[0]['t'])
-
-                # Change in x velocity (axial)
-                dv_x = self.calc_delta_v(dt, v_e, m_dot_sum, initial_masses[m])
-
-                # Calculate fuel usage
-                if dv_x > 0:
-                    # The change in mass will be the same for approach and departure regardless of the LM's mass
-                    # because it is the same thruster group firing for the same amount of time
-                    dm = self.calc_delta_mass_v_e(dv_x, v_e, forward_propagation)
-                    # If backpropagating then add the propellant mass expended
+            # Make sure JFH is defined and has at least one firing.
+            if self.jfh.JFH != None and len(self.jfh.JFH) > 0:
+                # Read the JFH and add propellant expended for each firing to a sum
+                for f in range(len(self.jfh.JFH)):
+                    dm = 0
+                    # Backpropagate with a vv.mass of 14,000 kg to find the vv.mass pre-approach
                     if m == 0:
-                        initial_masses[m] += dm
-                        # If the last firing in the JFH has been accounted for, then m_approach has been found
-                        if f == len(self.jfh.JFH) - 1:
-                            m_approach = initial_masses[m]
-                    # If forward propagating, then subtract the propellant mass expended
+                        forward_propagation = False
+                    # Forward propagate with a vv.mass of 8,600 kg to find the vv.mass post-departure
                     if m == 1:
-                        initial_masses[m] -= dm
-                        # If the last firing in the JFH has been accounted for, then m_departure has been found
-                        if f == len(self.jfh.JFH) - 1:
-                            m_departure = initial_masses[m]
+                        forward_propagation = True
 
-                dm_total += dm
+                    # The JFH only contains firings done by the neg_x group
+                    thruster_type = self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]
+                    m_dot_sum = self.calc_m_dot_sum('neg_x')
+                    v_e = self.calc_v_e('neg_x')
+                    dt = int(self.jfh.JFH[0]['t'])
+
+                    # Change in x velocity (axial)
+                    dv_x = self.calc_delta_v(dt, v_e, m_dot_sum, initial_masses[m])
+
+                    # Calculate fuel usage
+                    if dv_x > 0:
+                        # The change in mass will be the same for approach and departure regardless of the LM's mass
+                        # because it is the same thruster group firing for the same amount of time
+                        dm = self.calc_delta_mass_v_e(dv_x, v_e, forward_propagation)
+                        # If backpropagating then add the propellant mass expended
+                        if m == 0:
+                            initial_masses[m] += dm
+                            # If the last firing in the JFH has been accounted for, then m_approach has been found
+                            if f == len(self.jfh.JFH) - 1:
+                                m_approach = initial_masses[m]
+                        # If forward propagating, then subtract the propellant mass expended
+                        if m == 1:
+                            initial_masses[m] -= dm
+                            # If the last firing in the JFH has been accounted for, then m_departure has been found
+                            if f == len(self.jfh.JFH) - 1:
+                                m_departure = initial_masses[m]
+
+                    dm_total += dm
 
         # Saving the flight plan into a Pandas dataframe
-        dataframe = pd.read_csv(self.case_dir + 'jfh/' + self.config['jfh']['flight_plan'])
+        try:
+            dataframe = pd.read_csv(self.case_dir + 'jfh/' + self.config['jfh']['flight_plan'])
+        except KeyError:
+            # print("WARNING: flight plan not set")
+            return
+
         dataframe.columns = dataframe.columns.str.replace(' ', '')
 
         firings_list = dataframe.to_dict(orient='records')
