@@ -79,7 +79,7 @@ class CoordinateSweepCheck(unittest.TestCase):
             rpod = RPOD.RPOD(case_dir)
             rpod.study_init(jfh, tv, vv)
 
-            rpod.graph_jfh(i)
+            rpod.visualize_sweep(i)
             #rpod.jfh_plume_strikes()
 
 if __name__ == '__main__':
