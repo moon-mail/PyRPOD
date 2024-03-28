@@ -1,7 +1,7 @@
-# Andy Torres
+# Andy Torres, Pearce Patterson
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 03-16-24
+# Last Changed: 03-28-24
 
 # ========================
 # PyRPOD: tests/rpod/rpod_unit_test_01.py
