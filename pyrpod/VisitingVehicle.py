@@ -149,6 +149,10 @@ class VisitingVehicle(Vehicle):
             Gathers thruster configuration data for the Visiting Vehicle from a .dat file
             and saves it as class members.
 
+            If thruster data IS passed, simple overwrite self.thruster_data.
+            This use is intended to occur only after a notional use of this method.
+            (ie a method call without thruster_data, using the tcf file path instead.)
+
             Parameters
             ----------
             path_to_tcd : str
@@ -159,31 +163,32 @@ class VisitingVehicle(Vehicle):
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
+        if thruster_data is None:
+            path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
 
-        path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+            # Simple program, reading text from a file.
+            with open(path_to_tcf, 'r') as f:
+                lines = f.readlines()
 
-        # Simple program, reading text from a file.
-        with open(path_to_tcf, 'r') as f:
-            lines = f.readlines()
+                # Parse through first few lines, save relevant information. 
+                self.num_thrusters = int(lines.pop(0))
+                self.thruster_units = lines.pop(0)[0] # dont want '\n'
+                self.cog = process_coordinates(lines.pop(0))
+                self.grapple = process_coordinates(lines.pop(0))
 
-            # Parse through first few lines, save relevant information. 
-            self.num_thrusters = int(lines.pop(0))
-            self.thruster_units = lines.pop(0)[0] # dont want '\n'
-            self.cog = process_coordinates(lines.pop(0))
-            self.grapple = process_coordinates(lines.pop(0))
+                # Save all strings containing thruster data in a list
+                str_thrusters = []
+                for i in range(self.num_thrusters):
+                    str_thrusters.append(lines.pop(0))
 
-            # Save all strings containing thruster data in a list
-            str_thrusters = []
-            for i in range(self.num_thrusters):
-                str_thrusters.append(lines.pop(0))
-
-            # Parse through strings and save data in a dictionary
-            if thruster_data is None:
+                # Parse through strings and save data in a dictionary
                 self.thruster_data = process_str_thrusters(str_thrusters)
-            else:
-                self.thruster_data = thruster_data
 
-            self.jet_interactions = lines.pop(0)
+                self.jet_interactions = lines.pop(0)
+
+        else:
+            self.thruster_data = thruster_data
+            
         return
 
     def set_thruster_metrics(self):
