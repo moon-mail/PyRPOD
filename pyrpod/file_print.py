@@ -203,10 +203,10 @@ def print_1d_JFH(t_values, r,  rot, file_name):
 
             print('     ', i+1, end=' ')
 
-            p = 3
+            p = 6
 
             # Print t values
-            print(round(t_values[i], p), end = '    ')
+            print('{:.3f}'.format(t_values[i]),  end = '    ')
 
             # Print dt values.
             if i == 0:
@@ -221,20 +221,20 @@ def print_1d_JFH(t_values, r,  rot, file_name):
             # Print elements of rotation matrix
             for j in range(3):
                 for k in range(3):
-                    print(round(rot[i][j][k], p), end = ' ')
+                    print('{:.6e}'.format(rot[i][j][k]),  end = '    ')
 
             # Print position values.
-            print(-round(x[i], p), -round(y[i], p), -round(z[i], p), end = '   ')
+            print('{:.3f}'.format(x[i]), '{:.3f}'.format(y[i]), '{:.3f}'.format(z[i]), end = '    ')
 
             # Print uncertainty factor
             print('1.000', end = ' ')
+
+            # Print thrusters to be turned on.
 
             # thruster = i%16+1
             thruster = '1 5 9 13'
             print('4  ', thruster, end = ' ')
 
-
-            # Print thrusters to be turned on. 
             # group = i % 4
             # for j in range(4):
             #     print((j+1)*group + 1, end =' ')
