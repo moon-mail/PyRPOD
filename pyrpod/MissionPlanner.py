@@ -1,5 +1,6 @@
 from pyrpod.LogisticsModule import LogisticsModule
 
+import os
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -971,5 +972,18 @@ class MissionPlanner:
                         dm = dm_sum_rot
             
             dm_total += dm
+
+
+        # Create results directory if it doesn't already exist.
+        results_dir = self.case_dir + 'results'
+        if not os.path.isdir(results_dir):
+            #print("results dir doesn't exist")
+            os.mkdir(results_dir)
+
+        # Save results to rudementary log file.
+        with open(self.case_dir + 'results/prop_usage.txt', 'w') as f:
+            dm_total = round(dm_total, 3)
+            message = "The total propellant expended over the flight plan is " +  str(dm_total) + " kg"
+            f.write(message)
 
         return dm_total
