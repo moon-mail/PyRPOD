@@ -203,8 +203,11 @@ class VisitingVehicle(Vehicle):
             Does the method need to return a status message? or pass similar data?
         """
 
-        path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
-
+        try:
+            path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+        except KeyError:
+            # print("WARNING: Thruster Configuration File not set")
+            return
         # Simple program, reading text from a file.
         with open(path_to_tcf, 'r') as f:
             lines = f.readlines()
@@ -275,8 +278,13 @@ class VisitingVehicle(Vehicle):
             Does the method need to return a status message? or pass similar data?
         """
 
-        # TODO determine path.. possbily move to configuraition file.
-        path_to_thruster_metrics = self.case_dir + 'tcd/' + self.config['tcd']['tdf']
+        # Read in path for thruster metric data.
+        try:
+            path_to_thruster_metrics = self.case_dir + 'tcd/' + self.config['tcd']['tdf']
+        except KeyError:
+            # print("WARNING: Thruster Metrics File Not Set")
+            self.thruster_metrics = None
+            return
 
         # specify columns to be read as strings.
         str_cols = ['#']
