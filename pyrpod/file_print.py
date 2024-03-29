@@ -233,7 +233,7 @@ def print_1d_JFH(t_values, r,  rot, file_name):
 
             # thruster = i%16+1
             thruster = '1 5 9 13'
-            print('4  ', thruster, end = ' ')
+            print('4  ', thruster, end = '')
 
             # group = i % 4
             # for j in range(4):
