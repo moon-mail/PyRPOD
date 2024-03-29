@@ -304,7 +304,7 @@ class MissionPlanner:
 
         return
 
-    def calc_delta_mass_isp(self, dv, isp):
+    def calc_delta_m(self, dv, isp):
         """
             Calculates propellant usage using expressions derived from the ideal rocket equation.
 
