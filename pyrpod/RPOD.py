@@ -95,16 +95,9 @@ class RPOD (MissionPlanner):
             A Simple plume model is used. It does not calculate plume physics, only strikes. which
             are determined with a user defined "plume cone" geometry. Simple vector mathematics is
             used to determine if an VTK surface elements is struck by the "plume cone".
-
-        graph_param_curve(self, t, r_of_t)
-            Used to quickly prototype and visualize a proposed approach path.
-            Calculates the unit tangent vector at a given timestep and 
-            rotates the STL file accordingly. Data is plotted using matlab
-
-        print_JFH_param_curve(self, jfh_path, t, r_of_t, align = False)
-            Used to produce JFH data for a proposed approach path.
-            Calculates the unit tangent vector at a given timestep and DCMs for
-            STL file rotations. Data is then saved to a text file.
+        
+        print_jfh_1d_approach(v_ida, v_o, r_o)
+            Method creates JFH data for axial approach using simpified physics calculations.
     """
     # def __init__(self):
     #     print("Initialized Approach Visualizer")
