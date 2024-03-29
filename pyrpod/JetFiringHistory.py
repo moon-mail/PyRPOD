@@ -43,6 +43,16 @@ class JetFiringHistory:
         -------
         read_JFH : list
             Method reads in and parses through text file containing the JFH.
+        
+        graph_param_curve(self, t, r_of_t)
+            Used to quickly prototype and visualize a proposed approach path.
+            Calculates the unit tangent vector at a given timestep and 
+            rotates the STL file accordingly. Data is plotted using matlab
+
+        print_JFH_param_curve(self, jfh_path, t, r_of_t, align = False)
+            Used to produce JFH data for a proposed approach path.
+            Calculates the unit tangent vector at a given timestep and DCMs for
+            STL file rotations. Data is then saved to a text file.
     """
 
     def __init__(self, case_dir):
