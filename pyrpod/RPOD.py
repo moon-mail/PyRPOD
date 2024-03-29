@@ -379,8 +379,8 @@ class RPOD (MissionPlanner):
 
             Method used for mdao_unit_test_02.py
 
-            This utilities allows engineers to visualize the a configuration sweep before running
-            the full simulation and wasting computation time.
+            This utility allows engineers to visualize a configuration sweep before running
+            the full simulation and wasting computational resources.
 
             Parameters
             ----------
