@@ -764,7 +764,13 @@ class RPOD (MissionPlanner):
         # Calculate required change in velocity.
         dv_req = v_o - v_ida
 
-        # Determin thruster configuration characterstics. WIP.
+        # The JFH only contains firings done by the neg_x group
+        # m_dot_sum = self.calc_m_dot_sum('neg_x')
+        # dt = 0.025
+        # dm_firing = m_dot_sum * dt
+        # v_e = self.calc_v_e('neg_x')
+
+        # Determine thruster configuration characterstics. WIP.
         total_thrust = [500, 500, 500, 500] # N
         total_m_dot = [0.5, 0.5, 0.5, 0.5] # kg/s
         dt = 0.025
@@ -817,7 +823,8 @@ class RPOD (MissionPlanner):
             mass.append(mass_o - dm_firing)
             mass_f = mass[-1]
 
-            # Caclulate velocioty change per firing.
+            # Calculate velocity change per firing.
+            # dv_firing = self.calc_delta_v(dt, v_e, m_dot_sum, m_current)
             dv_firing = self.calc_dv(v_e, mass_o, mass_f)
             dv.append(dv_firing)
             # print(dv_firing)
