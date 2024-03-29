@@ -1,7 +1,7 @@
-# Andy Torres
+# Andy Torres, Nicholas Palumbo
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 03-16-24
+# Last Changed: 03-29-24
 
 # ========================
 # PyRPOD: tests/rpod/rpod_integration_test_01.py
@@ -27,9 +27,9 @@ class OneDimTransApproachChecks(unittest.TestCase):
 
         # Define LM  and mass properties.
         lm = LogisticsModule.LogisticsModule(case_dir)
-        m = 0.45*30000 # lb converted to kg
-        h = 14 # m
-        r = 4.0/2.0 # m
+        m = 14000 # kg
+        h = 11 # m
+        r = 2 # m
         lm.set_inertial_props(m, h, r)
         lm.set_thruster_config()
 
@@ -40,7 +40,7 @@ class OneDimTransApproachChecks(unittest.TestCase):
         # Produce JFH using 1D physics
         r_o = 20 + 14 # initial distance (m)
         v_ida = 0.1 # Docking velocity (m/s)
-        v_o = 0.55 # Initial varelocity (axial overshoot?) (m/s)
+        v_o = 0.55 # Initial velocity (axial overshoot) (m/s)
         rpod.print_jfh_1d_approach(v_ida = v_ida, v_o = v_o, r_o = r_o)
 
         # Read in JFH and conduct RPOD analysis.
