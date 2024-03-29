@@ -163,6 +163,10 @@ class SweepDecelAngles:
         Sweeps the given config by angles - these include yawing the yaw thrusters symmetrically
         as well as pitching the pitch thrusters symmetrically. These are nested. These are performed 
         over the min and max angles allowed.
+    
+    sweep_decel_thrusters_all(self, config, dcant):
+        Sweeps the given config by angles - all thrusters are canted simultaneously and symmetrically.
+        These are performed over the min and max angles allowed.
 
     read_swept_angles(swept_configs)
         Prints to terminal the DCM of all thrusters for all the swept cofigurations
@@ -340,7 +344,7 @@ class SweepDecelAngles:
                     neg_neg_yaw.append(thruster)
 
         #hard coded limits for the meantime
-        pitch_min, pitch_max, yaw_min, yaw_max = 0, 45, 0, 45
+        pitch_min, pitch_max, yaw_min, yaw_max = 0, 70, 0, 70
         for pitch in range(pitch_min, pitch_max + dpitch, dpitch):
             for yaw in range(yaw_min, yaw_max + dyaw, dyaw):
                 new_config = {}
@@ -367,6 +371,71 @@ class SweepDecelAngles:
                 elif thruster in neg_neg_pitch:
                     dcm = self.calculate_DCM(new_thruster_info['name'][0], pitch + dpitch, 0)
                     config[thruster]['dcm'] = dcm
+
+        return configs_swept_angles
+    
+    def sweep_decel_thrusters_all(self, config, dcant):
+        '''
+            Sweeps the given config by angle. Performed over min and max allowed. 
+            All thrusters are canted simultaneously.
+            
+            Parameters
+            ----------
+            config : dictionary
+                    Holds keys of thrusters, with values on their configuraiton information.
+                    This information includes: name, type, nozzle exit center position, and DCM.
+                    See test_case_sweep_angles.py for an example.
+            dcant : float
+                    step size for the canting sweep (deg)
+
+            Returns
+            -------
+            array like
+                Array of configuration dictionaries. Each element of the array is a 
+                combination given the inputted angling step sizes for each pitch and yaw.
+        '''
+
+        #basic case: look at +x thrusters, pitch the pitch group symmetrically
+        configs_swept_angles = []
+
+        neg_pos_pitch = []
+        neg_neg_pitch = []
+        neg_pos_yaw = []
+        neg_neg_yaw = []
+        for thruster in config:
+            if thruster in self.thruster_groups['-x']:
+                if thruster in self.thruster_groups['+pitch']:
+                    neg_pos_pitch.append(thruster)
+                if thruster in self.thruster_groups['-pitch']:
+                    neg_neg_pitch.append(thruster)
+                if thruster in self.thruster_groups['+yaw']:
+                    neg_pos_yaw.append(thruster)
+                if thruster in self.thruster_groups['-yaw']:
+                    neg_neg_yaw.append(thruster)
+
+        #hard coded limits for the meantime
+        cant_min, cant_max = 0, 70
+        for cant in range(cant_min, cant_max + dcant, dcant):
+            new_config = {}
+
+            for thruster, thruster_info in config.items():
+                new_thruster_info = thruster_info.copy()
+                if thruster in neg_pos_yaw:
+                    dcm = self.calculate_DCM(new_thruster_info['name'][0], 0, -cant)
+                    new_thruster_info['dcm'] = dcm
+                elif thruster in neg_neg_yaw:
+                    dcm = self.calculate_DCM(new_thruster_info['name'][0], 0, cant)
+                    new_thruster_info['dcm'] = dcm
+                elif thruster in neg_pos_pitch:
+                    dcm = self.calculate_DCM(new_thruster_info['name'][0], -cant - dcant, 0)
+                    config[thruster]['dcm'] = dcm
+                elif thruster in neg_neg_pitch:
+                    dcm = self.calculate_DCM(new_thruster_info['name'][0], cant + dcant, 0)
+                    config[thruster]['dcm'] = dcm
+
+                new_config[thruster] = new_thruster_info
+
+            configs_swept_angles.append(new_config)
 
         return configs_swept_angles
     

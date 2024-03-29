@@ -1,15 +1,16 @@
 # Juan P. Roldan
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 01-17-24
+# Last Changed: 03-28-24
 
 # ========================
-# PyRPOD: test/test_case_sweep_cants.py
+# PyRPOD: test/mdao/mdao_unit_test_02.py
 # ========================
 # A test case to create array of cant angle swept thruster configurations.
 # The sweep assumes the given thrusters angle symmetrically. 
 # This means that opposite pitch thrusters angle opposite but equally to each other
 # and yaw thrusters angle opposite but equally to each other
+# !!currently, the pitch and yaw thrusters are canted in unison!!
 # pitch thrusters are not angled such that they can produce a yaw
 # yaw thrusters are not angled such that they can introduce a pitch
 
@@ -43,22 +44,21 @@ class CoordinateSweepCheck(unittest.TestCase):
             '-z': [],
             '+pitch': ['P4T1'],
             '-pitch': ['P2T1'],
-            '+yaw' : ['P3T1'],
-            '-yaw' : ['P1T1']
+            '+yaw' : ['P1T1'],
+            '-yaw' : ['P3T1']
         }
 
         # define the LM's radius
         r = 2 # m
 
         # define step sizes for each angle
-        dpitch = 10 # deg
-        dyaw = 10 # deg
+        dcant = 10 # deg
 
         # create SweepAngles object
         angle_sweep = SweepConfig.SweepDecelAngles(r, config, thruster_groups)
         
         # call sweep_long_thruster on the configuration and print the DCM's
-        config_swept_array = angle_sweep.sweep_decel_thrusters(config, dpitch, dyaw)
+        config_swept_array = angle_sweep.sweep_decel_thrusters_all(config, dcant)
 
         for i, config in enumerate(config_swept_array):
             # Path to directory holding data assets and results for a specific RPOD study.

@@ -75,6 +75,10 @@ class RPOD (MissionPlanner):
         graph_jfh(self)
             Creates visualization data for the trajectory of the proposed RPOD analysis.
 
+        visualize_sweep(self, config_iter)
+            Creates visualization data for a sweep of configurations.
+            Each configuration undergoes a single jfh firing.
+
         update_window_queue(self, window_queue, cur_window, firing_time, window_size)
             Takes the most recent window of time size, and adds the new firing time to the sum, and the window_queue.
             If the new window is larger than the allowed window_size, then earleist firing times are removed
