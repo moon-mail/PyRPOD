@@ -48,7 +48,7 @@ class JetFiringHistory:
             Method responsible for reading and parsing through JFH data.
 
             NOTE: Methods does not take any parameters. It assumes that self.case_dir
-            and self.config are instatiated correctly. Potential defensive programming statements?
+            and self.config are instantiated correctly. Potential defensive programming statements?
 
             Parameters
             ----------
@@ -61,7 +61,13 @@ class JetFiringHistory:
 
         """
 
-        path_to_jfh = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        try:
+            path_to_jfh = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        except KeyError:
+            # print("WARNING: Jet Firing History not set")
+            self.JFH = None
+            return
+
         with open(path_to_jfh, 'r') as f:
             lines = f.readlines()
 
