@@ -99,25 +99,29 @@ class VisitingVehicle(Vehicle):
 
         Methods
         -------
-        add_thruster_config(path_to_tcd)
-            Read in thruster configuration data from the provided file path.
+        set_stl()
+            Reads in Vehicle surface mesh from STL file.
+        
+        set_thruster_config()
+            Reads the thruster configuration file from the config.ini for the Visiting Vehicle and saves it as class members.
+
+        set_thruster_metrics()
+            Reads the thruster data file to gather thruster-specific performance parameters for the configuration from a .csv file
+            and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.    
 
         print_info()
             Simple method to format printing of vehicle info.
 
-        set_stl()
-            Reads in Vehicle surface mesh from STL file.
-
         initiate_plume_mesh()
-            Reads in surface mesh for plume clone.
+            Helper method that reads in surface mesh for plume clone.
 
-        transform_plume_mesh()
+        transform_plume_mesh(thruster_id, plumeMesh)
             Transform plume mesh according to the specified thruster's DCM and exit coordinate.
 
-        initiate_plume_normal()
+        initiate_plume_normal(thruster_id)
             Collects plume normal vectors data for visualization.
 
-        plot_vv_and_thruster()
+        plot_vv_and_thruster(plumeMesh, thruster_id, normal, i)
             Plots Visiting Vehicle and plume cone for provided thruster id.
 
         check_thruster_configuration()
@@ -129,8 +133,7 @@ class VisitingVehicle(Vehicle):
 
             Parameters
             ----------
-            path_to_stl : str
-                file location for Vehicle's surface mesh using an STL file.
+            None
 
             Returns
             -------
@@ -144,10 +147,7 @@ class VisitingVehicle(Vehicle):
 
     def set_thruster_config(self):
         """
-            Read in thruster configuration data from the provided file path.
-
-            Gathers thruster configuration data for the Visiting Vehicle from a .dat file
-            and saves it as class members.
+            Reads the thruster configuration file from the config.ini for the Visiting Vehicle and saves it as class members.
 
             Parameters
             ----------
@@ -187,9 +187,7 @@ class VisitingVehicle(Vehicle):
 
     def set_thruster_metrics(self):
         """
-            Read in performance data specific to thruster types.
-
-            Gathers thruster-specific performance parameters for the configuration from a .csv file
+            Reads the csv thruster data file to gather thruster-specific performance parameters for the configuration
             and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.
 
             Parameters
@@ -238,7 +236,17 @@ class VisitingVehicle(Vehicle):
 
 
     def print_info(self):
-        """Simple method to format printing of vehicle info."""
+        """
+            Simple method to format printing of vehicle info.
+        
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
+        """
 
         print('number of thrusters:', self.num_thrusters)
         print('thruster units:', self.thruster_units)
@@ -294,7 +302,7 @@ class VisitingVehicle(Vehicle):
 
     def initiate_plume_normal(self, thruster_id):
         """
-                Collects plume normal vectors data for visualization.
+            Collects plume normal vectors data for visualization.
 
             Parameters
             ----------

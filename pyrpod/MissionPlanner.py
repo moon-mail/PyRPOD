@@ -27,6 +27,9 @@ class MissionPlanner:
 
         Methods
         -------
+        set_lm(LogisticsModule)
+            Simple setter method to set VV/LM used in analysis.
+        
         set_jfh(JetFiringHistory)
             Simple setter method to set JFH used in propellant usage calculations.
         
@@ -48,13 +51,13 @@ class MissionPlanner:
         plot_burn_time_flight_plan()
             Plots burn time for all dv maneuvers in the specified flight plan.
 
-        calc_delta_m(dv, isp)
+        calc_delta_mass(dv, isp)
             Calculates propellant usage using expressions derived from the ideal rocket equation.
 
-        plot_delta_m(dv)
+        plot_delta_mass(dv)
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
-        plot_delta_m_contour()
+        plot_delta_mass_contour()
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
         calc_trans_performance(motion, dv)
@@ -63,7 +66,7 @@ class MissionPlanner:
         calc_6dof_performance()
             Calculates performance for translation and rotational maneuvers.
 
-        read_flight_plan(path_to_file)
+        read_flight_plan()
             Reads in VV flight as specified using CSV format.
 
         calc_flight_performance()
@@ -123,6 +126,15 @@ class MissionPlanner:
             If so, how do we handle inheritance between them? Previous efforts have broken
             the code. This is due to "hacky/minimal" effort. A follow up attempt would
             require research into how Python handles inheritance including "container classes".
+
+            Parameters
+            ----------
+            LogisticsModule : LogisticsModule
+                LogisticsModule Object containing inertial properties.
+
+            Returns
+            -------
+            None
         """
         self.vv = LogisticsModule
     
@@ -192,18 +204,18 @@ class MissionPlanner:
             Parameters
             ----------
             dv : float
-                Speficied change in velocity value.
+                Specified change in velocity value.
 
             isp : float
-                Speficied specific impulse value.
+                Specified specific impulse value.
 
             T : float
-                Speficied thrust value.
+                Specified thrust value.
 
             Returns
             -------
             t_burn : float
-                Required burn time is seconds/
+                Required burn time is seconds.
         """
         g_0=9.81
         m_f=self.vv.mass
@@ -213,9 +225,9 @@ class MissionPlanner:
 
     def plot_burn_time(self, dv):
         """
-            Plots burn time for a given dv and isp value. Varries thrust according to user inputs.
+            Plots burn time for a given dv and isp value. Varies thrust according to user inputs.
 
-            TODO: Add ISP value as a parameter. Remove isp_vals, add isp as a paramter to the function.
+            TODO: Add ISP value as a parameter. Remove isp_vals, add isp as a parameter to the function.
             Test code.
 
             TODO: Integrate with establsihed configuration file framework.
@@ -223,10 +235,10 @@ class MissionPlanner:
             Parameters
             ----------
             dv : float
-                Speficied change in velocity value.
+                Specified change in velocity value.
 
             isp : float
-                Speficied specific impulse value.
+                Specified specific impulse value.
 
             Returns
             -------
@@ -264,8 +276,7 @@ class MissionPlanner:
             Parameters
             ----------
             dv : float
-                Speficied change in velocity value.
-
+                Specified change in velocity value.
 
             Returns
             -------
@@ -299,6 +310,7 @@ class MissionPlanner:
 
             Parameters
             ----------
+            None
 
             Returns
             -------
@@ -332,7 +344,7 @@ class MissionPlanner:
 
         return
 
-    def calc_delta_m(self, dv, isp):
+    def calc_delta_mass(self, dv, isp):
         """
             Calculates propellant usage using expressions derived from the ideal rocket equation.
 
@@ -354,7 +366,7 @@ class MissionPlanner:
         m_f = self.vv.mass
         return m_f * (1 - np.exp(a))
 
-    def plot_delta_m(self, dv):
+    def plot_delta_mass(self, dv):
         """
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
 
@@ -369,13 +381,13 @@ class MissionPlanner:
             Does the method need to return a status message? or pass similar data?
         """
         isp_range = np.linspace(100, 600, 5000)
-        delta_m = []
+        delta_mass = []
 
         for isp in isp_range:
-            delta_m.append(abs(self.calc_delta_m(dv, isp)))
-        delta_m = np.array(delta_m)
+            delta_mass.append(abs(self.calc_delta_mass(dv, isp)))
+        delta_mass = np.array(delta_mass)
         # for i, isp, in enumerate(isp_range):
-        #     print(isp_range[i], delta_m[i])
+        #     print(isp_range[i], delta_mass[i])
 
         thrust_tech = {
             'electro thermal': [50, 185],
@@ -388,13 +400,13 @@ class MissionPlanner:
         for tech in thrust_tech:
             # print(tech)
 
-            y_vals = np.array([delta_m.max(), delta_m.mean(), delta_m.min()])
+            y_vals = np.array([delta_mass.max(), delta_mass.mean(), delta_mass.min()])
             isp_val = thrust_tech[tech][1]
             isp_line = np.array([isp_val, isp_val, isp_val])
 
             ax.plot(isp_line, y_vals, label=tech)
 
-        ax.plot(isp_range, delta_m)
+        ax.plot(isp_range, delta_mass)
         ax.set(xlabel='ISP (s)', ylabel='mass (kg)',
             title='Max ISP vs Propellant Mass Required (' + str(abs(dv)) + ' m/s)')
         ax.grid()
@@ -403,17 +415,25 @@ class MissionPlanner:
         # plt.yscale("log")
         fig.savefig("test.png")
 
-    def plot_delta_m_contour(self):
+    def plot_delta_mass_contour(self):
         """
             Co-Plots propellant usage for all dv maneuvers in the specified flight plan.
 
-             TODO: Add isp_range as a parameter. Integrate with configuration file framework. Test Code.
+            TODO: Add isp_range as a parameter. Integrate with configuration file framework. Test Code.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         #creat plotting object.
         fig, ax = plt.subplots()
 
-        delta_m_min = 10e9
-        delta_m_max = 0
+        delta_mass_min = 10e9
+        delta_mass_max = 0
 
         # Step through all planned firings in the flight plan
         for firing in self.flight_plan.iterrows():
@@ -422,21 +442,21 @@ class MissionPlanner:
 
             # Calculate change in mass for a given range of ISP values.
             isp_range = np.linspace(50, 400, 5000)
-            delta_m = []
+            delta_mass = []
 
             for isp in isp_range:
-                delta_m.append(abs(self.calc_delta_m(dv, isp)))
-            delta_m = np.array(delta_m)
+                delta_mass.append(abs(self.calc_delta_mass(dv, isp)))
+            delta_mass = np.array(delta_mass)
 
             # Save absolute min and max data for plotting.
-            if delta_m.max() > delta_m_max:
-                delta_m_max = delta_m.max()
+            if delta_mass.max() > delta_mass_max:
+                delta_mass_max = delta_mass.max()
 
-            if delta_m.min() < delta_m_min:
-                delta_m_min = delta_m.min()
+            if delta_mass.min() < delta_mass_min:
+                delta_mass_min = delta_mass.min()
 
             # Plot data.
-            ax.plot(isp_range, delta_m, label='( Δv =' + str(abs(dv)) + ' m/s)')
+            ax.plot(isp_range, delta_mass, label='( Δv =' + str(abs(dv)) + ' m/s)')
 
         # thrust_tech = {
         #     # 'electro thermal': [50, 185],
@@ -448,7 +468,7 @@ class MissionPlanner:
         # for tech in thrust_tech:
         #     print(tech)
 
-        #     y_vals = np.array([delta_m_max, 0.5*(delta_m_max + delta_m_min), delta_m_min])
+        #     y_vals = np.array([delta_mass_max, 0.5*(delta_mass_max + delta_mass_min), delta_mass_min])
         #     isp_val = thrust_tech[tech][1]
         #     isp_line = np.array([isp_val, isp_val, isp_val])
 
@@ -486,9 +506,9 @@ class MissionPlanner:
             Returns
             -------
             time : float
-                Burn time ellapsed.
+                Burn time elapsed.
 
-            destance : float
+            distance : float
                 Distance covered during burn time.
 
             propellant_used : float
@@ -524,6 +544,14 @@ class MissionPlanner:
     def calc_6dof_performance(self):
         """
             Wrapper method used to calculate performance for translation and rotational maneuvers.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         # Wrapper function that sets up data for 6DOF performance
         dv = self.v_desired - self.v_current
@@ -565,9 +593,16 @@ class MissionPlanner:
         """
             Reads in VV flight as specified using CSV format.
 
+            NOTE: Method assumes that self.case_dir and self.config are instantiated
+            correctly. Potential defensive programming statements?
 
-            NOTE: Methods does not take any parameters. It assumes that self.case_dir
-            and self.config are instatiated correctly. Potential defensive programming statements?
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         # Reads and parses through flight plan CSV file.
         try:
@@ -584,6 +619,14 @@ class MissionPlanner:
     def calc_flight_performance(self):
         """
             Calculates 6DOF performance for all firings specified in the flight plan.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         for firing in self.flight_plan.iterrows():
 
@@ -615,6 +658,14 @@ class MissionPlanner:
     def plot_thrust_envelope(self):
         """
             Plots operational envelope relating burn time to thrust required for all firings in the flight plan.
+
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
         """
         # print(self.vv)
         # print(self.flight_plan)
@@ -980,7 +1031,7 @@ class MissionPlanner:
             #print("results dir doesn't exist")
             os.mkdir(results_dir)
 
-        # Save results to rudementary log file.
+        # Save results to rudimentary log file.
         with open(self.case_dir + 'results/prop_usage.txt', 'w') as f:
             dm_total = round(dm_total, 3)
             message = "The total propellant expended over the flight plan is " +  str(dm_total) + " kg"
