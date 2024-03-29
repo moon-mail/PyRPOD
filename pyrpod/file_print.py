@@ -224,7 +224,7 @@ def print_1d_JFH(t_values, r,  rot, file_name):
                     print('{:.6e}'.format(rot[i][j][k]),  end = '    ')
 
             # Print position values.
-            print('{:.3f}'.format(x[i]), '{:.3f}'.format(y[i]), '{:.3f}'.format(z[i]), end = '    ')
+            print('{:.3f}'.format(-x[i]), '{:.3f}'.format(-y[i]), '{:.3f}'.format(-z[i]), end = '    ')
 
             # Print uncertainty factor
             print('1.000', end = ' ')
