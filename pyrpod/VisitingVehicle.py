@@ -172,25 +172,21 @@ class VisitingVehicle(Vehicle):
         with open(path_to_tcf, 'r') as f:
             lines = f.readlines()
 
-                # Parse through first few lines, save relevant information. 
-                self.num_thrusters = int(lines.pop(0))
-                self.thruster_units = lines.pop(0)[0] # dont want '\n'
-                self.cog = process_coordinates(lines.pop(0))
-                self.grapple = process_coordinates(lines.pop(0))
+            # Parse through first few lines, save relevant information. 
+            self.num_thrusters = int(lines.pop(0))
+            self.thruster_units = lines.pop(0)[0] # dont want '\n'
+            self.cog = process_coordinates(lines.pop(0))
+            self.grapple = process_coordinates(lines.pop(0))
 
-                # Save all strings containing thruster data in a list
-                str_thrusters = []
-                for i in range(self.num_thrusters):
-                    str_thrusters.append(lines.pop(0))
+            # Save all strings containing thruster data in a list
+            str_thrusters = []
+            for i in range(self.num_thrusters):
+                str_thrusters.append(lines.pop(0))
 
-                # Parse through strings and save data in a dictionary
-                self.thruster_data = process_str_thrusters(str_thrusters)
+            # Parse through strings and save data in a dictionary
+            self.thruster_data = process_str_thrusters(str_thrusters)
 
-                self.jet_interactions = lines.pop(0)
-
-        else:
-            self.thruster_data = thruster_data
-            
+            self.jet_interactions = lines.pop(0)
         return
 
     def set_thruster_metrics(self):
