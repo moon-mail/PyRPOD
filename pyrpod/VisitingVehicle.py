@@ -162,31 +162,37 @@ class VisitingVehicle(Vehicle):
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
-
-        try:
+        if thruster_data is None:
             path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
-        except KeyError:
-            # print("WARNING: Thruster Configuration File not set")
-            return
-        # Simple program, reading text from a file.
-        with open(path_to_tcf, 'r') as f:
-            lines = f.readlines()
+        
+            try:
+                path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+            except KeyError:
+                # print("WARNING: Thruster Configuration File not set")
+                return
+            # Simple program, reading text from a file.
+            with open(path_to_tcf, 'r') as f:
+                lines = f.readlines()
 
-            # Parse through first few lines, save relevant information. 
-            self.num_thrusters = int(lines.pop(0))
-            self.thruster_units = lines.pop(0)[0] # dont want '\n'
-            self.cog = process_coordinates(lines.pop(0))
-            self.grapple = process_coordinates(lines.pop(0))
+                # Parse through first few lines, save relevant information. 
+                self.num_thrusters = int(lines.pop(0))
+                self.thruster_units = lines.pop(0)[0] # dont want '\n'
+                self.cog = process_coordinates(lines.pop(0))
+                self.grapple = process_coordinates(lines.pop(0))
 
-            # Save all strings containing thruster data in a list
-            str_thrusters = []
-            for i in range(self.num_thrusters):
-                str_thrusters.append(lines.pop(0))
+                # Save all strings containing thruster data in a list
+                str_thrusters = []
+                for i in range(self.num_thrusters):
+                    str_thrusters.append(lines.pop(0))
 
-            # Parse through strings and save data in a dictionary
-            self.thruster_data = process_str_thrusters(str_thrusters)
+                # Parse through strings and save data in a dictionary
+                self.thruster_data = process_str_thrusters(str_thrusters)
 
-            self.jet_interactions = lines.pop(0)
+                self.jet_interactions = lines.pop(0)
+
+        else:
+            self.thruster_data = thruster_data
+        
         return
 
     def set_thruster_metrics(self):
