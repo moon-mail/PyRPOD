@@ -760,59 +760,68 @@ class RPOD (MissionPlanner):
             Does the method need to return a status message? or pass similar data?
 
         """
+        # Determine thruster configuration characterstics.
+        # The JFH only contains firings done by the neg_x group
+        m_dot_sum = self.calc_m_dot_sum('neg_x')
+        # print('m_dot_sum is', m_dot_sum)
+        MIB = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['MIB']
+        # print('MIB is', MIB)
+        F = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
+        # print('F is', F)
+
+        # Defining a multiplier reduce time steps and make running faster
+        time_multiplier = 600
+        dt = (MIB / F) * time_multiplier
+        # print('dt is', dt)
+        dm_firing = m_dot_sum * dt
+        # print('dm_firing is', dm_firing)
+        docking_mass = self.vv.mass
+        # print('docking mass is', docking_mass)
 
         # Calculate required change in velocity.
         dv_req = v_o - v_ida
-
-        # The JFH only contains firings done by the neg_x group
-        # m_dot_sum = self.calc_m_dot_sum('neg_x')
-        # dt = 0.025
-        # dm_firing = m_dot_sum * dt
-        # v_e = self.calc_v_e('neg_x')
-
-        # Determine thruster configuration characterstics. WIP.
-        total_thrust = [500, 500, 500, 500] # N
-        total_m_dot = [0.5, 0.5, 0.5, 0.5] # kg/s
-        dt = 0.025
-        dm_firing = sum(total_m_dot) * dt
-        v_e  = sum(total_thrust) / sum(total_m_dot)
+        v_e = self.calc_v_e('neg_x')
+        forward_propagation = False
 
         # Calculate propellant used for docking and changes in mass.
-        delta_m_docking = round(self.calc_delta_mass_v_e(dv_req, v_e), 0)
-        docking_dry_mass = self.vv.mass
-        docking_wet_mass = self.vv.mass + delta_m_docking
-        # print('docking dry mass', docking_dry_mass)
-        # print('docking wet mass', docking_wet_mass)
+        delta_mass_jfh = self.calc_delta_mass_v_e(dv_req, v_e, forward_propagation)
+        # print('delta_mass_docking is',delta_mass_jfh)
 
+        pre_approach_mass = self.vv.mass
+        # print('pre-approach mass is', pre_approach_mass)
 
         # Instantiate data structure to hold JFH data + physics data.
-        # First values are initial conditions.
+        # Initializing position
         x = [r_o]
         y = [0]
         z = [0]
+
+        # Initializing empty tracking lists
         dx = [0]
-
-        dt_vals = [dt]
         t = [0]
-
         dv = [0]
+
+        # Initializing inertial state
         dxdt = [v_o]
-        mass = [docking_wet_mass]
+
+        # Initializing initial mass
+        mass = [pre_approach_mass]
+
+        # Initializing list to later sum propellant expenditure
         dm_total = [dm_firing]
 
+        # Firing number
         n = [1]
 
         # Create dummy rotation matrices.
-        y1 = [1, 0, 0]
         x1 = [1, 0, 0]
+        y1 = [1, 0, 0]
 
         rot = [np.array(rotation_matrix_from_vectors(x1, y1))]
 
         # Calculate JFH and 1D physics data for required firings.
-        i = 0 # ugly but useful
         while (dv_req > 0):
             # print('dv_req', round(dv_req, 4), 'n firings', n[i])
-
 
             # Grab last value in the JFH arrays (initial conditions for current time step)
             # print('x, dx, dt, t, dxdt, mass, dm_total')
@@ -822,12 +831,12 @@ class RPOD (MissionPlanner):
             mass_o = mass[-1]
             mass.append(mass_o - dm_firing)
             mass_f = mass[-1]
+            # print('mass_f is', mass_f)
 
             # Calculate velocity change per firing.
-            # dv_firing = self.calc_delta_v(dt, v_e, m_dot_sum, m_current)
-            dv_firing = self.calc_dv(v_e, mass_o, mass_f)
+            dv_firing = self.calc_delta_v(dt, v_e, m_dot_sum, mass_o)
             dv.append(dv_firing)
-            # print(dv_firing)
+            # print('dv is', dv_firing)
             # print(round(dxdt[-1] - dv_firing, 2))
             # input()
             dxdt.append(dxdt[-1] - dv_firing)
@@ -843,16 +852,14 @@ class RPOD (MissionPlanner):
             # Calculate left over v_req (TERMINATES LOOP)
             dv_req -= dv_firing
 
-            # Calculate mass expanded up to thois point.
+            # Calculate mass expended up to this point.
             dm_total.append(dm_total[-1] + dm_firing)
 
             # Calculate current firing.
             n.append(n[-1]+1)
-            i += 1
 
             # Add time data.
             t.append(t[-1] + dt)
-
 
             rot.append(np.array(rotation_matrix_from_vectors(x1, y1)))
 
@@ -874,6 +881,7 @@ class RPOD (MissionPlanner):
         jfh_path = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
         # print(jfh_path)
         print_1d_JFH(t, r, rot, jfh_path)
+
         return
 
 
