@@ -369,29 +369,6 @@ class MissionPlanner:
         self.vv.mass += dm
         return dm
 
-    def calc_delta_mass_v_e(self, dv, v_e):
-        """
-            Calculates propellant usage using expressions derived from the ideal rocket equation.
-
-            Parameters
-            ----------
-            dv : float
-                Speficied change in velocity value.
-
-            isp : float
-                Speficied specific impulse value.
-
-            Returns
-            -------
-            dm : float
-                Change in mass calculated using the ideal rocket equation.
-        """
-        a = (dv/v_e)
-        m_f = self.vv.mass
-        dm = m_f * (np.exp(a) - 1)
-        # self.vv.mass += dm
-        return dm
-
     def plot_delta_mass(self, dv):
         """
             Plots propellant usage for a given dv requirements by varying ISP according to user inputs.
