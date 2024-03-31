@@ -4,7 +4,7 @@
 # Last Changed: 03-28-24
 
 # ========================
-# PyRPOD: test/mdao/mdao_unit_test_02.py
+# PyRPOD: test/mdao/mdao_unit_test_03.py
 # ========================
 # A test case to create array of cant angle swept thruster configurations.
 # The sweep assumes the given thrusters angle symmetrically. 
@@ -24,38 +24,50 @@ from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD, Sweep
 class CoordinateSweepCheck(unittest.TestCase):
     def test_cant_sweep(self):
 
+        # number of deceleration thrusters to evenly distribute
+        # !!!IMPORTANT!!! also ensure to update jfh, fire all thrusters one wants to visualize!!!
+        nthrusters = 7
+
+        # define the LM's radius
+        r = 2 # m
+
         # creating an example configuration
-        dcm = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 
-        config = {
-            'P1T1': {'name': ['P1T1'], 'type': ['001'], 'exit': [[0, 0, 2.07544]], 'dcm': dcm}, 
-            'P2T1': {'name': ['P2T1'], 'type': ['001'], 'exit': [[0, 2.07544, 0]], 'dcm': dcm},
-            'P3T1': {'name': ['P3T1'], 'type': ['001'], 'exit': [[0, 0, -2.07544]], 'dcm': dcm}, 
-            'P4T1': {'name': ['P4T1'], 'type': ['001'], 'exit': [[0, -2.07544, 0]], 'dcm': dcm}
-        }
+        # identity matrix as the default for all thrusters
+        # techically not needed, since all the thrusters are set to -x group
+        # these thrusters DCMs are standardized within SweepConfig
+        dcm = np.eye(3)
 
-        # creating example thruster groups, to grant symmetrical canting
+        # creating example thruster groups, to confirm thrusters that are for decel
         thruster_groups = {
             '+x': [],
-            '-x': ['P1T1', 'P2T1', 'P3T1', 'P4T1'],
+            '-x': [],
             '+y': [],
             '-y': [],
             '+z': [],
             '-z': [],
-            '+pitch': ['P4T1'],
-            '-pitch': ['P2T1'],
-            '+yaw' : ['P1T1'],
-            '-yaw' : ['P3T1']
+            '+pitch': [],
+            '-pitch': [],
+            '+yaw' : [],
+            '-yaw' : []
         }
 
-        # define the LM's radius
-        r = 2 # m
+        config = {}
+
+        # name each thruster, as corresponding to different packs
+        # evenly distribute the exit coordinate of each thruster
+        # append each thruster to deceleration group
+        for i in range(1, nthrusters+1):
+            name = 'P' + str(i) + 'T1'
+            exit = [0, r*np.cos((i-1)*(2 * np.pi / nthrusters)), r*np.sin((i-1)*(2 * np.pi / nthrusters))]
+            config[name] = {'name': [name], 'type': ['001'], 'exit': [exit], 'dcm': dcm}
+            thruster_groups['-x'].append(name)
 
         # define step sizes for each angle
         dcant = 10 # deg
 
         # create SweepAngles object
-        angle_sweep = SweepConfig.SweepDecelAngles(r, config, thruster_groups)
+        angle_sweep = SweepConfig.SweepDecelAngles(config, thruster_groups)
         
         # call sweep_long_thruster on the configuration and print the DCM's
         config_swept_array = angle_sweep.sweep_decel_thrusters_all(config, dcant)
@@ -74,13 +86,11 @@ class CoordinateSweepCheck(unittest.TestCase):
             vv = VisitingVehicle.VisitingVehicle(case_dir)
             vv.set_stl()
             vv.set_thruster_config(config)
-            #vv.set_thruster_metrics()
 
             rpod = RPOD.RPOD(case_dir)
             rpod.study_init(jfh, tv, vv)
 
             rpod.visualize_sweep(i)
-            #rpod.jfh_plume_strikes()
 
 if __name__ == '__main__':
     unittest.main()
