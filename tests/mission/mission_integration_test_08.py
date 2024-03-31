@@ -35,7 +35,7 @@ class DeltaMassContourChecks(unittest.TestCase):
         mp = MissionPlanner.MissionPlanner(case_dir)
         mp.set_lm(lm)
         mp.read_flight_plan()
-        # mp.plot_delta_m_contour()
+        # mp.plot_delta_mass_contour()
 
 if __name__ == '__main__':
     unittest.main()
