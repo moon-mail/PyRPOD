@@ -143,18 +143,15 @@ class VisitingVehicle(Vehicle):
         set_thruster_config()
             Reads the thruster configuration file from the config.ini for the Visiting Vehicle and saves it as class members.
 
+        set_cluster_config()
+            Read in cluster configuration data from the provided file path.
+
         set_thruster_metrics()
             Reads the thruster data file to gather thruster-specific performance parameters for the configuration from a .csv file
             and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.    
 
         print_info()
             Simple method to format printing of vehicle info.
-
-        set_stl()
-            Reads in Vehicle surface mesh from STL file.
-
-        set_cluster_config()
-            Read in cluster configuration data from the provided file path.
 
         initiate_plume_mesh()
             Helper method that reads in surface mesh for plume clone.
