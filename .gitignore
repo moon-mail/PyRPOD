@@ -6,6 +6,7 @@ data/stl/tcd/
 
 results/
 
+results.txt
 *.pyc
 *.png
 *.vtu

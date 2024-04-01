@@ -99,29 +99,32 @@ class VisitingVehicle(Vehicle):
 
         Methods
         -------
+        set_stl()
+            Reads in Vehicle surface mesh from STL file.
+        
+        set_thruster_config()
+            Reads the thruster configuration file from the config.ini for the Visiting Vehicle and saves it as class members.
+
+        change_thruster_config()
+            Alters thruster configuration data using OpenMDAO inputs.
+
+        set_thruster_metrics()
+            Reads the thruster data file to gather thruster-specific performance parameters for the configuration from a .csv file
+            and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.    
 
         print_info()
             Simple method to format printing of vehicle info.
 
-        set_stl()
-            Reads in Vehicle surface mesh from STL file.
-
-        set_thruster_config()
-            Reads in thruster configuration data from the provided file path.
-        
-        change_thruster_config()
-            Alters thruster configuration data using OpenMDAO inputs.
-
         initiate_plume_mesh()
-            Reads in surface mesh for plume clone.
+            Helper method that reads in surface mesh for plume clone.
 
-        transform_plume_mesh()
+        transform_plume_mesh(thruster_id, plumeMesh)
             Transform plume mesh according to the specified thruster's DCM and exit coordinate.
 
-        initiate_plume_normal()
+        initiate_plume_normal(thruster_id)
             Collects plume normal vectors data for visualization.
 
-        plot_vv_and_thruster()
+        plot_vv_and_thruster(plumeMesh, thruster_id, normal, i)
             Plots Visiting Vehicle and plume cone for provided thruster id.
 
         check_thruster_configuration()
@@ -144,58 +147,66 @@ class VisitingVehicle(Vehicle):
 
             Parameters
             ----------
-            path_to_stl : str
-                file location for Vehicle's surface mesh using an STL file.
+            None
 
             Returns
             -------
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
-        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['lm']
+        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['stl_lm']
         self.mesh = mesh.Mesh.from_file(path_to_stl)
         self.path_to_stl = path_to_stl
         return
 
-    def set_thruster_config(self):
+    def set_thruster_config(self, thruster_data=None):
         """
-            Reads in thruster configuration data from the provided file path.
+            Reads the thruster configuration file from the config.ini for the Visiting Vehicle and saves it as class members.
 
-            Gathers RCS configuration data for the Visiting Vehicle from a .dat file
-            and saves it as class members.
+            If thruster data IS passed, simple overwrite self.thruster_data.
+            This use is intended to occur only after a notional use of this method.
+            (ie a method call without thruster_data, using the tcf file path instead.)
 
             Parameters
             ----------
-            path_to_tcd : str
-                file location for thruster configuration data file.
+            None
 
             Returns
             -------
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
+        if thruster_data is None:
+            path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+        
+            try:
+                path_to_tcf = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+            except KeyError:
+                # print("WARNING: Thruster Configuration File not set")
+                return
+            # Simple program, reading text from a file.
+            with open(path_to_tcf, 'r') as f:
+                lines = f.readlines()
 
-        path_to_tcd = self.case_dir + 'tcd/' + self.config['tcd']['tcf']
+                # Parse through first few lines, save relevant information. 
+                self.num_thrusters = int(lines.pop(0))
+                self.thruster_units = lines.pop(0)[0] # dont want '\n'
+                self.cog = process_coordinates(lines.pop(0))
+                self.grapple = process_coordinates(lines.pop(0))
 
-        # Simple program, reading text from a file.
-        with open(path_to_tcd, 'r') as f:
-            lines = f.readlines()
+                # Save all strings containing thruster data in a list
+                str_thrusters = []
+                for i in range(self.num_thrusters):
+                    str_thrusters.append(lines.pop(0))
 
-            # Parse through first few lines, save relevant information. 
-            self.num_thrusters = int(lines.pop(0))
-            self.thruster_units = lines.pop(0)[0] # dont want '\n'
-            self.cog = process_coordinates(lines.pop(0))
-            self.grapple = process_coordinates(lines.pop(0))
+                # Parse through strings and save data in a dictionary
+                self.thruster_data = process_str_thrusters(str_thrusters)
 
-            # Save all strings containing thruster data in a list
-            str_thrusters = []
-            for i in range(self.num_thrusters):
-                str_thrusters.append(lines.pop(0))
+                self.jet_interactions = lines.pop(0)
 
-            # Parse through strings and save data in a dictionary
-            self.thruster_data = process_str_thrusters(str_thrusters)
-
-            self.jet_interactions = lines.pop(0)
+        else:
+            self.thruster_data = thruster_data
+        
         return
     
     def change_thruster_config(self, x):
@@ -217,15 +228,12 @@ class VisitingVehicle(Vehicle):
 
     def set_thruster_metrics(self):
         """
-            Read in performance data specific to thruster types.
-
-            Gathers thruster-specific performance parameters for the configuration from a .csv file
+            Reads the csv thruster data file to gather thruster-specific performance parameters for the configuration
             and saves it in a list of dictionaries. These dictionaries are then saved into each thruster in the configuration.
 
             Parameters
             ----------
-            path_to_tcd : str
-                file location for thruster configuration data file.
+            None
 
             Returns
             -------
@@ -233,8 +241,13 @@ class VisitingVehicle(Vehicle):
             Does the method need to return a status message? or pass similar data?
         """
 
-        # TODO determine path.. possbily move to configuraition file.
-        path_to_thruster_metrics = self.case_dir + 'tcd/' + self.config['tcd']['tdf']
+        # Read in path for thruster metric data.
+        try:
+            path_to_thruster_metrics = self.case_dir + 'tcd/' + self.config['tcd']['tdf']
+        except KeyError:
+            # print("WARNING: Thruster Metrics File Not Set")
+            self.thruster_metrics = None
+            return
 
         # specify columns to be read as strings.
         str_cols = ['#']
@@ -264,7 +277,17 @@ class VisitingVehicle(Vehicle):
 
 
     def print_info(self):
-        """Simple method to format printing of vehicle info."""
+        """
+            Simple method to format printing of vehicle info.
+        
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
+        """
 
         print('number of thrusters:', self.num_thrusters)
         print('thruster units:', self.thruster_units)
@@ -320,7 +343,7 @@ class VisitingVehicle(Vehicle):
 
     def initiate_plume_normal(self, thruster_id):
         """
-                Collects plume normal vectors data for visualization.
+            Collects plume normal vectors data for visualization.
 
             Parameters
             ----------
