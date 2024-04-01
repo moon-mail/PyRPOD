@@ -10,7 +10,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, MissionPlanner, JetFiringHistory, TargetVehicle, RPOD
+from pyrpod import LogisticsModule, JetFiringHistory, TargetVehicle, RPOD
 
 class OneDimTransApproachChecks(unittest.TestCase):
     def test_1d_approach_performance(self):
