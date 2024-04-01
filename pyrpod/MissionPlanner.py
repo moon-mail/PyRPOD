@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import configparser
+import math
 
 class MissionPlanner:
     """
@@ -364,7 +365,9 @@ class MissionPlanner:
         g_0 = 9.81
         a = (dv/(isp*g_0))
         m_f = self.vv.mass
-        return m_f * (1 - np.exp(a))
+        dm = m_f * (np.exp(a) - 1)
+        self.vv.mass += dm
+        return dm
 
     def plot_delta_mass(self, dv):
         """
