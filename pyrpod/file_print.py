@@ -232,8 +232,8 @@ def print_1d_JFH(t_values, r,  rot, file_name):
             # Print thrusters to be turned on.
 
             # thruster = i%16+1
-            thruster = '1 5 9 13'
-            print('4  ', thruster, end = '')
+            thruster = '1 2 5 6 9 10 13 14'
+            print('8  ', thruster, end = '')
 
             # group = i % 4
             # for j in range(4):
