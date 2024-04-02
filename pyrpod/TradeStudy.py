@@ -24,7 +24,17 @@ class TradeStudy():
         rpod.study_init(jfh, tv, lm)
         self.rpod = rpod
 
-    def run_var_sweep(self, sweep_vars, lm, tv):
+    def init_trade_study_case(self):
+        # Instantiate JetFiringHistory object.
+        jfh = JetFiringHistory.JetFiringHistory(self.case_dir)
+        jfh.config['jfh']['jfh'] = self.rpod.get_case_key() + ".A"
+        jfh.read_jfh()
+
+        self.rpod.jfh = jfh
+
+
+
+    def run_axial_overshoot_sweep(self, sweep_vars, lm, tv):
 
         # Organize variables to sweet over.
         axial_overshoot = sweep_vars['axial_overshoot']
@@ -51,4 +61,10 @@ class TradeStudy():
                                     tv.r_o, 
                                     trade_study = True
                                 )
+
+            self.init_trade_study_case()              
+            
+
+
+            self.rpod.jfh_plume_strikes(trade_study = True)
             

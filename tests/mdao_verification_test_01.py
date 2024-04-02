@@ -7,7 +7,8 @@
 # ========================
 # PyRPOD: test/mdao/mdao_verification_test_01.py
 # ========================
-# Initial trade study used to explore a design space and inform optimization efforts of a single thruster configuration.
+# Initial variable sweep study used to explore the maximum overshoot velocity an LM can handle
+# if the thruster configuration and decelaration starting distance are held constant.
 
 import test_header
 import unittest
@@ -60,7 +61,7 @@ class MDAOTest(unittest.TestCase):
     # 2. Excecute
         # Produce data for trade study by running docking analysis according to relevant design variable sweeps.
         study = TradeStudy.TradeStudy(case_dir)
-        results = study.run_var_sweep(sweep_vars, lm, tv)
+        results = study.run_axial_overshoot_sweep(sweep_vars, lm, tv)
 
         # Post process results and perform trade studies analysis.
         # design_metrics = ['fuel_usage', 'plume', 'maneuver', 'safety']

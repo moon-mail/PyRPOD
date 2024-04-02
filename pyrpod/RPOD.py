@@ -543,7 +543,7 @@ class RPOD (MissionPlanner):
             param_window_sum -= old_param
         return param_queue, param_window_sum
 
-    def jfh_plume_strikes(self):
+    def jfh_plume_strikes(self, trade_study = False):
         """
             Calculates number of plume strikes according to data provided for RPOD analysis.
             Method does not take any parameters but assumes that study assets are correctly configured.
@@ -569,11 +569,24 @@ class RPOD (MissionPlanner):
         if not os.path.isdir(results_dir):
             #print("results dir doesn't exist")
             os.mkdir(results_dir)
+        if not trade_study:
+            results_dir = results_dir + "/strikes"
+            if not os.path.isdir(results_dir):
+                #print("results dir doesn't exist")
+                os.mkdir(results_dir)
 
-        results_dir = results_dir + "/strikes"
-        if not os.path.isdir(results_dir):
-            #print("results dir doesn't exist")
-            os.mkdir(results_dir)
+        if trade_study:
+            v_o = ['vo_0', 'vo_1', 'vo_2', 'vo_3', 'vo_4']
+            for v in v_o:
+                results_dir_case = results_dir + "/" + v
+                if not os.path.isdir(results_dir_case):
+                    #print("results dir doesn't exist")
+                    os.mkdir(results_dir_case)  
+
+                results_dir_case = results_dir_case + '/strikes'
+                if not os.path.isdir(results_dir_case):
+                    #print("results dir doesn't exist")
+                    os.mkdir(results_dir_case) 
 
         # Save STL surface of target vehicle to local variable.
         target = self.target.mesh
@@ -842,8 +855,10 @@ class RPOD (MissionPlanner):
                 cellData["heat_flux_load"] = heat_flux_load
                 cellData["cum_heat_flux_load"] = cum_heat_flux_load
 
-            path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
-
+            if trade_study == False:
+                path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
+            elif trade_study == True:
+                path_to_vtk = self.case_dir + "results/" + self.get_case_key() + "/strikes/firing-" + str(firing) + ".vtu" 
             # print(cellData)
             # input()
             self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData, target)
@@ -888,8 +903,8 @@ class RPOD (MissionPlanner):
         # print('F is', F)
 
         # Defining a multiplier reduce time steps and make running faster
-        time_multiplier = 600
-        dt = (MIB / F) * time_multiplier
+        time_multiplier = 1
+        dt = (MIB / F)
         # print('dt is', dt)
         dm_firing = m_dot_sum * dt
         # print('dm_firing is', dm_firing)
@@ -1003,6 +1018,8 @@ class RPOD (MissionPlanner):
 
         # print(jfh_path)
         print_1d_JFH(t, r, rot, jfh_path)
+
+        # self.
 
         return
 
