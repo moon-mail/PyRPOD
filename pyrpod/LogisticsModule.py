@@ -377,3 +377,23 @@ class LogisticsModule(VisitingVehicle):
             self.plot_thruster_group(group)
             # print()
         return
+
+    def calc_overshoot_v_range(self, v_ida, r_o):
+        mass = self.mass
+        # print(len(self.rcs_groups['neg_x']))
+
+        F_decel = 0
+        for thruster in self.rcs_groups['neg_x']:
+            thruster_type = self.thruster_data[thruster]['type'][0]
+            thruster_metrics = self.thruster_metrics[thruster_type]
+            F_decel += thruster_metrics['F']
+
+        print(F_decel)
+        a_decel = F_decel / mass
+
+        v_o = np.sqrt(v_ida**2 + 2 * a_decel * r_o)
+        print(v_o)
+
+        vo_range = [0, 0.25*v_o, 0.5*v_o, 0.75*v_o, v_o]
+        print(vo_range)
+        return
