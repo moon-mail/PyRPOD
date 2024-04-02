@@ -394,6 +394,6 @@ class LogisticsModule(VisitingVehicle):
         v_o = np.sqrt(v_ida**2 + 2 * a_decel * r_o)
         print(v_o)
 
-        vo_range = [0, 0.25*v_o, 0.5*v_o, 0.75*v_o, v_o]
+        vo_range = [0.1*v_o, 0.25*v_o, 0.5*v_o, 0.75*v_o, v_o]
         print(vo_range)
-        return
+        return vo_range

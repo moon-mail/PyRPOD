@@ -1,4 +1,7 @@
-from pyrpod import RPOD as rpod
+import os
+
+from pyrpod import RPOD
+from pyrpod import JetFiringHistory
 import configparser
 
 class TradeStudy():
@@ -8,6 +11,44 @@ class TradeStudy():
         config.read(self.case_dir + "config.ini")
         self.config = config
 
+    def init_trade_study(self, lm, tv):
+
+        # Save variable name for readability.        
+        case_dir = self.case_dir
+
+        # Instantiate JetFiringHistory object.
+        jfh = JetFiringHistory.JetFiringHistory(case_dir)
+
+        # Instantiate RPOD object.
+        rpod = RPOD.RPOD(case_dir)
+        rpod.study_init(jfh, tv, lm)
+        self.rpod = rpod
+
     def run_var_sweep(self, sweep_vars, lm, tv):
-        for key in sweep_vars:
-            print(key, sweep_vars[key])
+
+        # Organize variables to sweet over.
+        axial_overshoot = sweep_vars['axial_overshoot']
+
+        # Link elements for RPOD analysis.
+        self.init_trade_study(lm, tv)
+
+        # Create results directory if necessary.
+        results_dir = self.case_dir + 'results'
+        if not os.path.isdir(results_dir):
+            os.mkdir(results_dir)       
+
+        # Loop through over shoot velocities to test.
+        for i, v_o in enumerate(axial_overshoot):
+
+            # print(i, v_o)
+            # # Set unique case identifier within trade study.
+            self.rpod.set_case_key(i)
+
+            # Create JFH for a given velocity.
+            self.rpod.print_jfh_1d_approach(
+                                    tv.v_ida,
+                                    v_o,
+                                    tv.r_o, 
+                                    trade_study = True
+                                )
+            

@@ -66,3 +66,9 @@ class TargetVehicle(Vehicle):
         """
         print('')
         return
+
+    def set_v_ida(self, v_ida):
+        self.v_ida = v_ida
+
+    def set_r_o(self, r_o):
+        self.r_o = r_o

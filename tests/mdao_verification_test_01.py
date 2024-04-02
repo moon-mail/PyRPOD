@@ -40,12 +40,14 @@ class MDAOTest(unittest.TestCase):
         lm.assign_thruster_groups()
 
         # Define LM Docking conditions
-        V_ida = 0.1 # m/s (target velocity for safe docking)
+        v_ida = 0.1 # m/s (target velocity for safe docking)
+        tv.set_v_ida(v_ida)
         r_o = 20 # m (initial distance at start of initial burn)
+        tv.set_r_o(r_o)
  
         # Determine design variables to vary over. 
         # axial_overshoot = [0, 25, 50, 75, 100] # m/s (WIP, replace with physical values)
-        axial_overshoot = lm.calc_overshoot_v_range(V_ida, r_o)
+        axial_overshoot = lm.calc_overshoot_v_range(v_ida, r_o)
         axial_thruster_pos = [0, 2.75, 5.5, 8.25, 11] # m (ignoring solar panel since decel thrusters)
         surface_cant_angle = [0, 15, 30, 45, 60] # degrees
 
@@ -59,7 +61,6 @@ class MDAOTest(unittest.TestCase):
         # Produce data for trade study by running docking analysis according to relevant design variable sweeps.
         study = TradeStudy.TradeStudy(case_dir)
         results = study.run_var_sweep(sweep_vars, lm, tv)
-
 
         # Post process results and perform trade studies analysis.
         # design_metrics = ['fuel_usage', 'plume', 'maneuver', 'safety']

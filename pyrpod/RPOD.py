@@ -853,7 +853,7 @@ class RPOD (MissionPlanner):
                 constraint_file.write(f"All impingement constraints met.")
             constraint_file.close()
 
-    def print_jfh_1d_approach(self, v_ida, v_o, r_o):
+    def print_jfh_1d_approach(self, v_ida, v_o, r_o, trade_study = False):
         """
             Method creates JFH data for axial approach using simpified physics calculations.
 
@@ -996,12 +996,24 @@ class RPOD (MissionPlanner):
 
         r = [x, y, z]
 
-        jfh_path = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        if trade_study == False:
+            jfh_path = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        elif trade_study == True:
+            jfh_path = self.case_dir +'jfh/' + self.get_case_key() + '.A'
+
         # print(jfh_path)
         print_1d_JFH(t, r, rot, jfh_path)
 
         return
 
+    def get_case_key(self):
+        return self.case_key
+
+    def set_case_key(self, i):
+
+        self.case_key = 'vo_' + str(i)
+
+        return
 
     def make_test_jfh():
 
