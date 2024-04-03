@@ -12,7 +12,12 @@ class TradeStudy():
         self.config = config
 
     def init_trade_study(self, lm, tv):
+        """
+        Organizes data needed to kick off an RPOD trade study.
 
+        Mainly done by properly configuring an RPOD object 
+
+        """
         # Save variable name for readability.        
         case_dir = self.case_dir
 
@@ -25,6 +30,12 @@ class TradeStudy():
         self.rpod = rpod
 
     def init_trade_study_case(self):
+        """
+        Resets JFH data according to current case key.
+
+        Case key is a unique identified for a specific configuration within the trade study. 
+        """
+
         # Instantiate JetFiringHistory object.
         jfh = JetFiringHistory.JetFiringHistory(self.case_dir)
         jfh.config['jfh']['jfh'] = self.rpod.get_case_key() + ".A"
@@ -35,6 +46,9 @@ class TradeStudy():
 
 
     def run_axial_overshoot_sweep(self, sweep_vars, lm, tv):
+        """
+        Simple variable sweep study that assesses RCS performance for a given set of axial overshoot velocity values.
+        """
 
         # Organize variables to sweet over.
         axial_overshoot = sweep_vars['axial_overshoot']
@@ -62,9 +76,9 @@ class TradeStudy():
                                     trade_study = True
                                 )
 
+            # Reset JFH according to specific case.
             self.init_trade_study_case()              
-            
-
+    
 
             self.rpod.jfh_plume_strikes(trade_study = True)
             
