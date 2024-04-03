@@ -620,7 +620,9 @@ class RPOD (MissionPlanner):
 
                 # open an output file to record if constraints are passed or failed
                 report_dir = results_dir.replace('strikes', '')
-                constraint_file = open(report_dir + 'impingement_report.txt', 'w')
+
+                report_file_path = report_dir + '/' +str(self.get_case_key()) +'/impingement_report-' + '-.txt'
+                constraint_file = open(report_file_path,  'w')
                 failed_constraints = 0
 
                 # Initiate array containing sum of pressures over a given window
@@ -654,9 +656,13 @@ class RPOD (MissionPlanner):
 
 
         # Loop through each firing in the JFH.
+        n_firings = len(self.jfh.JFH)
+        curr_firing = 1.0
         for firing in range(len(self.jfh.JFH)):
         # for firing in tqdm(range(len(self.jfh.JFH)), desc='All firings'):
 
+            # print('Analysis is ' + str(round((curr_firing / n_firings)*100, 2)) + '% complete')
+            curr_firing += 1.0
             # print('firing =', firing+1)
 
             # reset strikes for each firing
@@ -903,8 +909,8 @@ class RPOD (MissionPlanner):
         # print('F is', F)
 
         # Defining a multiplier reduce time steps and make running faster
-        time_multiplier = 1
-        dt = (MIB / F)
+        time_multiplier = 60
+        dt = (MIB / F) * time_multiplier
         # print('dt is', dt)
         dm_firing = m_dot_sum * dt
         # print('dm_firing is', dm_firing)
@@ -1008,7 +1014,7 @@ class RPOD (MissionPlanner):
         # }
 
         # print(one_d_results)
-
+        # input()
         r = [x, y, z]
 
         if trade_study == False:
