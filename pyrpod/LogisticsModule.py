@@ -386,7 +386,10 @@ class LogisticsModule(VisitingVehicle):
         for thruster in self.rcs_groups['neg_x']:
             thruster_type = self.thruster_data[thruster]['type'][0]
             thruster_metrics = self.thruster_metrics[thruster_type]
-            F_decel += thruster_metrics['F']
+
+            cant = self.get_thruster_cant(thruster)
+
+            F_decel += (thruster_metrics['F'] * np.cos(cant))
 
         print(F_decel)
         a_decel = F_decel / mass
