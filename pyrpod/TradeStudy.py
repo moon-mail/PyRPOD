@@ -2,6 +2,7 @@ import os
 
 from pyrpod import RPOD
 from pyrpod import JetFiringHistory
+from pyrpod import SweepConfig
 import configparser
 
 class TradeStudy():
@@ -63,6 +64,51 @@ class TradeStudy():
 
         # Loop through over shoot velocities to test.
         for i, v_o in enumerate(axial_overshoot):
+
+            # print(i, v_o)
+            # # Set unique case identifier within trade study.
+            self.rpod.set_case_key(i)
+
+            # Create JFH for a given velocity.
+            self.rpod.print_jfh_1d_approach_n_fire(
+                                    tv.v_ida,
+                                    v_o,
+                                    tv.r_o,
+                                    n_firings = 100,
+                                    trade_study = True
+                                )
+
+            # Reset JFH according to specific case.
+            self.init_trade_study_case()              
+    
+
+            # self.rpod.jfh_plume_strikes(trade_study = True)
+    
+    def run_surface_cant_sweep(self, sweep_vars, lm, tv):
+        """
+        """
+
+        # Organize variables to sweet over.
+        surface_cant_angles = sweep_vars['surface_cant_angles']
+        v_o = sweep_vars['axial_overshoot']
+
+        # Link elements for RPOD analysis.
+        self.init_trade_study(lm, tv)
+
+        angle_sweep = SweepConfig.SweepDecelAngles(lm.thruster_data, lm.rcs_groups)
+
+        # Create results directory if necessary.
+        results_dir = self.case_dir + 'results'
+        if not os.path.isdir(results_dir):
+            os.mkdir(results_dir)       
+
+        # Loop through over shoot velocities to test.
+        for i, cant in enumerate(surface_cant_angles):
+
+            lm.decel_cant = cant
+
+            new_tcd = angle_sweep.cant_decel_thrusters(lm.thruster_data, cant)   
+            lm.set_thruster_config(new_tcd)
 
             # print(i, v_o)
             # # Set unique case identifier within trade study.
