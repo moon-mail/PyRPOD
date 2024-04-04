@@ -906,6 +906,9 @@ class RPOD (MissionPlanner):
         MIB = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['MIB']
         # print('MIB is', MIB)
         F = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
+        F = F * np.cos(self.vv.decel_cant)
+        n_thrusters = len(self.vv.rcs_groups['neg_x'])
+        F = F * n_thrusters
         # print('F is', F)
 
         # Defining a multiplier reduce time steps and make running faster
