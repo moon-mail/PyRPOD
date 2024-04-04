@@ -273,6 +273,9 @@ class LogisticsModule(VisitingVehicle):
         # Assign thruster groups according provided grouping data.
         for group in group_ids:
             self.assign_thrusters(group)
+        
+        decel_thruster_name = next(iter(self.rcs_groups['neg_x']))
+        self.decel_cant = self.get_thruster_cant(decel_thruster_name)
 
     def plot_active_thrusters(self, active_thrusters, working_group, normals):
         """
@@ -387,7 +390,7 @@ class LogisticsModule(VisitingVehicle):
             thruster_type = self.thruster_data[thruster]['type'][0]
             thruster_metrics = self.thruster_metrics[thruster_type]
 
-            cant = self.get_thruster_cant(thruster)
+            cant = self.decel_cant
 
             F_decel += (thruster_metrics['F'] * np.cos(cant))
 

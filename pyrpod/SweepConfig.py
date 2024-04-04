@@ -217,7 +217,7 @@ class SweepDecelAngles:
                     A thruster configuration dictionary with the updated DCMs by thruster groups.
             '''
             
-            if thruster['name'][0] in self.thruster_groups['-x']:
+            if thruster['name'][0] in self.thruster_groups['neg_x']:
                 dcm = np.eye(3)
                 thruster['dcm'] = dcm
                 return thruster
@@ -284,8 +284,27 @@ class SweepDecelAngles:
         ])
 
         return Tx.tolist()
+    
+    def cant_decel_thrusters(self, config, cant):
+        """
+        """
+        new_config = {}
 
-    def sweep_decel_thrusters_all(self, config, dcant):
+        Rz = self.calculate_DCM(cant)
+
+        for thruster, thruster_info in config.items():
+            new_thruster_info = thruster_info.copy()
+
+            Tx = self.calculate_frame_rot(new_thruster_info['name'][0])
+
+            dcm = np.dot(Tx, Rz)
+            new_thruster_info['dcm'] = dcm
+
+            new_config[thruster] = new_thruster_info
+        
+        return new_config
+
+    def sweep_decel_thrusters_all(self, dcant):
         '''
             Sweeps the given config by angle. Performed over min and max allowed. 
             All thrusters are canted simultaneously.
@@ -312,19 +331,7 @@ class SweepDecelAngles:
         #hard coded limits for the meantime
         cant_min, cant_max = 0, 70
         for cant in range(cant_min, cant_max + dcant, dcant):
-            new_config = {}
-
-            Rz = self.calculate_DCM(cant)
-
-            for thruster, thruster_info in config.items():
-                new_thruster_info = thruster_info.copy()
-
-                Tx = self.calculate_frame_rot(new_thruster_info['name'][0])
-
-                dcm = np.dot(Tx, Rz)
-                new_thruster_info['dcm'] = dcm
-
-                new_config[thruster] = new_thruster_info
+            new_config = self.cant_decel_thrusters(cant)
 
             configs_swept_angles.append(new_config)
 
