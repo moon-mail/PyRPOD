@@ -799,6 +799,7 @@ class MissionPlanner:
                 Change in mass.
         """
         m_current = self.vv.mass
+        # print('m_current is', m_current)
         dm = m_current*(np.exp(dv/v_e)-1)
 
         if forward_propagation == False:
@@ -810,7 +811,7 @@ class MissionPlanner:
         return dm
 
     def calc_thrust_sum(self, group):
-            """
+        """
             Calculates thrust sum for a thruster group.
 
             Parameters
@@ -822,12 +823,14 @@ class MissionPlanner:
             -------
             Thrust sum.
         """
-            thrust_sum = 0
-            for thruster_name in self.vv.rcs_groups[group]:
-                thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
-                thrust = self.vv.thruster_metrics[thruster_type]['F']
-                thrust_sum += thrust
-            return thrust_sum
+        # print('self.vv.thruster_data is', self.vv.thruster_data)
+        thrust_sum = 0
+        for thruster_name in self.vv.rcs_groups[group]:
+            thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
+            thrust = np.cos(self.cant) * self.vv.thruster_metrics[thruster_type]['F']
+            # print('thrust is', thrust)
+            thrust_sum += thrust
+        return thrust_sum
 
     def calc_m_dot_sum(self, group):
         """
@@ -885,7 +888,8 @@ class MissionPlanner:
             Total change in mass.
         """
         # Initialization
-        dm_total = 0
+        self.dm_total = 0
+        dm_jfh_total = 0
         payload_mass = 5400
         # Docking mass and post delivery mass
         initial_masses = [self.vv.mass, self.vv.mass - payload_mass]
@@ -911,7 +915,7 @@ class MissionPlanner:
                     thruster_type = self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]
                     m_dot_sum = self.calc_m_dot_sum('neg_x')
                     v_e = self.calc_v_e('neg_x')
-                    dt = int(self.jfh.JFH[0]['t'])
+                    dt = float(self.jfh.JFH[0]['t'])
 
                     # Change in x velocity (axial)
                     dv_x = self.calc_delta_v(dt, v_e, m_dot_sum, initial_masses[m])
@@ -927,6 +931,10 @@ class MissionPlanner:
                             # If the last firing in the JFH has been accounted for, then m_approach has been found
                             if f == len(self.jfh.JFH) - 1:
                                 m_approach = initial_masses[m]
+                                # print('self.dm_total is', self.dm_total)
+                                # print('dm is', dm)
+                                self.dm_jfh_total = self.dm_total + dm
+                                # print('dm_jfh_total is', dm_jfh_total)
                         # If forward propagating, then subtract the propellant mass expended
                         if m == 1:
                             initial_masses[m] -= dm
@@ -934,7 +942,7 @@ class MissionPlanner:
                             if f == len(self.jfh.JFH) - 1:
                                 m_departure = initial_masses[m]
 
-                    dm_total += dm
+                    self.dm_total += dm
 
         # Saving the flight plan into a Pandas dataframe
         try:
@@ -1025,7 +1033,7 @@ class MissionPlanner:
                             dm_sum_rot += dm_rot
                         dm = dm_sum_rot
             
-            dm_total += dm
+            self.dm_total += dm
 
 
         # Create results directory if it doesn't already exist.
@@ -1036,8 +1044,8 @@ class MissionPlanner:
 
         # Save results to rudimentary log file.
         with open(self.case_dir + 'results/prop_usage.txt', 'w') as f:
-            dm_total = round(dm_total, 3)
-            message = "The total propellant expended over the flight plan is " +  str(dm_total) + " kg"
+            self.dm_total = round(self.dm_total, 3)
+            message = "The total propellant expended over the flight plan is " +  str(self.dm_total) + " kg"
             f.write(message)
 
-        return dm_total
+        return

@@ -41,7 +41,7 @@ class JetFiringHistory:
 
         Methods
         -------
-        read_JFH : list
+        read_JFH()
             Method reads in and parses through text file containing the JFH.
         
         graph_param_curve(self, t, r_of_t)

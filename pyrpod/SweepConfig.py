@@ -183,7 +183,7 @@ class SweepDecelAngles:
                     See test_case_sweep_angles.py for an example.
             thruster_groups : dictionary
                     Stores the thruster names that belong to a given translational or rotational direction.
-                    See test_case_sweep_cants.py for an example.
+                    See tgf.ini in the case directory for an example.
             
             Returns
             -------
@@ -193,9 +193,13 @@ class SweepDecelAngles:
 
         self.config = config
 
-        for thruster in config:
-            standardized_thruster = self.standardize_thruster_normal(config[thruster])
-            config[thruster] = standardized_thruster
+        # NOTE: The dcms are already initialized in the tcf, I think im missing the need for
+            # the standardize_thruster_normal function.
+        
+        # for thruster in config:
+        #     print('thruster is', thruster)
+        #     standardized_thruster = self.standardize_thruster_normal(config[thruster])
+        #     config[thruster] = standardized_thruster
 
     def standardize_thruster_normal(self, thruster):
             '''
@@ -217,14 +221,84 @@ class SweepDecelAngles:
                     A thruster configuration dictionary with the updated DCMs by thruster groups.
             '''
             
-            if thruster['name'][0] in self.thruster_groups['-x']:
+            if thruster['name'][0] in self.thruster_groups['neg_x']:
                 dcm = np.eye(3)
                 thruster['dcm'] = dcm
                 return thruster
             
             return thruster
 
-    def calculate_DCM(self, cant):
+    def set_lm(self, LogisticsModule):
+        """
+            Simple setter method to set VV/LM used in analysis.
+
+            Parameters
+            ----------
+            LogisticsModule : LogisticsModule
+                LogisticsModule Object containing inertial properties.
+
+            Returns
+            -------
+            None
+        """
+        self.lm = LogisticsModule
+
+    def categorize_rcs_groups(self):
+        '''
+            Populates lists containing thrusters from several tgf groups and
+            saves them as class members.
+            
+            Parameters
+            ----------
+            None
+
+            Returns
+            -------
+            None
+        '''
+        # Navigating rcs_groups
+        # print('self.lm.rcs_groups is', self.lm.rcs_groups, '\n')
+        # print("self.lm.rcs_groups['neg_x'] is", self.lm.rcs_groups['neg_x'], '\n')
+        # print("len(self.lm.rcs_groups['neg_x']) is", len(self.lm.rcs_groups['neg_x']))
+        # print("self.lm.rcs_groups['pos_pitch'] is", self.lm.rcs_groups['pos_pitch'], '\n')
+        # print("self.lm.rcs_groups['neg_pitch'] is", self.lm.rcs_groups['neg_pitch'], '\n')
+        # print("self.lm.rcs_groups['pos_yaw'] is", self.lm.rcs_groups['pos_yaw'], '\n')
+        # print("self.lm.rcs_groups['neg_yaw'] is", self.lm.rcs_groups['neg_yaw'], '\n')
+
+        # Initialize empty lists to hold thrusters that are neg_x and either pitch or yaw
+        self.neg_x_and_pos_pitch = []
+        self.neg_x_and_neg_pitch = []
+        self.neg_x_and_pos_yaw = []
+        self.neg_x_and_neg_yaw = []
+        # A double for loop to find the thrusters that are both pitch and neg_x
+        for neg_x_thruster in self.lm.rcs_groups['neg_x']:
+            for pos_pitch_thruster in self.lm.rcs_groups['pos_pitch']:
+                if neg_x_thruster == pos_pitch_thruster:
+                    neg_x_and_pos_pitch_thruster = pos_pitch_thruster
+                    self.neg_x_and_pos_pitch.append(neg_x_and_pos_pitch_thruster)
+            for neg_pitch_thruster in self.lm.rcs_groups['neg_pitch']:
+                if neg_x_thruster == neg_pitch_thruster:
+                    neg_x_and_neg_pitch_thruster = neg_pitch_thruster
+                    self.neg_x_and_neg_pitch.append(neg_x_and_neg_pitch_thruster)
+        # print('self.neg_x_and_pos_pitch is', self.neg_x_and_pos_pitch)
+        # print('self.neg_x_and_neg_pitch is', self.neg_x_and_neg_pitch)
+
+        # A double for loop to find the thrusters that are both yaw and neg_x
+        for neg_x_thruster in self.lm.rcs_groups['neg_x']:
+            for pos_yaw_thruster in self.lm.rcs_groups['pos_yaw']:
+                if neg_x_thruster == pos_yaw_thruster:
+                    neg_x_and_pos_yaw_thruster = pos_yaw_thruster
+                    self.neg_x_and_pos_yaw.append(neg_x_and_pos_yaw_thruster)
+            for neg_yaw_thruster in self.lm.rcs_groups['neg_yaw']:
+                if neg_x_thruster == neg_yaw_thruster:
+                    neg_x_and_neg_yaw_thruster = neg_yaw_thruster
+                    self.neg_x_and_neg_yaw.append(neg_x_and_neg_yaw_thruster)
+        # print('self.neg_x_and_pos_yaw is', self.neg_x_and_pos_yaw)
+        # print('self.neg_x_and_neg_yaw is', self.neg_x_and_neg_yaw, '\n')
+
+        return
+
+    def calculate_DCM(self, cant, thruster):
         '''
             Given the cant angle:
             calculate the DCM to angle that thruster "cant" deg about z axis.
@@ -232,21 +306,53 @@ class SweepDecelAngles:
             Parameters
             ----------
             cant : float
-                    amount of additional angle to "cant" the thruster's orientation (deg)
+                    Amount of additional angle to "cant" the thruster's orientation (deg)
+            thruster : string
+                    The thruster name or ID
             
             Returns
             -------
-            array
+            DCM : array
                 The DCM of the thruster as adjusted with the increments in "cant".
         '''
-
         cant = np.radians(cant)
+        self.categorize_rcs_groups()
 
-        DCM = np.array([
-            [np.cos(cant), -np.sin(cant), 0],
-            [np.sin(cant), np.cos(cant), 0],
-            [0, 0, 1]
-        ])
+        for this_thruster in self.neg_x_and_pos_pitch:
+            if thruster == this_thruster:
+                # Works for the +y cluster
+                DCM = np.array([
+                    [np.cos(cant), -np.sin(cant), 0],
+                    [np.sin(cant), np.cos(cant), 0],
+                    [0, 0, 1]
+                ])
+
+        for this_thruster in self.neg_x_and_neg_yaw:
+            if thruster == this_thruster:
+                # Works for the +z cluster
+                DCM = np.array([
+                    [np.cos(cant), 0, -np.sin(cant)],
+                    [0, 1, 0],
+                    [np.sin(cant), 0, np.cos(cant)]
+                ])
+
+        for this_thruster in self.neg_x_and_neg_pitch:
+            if thruster == this_thruster:
+                # Works for the -y cluster
+                DCM = np.array([
+                    [np.cos(cant), np.sin(cant), 0],
+                    [-np.sin(cant), np.cos(cant), 0],
+                    [0, 0, 1]
+                ])
+
+        for this_thruster in self.neg_x_and_pos_yaw:
+            if thruster == this_thruster:
+                # Works for the -z cluster
+                DCM = np.array([
+                    [np.cos(cant), 0, np.sin(cant)],
+                    [0, 1, 0],
+                    [-np.sin(cant), 0, np.cos(cant)]
+                ])
         
         return DCM.tolist()
     
@@ -268,6 +374,7 @@ class SweepDecelAngles:
                 The transformation matrix to rotate frames about the x-axis.
         '''
         exit_coords = self.config[thruster_name]['exit'][0]
+        # print("self.config[thruster_name] is", self.config[thruster_name])
         y = exit_coords[1]
         z = exit_coords[2]
         if y == 0 and z > 0:
@@ -293,7 +400,7 @@ class SweepDecelAngles:
             Parameters
             ----------
             config : dictionary
-                    Holds keys of thrusters, with values on their configuraiton information.
+                    Holds keys of thrusters, with values on their configuration information.
                     This information includes: name, type, nozzle exit center position, and DCM.
                     See test_case_sweep_angles.py for an example.
             dcant : float
@@ -301,34 +408,95 @@ class SweepDecelAngles:
 
             Returns
             -------
-            array like
-                Array of configuration dictionaries. Each element of the array is a 
+            configs_swept_angles : list
+                List of configuration dictionaries. Each element of the list is a 
                 combination given the inputted angling step sizes for each pitch and yaw.
         '''
 
-        #basic case: look at +x thrusters, pitch the pitch group symmetrically
+        # Initializing a list to hold dictionaries
         configs_swept_angles = []
 
-        #hard coded limits for the meantime
+        # Hard coded limits defined here should match those in cant_optimization.py
         cant_min, cant_max = 0, 70
-        for cant in range(cant_min, cant_max + dcant, dcant):
+        for cant in range(cant_min, cant_max, dcant):
+
             new_config = {}
 
-            Rz = self.calculate_DCM(cant)
+            # Rz = self.calculate_DCM(cant)
 
             for thruster, thruster_info in config.items():
                 new_thruster_info = thruster_info.copy()
+                
+                for match in self.lm.rcs_groups['neg_x']:
+                    if thruster == match:
 
-                Tx = self.calculate_frame_rot(new_thruster_info['name'][0])
+                        Rz = self.calculate_DCM(cant, thruster)
 
-                dcm = np.dot(Tx, Rz)
-                new_thruster_info['dcm'] = dcm
+                        Tx = self.calculate_frame_rot(new_thruster_info['name'][0])
 
-                new_config[thruster] = new_thruster_info
+                        # dcm = np.dot(Tx, Rz)
+                        dcm = np.dot(Rz, Tx)
+                        new_thruster_info['dcm'] = dcm
+
+                        new_config[thruster] = new_thruster_info
+                        
 
             configs_swept_angles.append(new_config)
 
         return configs_swept_angles
+    
+    def one_cant_decel_thrusters_all(self, config, cant):
+        '''
+            Sweeps the given config by angle. Performed over min and max allowed. 
+            All thrusters are canted simultaneously.
+            
+            Parameters
+            ----------
+            config : dictionary
+                    Holds keys of thrusters, with values on their configuration information.
+                    This information includes: name, type, nozzle exit center position, and DCM.
+                    See test_case_sweep_angles.py for an example.
+            cant : float
+                    Desired cant angle (degrees)
+
+            Returns
+            -------
+            new_config : list
+                List of configuration dictionaries. Each element of the list is a 
+                combination given the inputted angling step sizes for each pitch and yaw.
+        '''
+
+        # Initializing a list to hold dictionaries
+        configs_swept_angles = []
+
+        # Hard coded limits defined here should match those in cant_optimization.py
+        # cant_min, cant_max = 0, 70
+        # for cant in range(cant_min, cant_max, dcant):
+
+        new_config = {}
+
+        # Rz = self.calculate_DCM(cant)
+
+        for thruster, thruster_info in config.items():
+            new_thruster_info = thruster_info.copy()
+            new_config[thruster] = new_thruster_info
+            for match in self.lm.rcs_groups['neg_x']:
+                if thruster == match:
+
+                    Rz = self.calculate_DCM(cant, thruster)
+
+                    Tx = self.calculate_frame_rot(new_thruster_info['name'][0])
+
+                    # dcm = np.dot(Tx, Rz)
+                    dcm = np.dot(Rz, Tx)
+                    new_thruster_info['dcm'] = dcm
+
+                    new_config[thruster] = new_thruster_info
+
+            # configs_swept_angles.append(new_config)
+
+        # return configs_swept_angles
+        return new_config
     
     def read_swept_angles(self, swept_configs):
         '''
