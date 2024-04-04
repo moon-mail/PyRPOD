@@ -69,10 +69,11 @@ class TradeStudy():
             self.rpod.set_case_key(i)
 
             # Create JFH for a given velocity.
-            self.rpod.print_jfh_1d_approach(
+            self.rpod.print_jfh_1d_approach_n_fire(
                                     tv.v_ida,
                                     v_o,
-                                    tv.r_o, 
+                                    tv.r_o,
+                                    n_firings = 100,
                                     trade_study = True
                                 )
 
@@ -80,5 +81,5 @@ class TradeStudy():
             self.init_trade_study_case()              
     
 
-            self.rpod.jfh_plume_strikes(trade_study = True)
+            # self.rpod.jfh_plume_strikes(trade_study = True)
             
