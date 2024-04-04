@@ -874,134 +874,6 @@ class RPOD (MissionPlanner):
                 constraint_file.write(f"All impingement constraints met.")
             constraint_file.close()
 
-
-    def print_jfh_1d_approach_n_fire(self, v_ida, v_o, r_o, n_firings, trade_study = False):
-        # Determine thruster configuration characterstics.
-        # The JFH only contains firings done by the neg_x group
-        m_dot_sum = self.calc_m_dot_sum('neg_x')
-        # print('m_dot_sum is', m_dot_sum)
-        MIB = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['MIB']
-        # print('MIB is', MIB)
-        F_thruster = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
-        n_thrusters = len(self.vv.rcs_groups['neg_x'])
-        F = n_thrusters * F_thruster
-        # print(n_thrusters)
-        isp = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['isp']
-
-        # Calculate required change in velocity.
-        dv_req = v_o - v_ida
-        v_e = self.calc_v_e('neg_x')
-
-        # Calcualte total burn time and time step.
-        burn_time = self.calc_burn_time(dv_req, isp, F)
-        dt = burn_time / n_firings
-
-
-        m_dot_sum = self.calc_m_dot_sum('neg_x')
-        dm_firing = m_dot_sum * dt
-
-        # print('burn_time', burn_time)
-        # print('dt', dt)
-
-        # Calculate propellant used for docking and changes in mass.
-        forward_propagation = False
-        delta_mass_jfh = self.calc_delta_mass_v_e(dv_req, v_e, forward_propagation)
-        # print('delta_mass_docking is',delta_mass_jfh)
-
-        pre_approach_mass = self.vv.mass
-        # print('pre-approach mass is', pre_approach_mass)
-
-        # Instantiate data structure to hold JFH data + physics data.
-        # Initializing position
-        x = [r_o]
-        y = [0]
-        z = [0]
-
-        # Initializing empty tracking lists
-        dx = [0]
-        t = [0]
-        dv = [0]
-
-        # Initializing inertial state
-        dxdt = [v_o]
-
-        # Initializing initial mass
-        mass = [pre_approach_mass]
-
-        # Initializing list to later sum propellant expenditure
-        dm_total = [dm_firing]
-
-        # Firing number
-        n = [1]
-
-        # Create dummy rotation matrices.
-        x1 = [1, 0, 0]
-        y1 = [1, 0, 0]
-
-        rot = [np.array(rotation_matrix_from_vectors(x1, y1))]
-
-        for firing in range(n_firings):
-            # print(firing)  
-            # Update VV mass per firing
-            mass_o = mass[-1]
-            mass.append(mass_o - dm_firing)
-            mass_f = mass[-1]
-            # print('mass_f is', mass_f)
-
-            # Calculate velocity change per firing.
-            dv_firing = self.calc_delta_v(dt, v_e, m_dot_sum, mass_o)
-            dv.append(dv_firing)
-            # print('dv is', dv_firing)
-            # print(round(dxdt[-1] - dv_firing, 2))
-            # input()
-            dxdt.append(dxdt[-1] - dv_firing)
-
-            # Calculate distance traveled per firing
-            # print(dxdt[-1], dxdt[-2]) # last and second to last element.
-            v_avg = 0.5 * (dxdt[-1] + dxdt[-2])
-            dx.append(v_avg * dt)
-            x.append(x[-1] - v_avg*dt)
-            y.append(0)
-            z.append(0)
-
-            # Calculate left over v_req (TERMINATES LOOP)
-            dv_req -= dv_firing
-
-            # Calculate mass expended up to this point.
-            dm_total.append(dm_total[-1] + dm_firing)
-
-            # Calculate current firing.
-            n.append(n[-1]+1)
-
-            # Add time data.
-            t.append(t[-1] + dt)
-
-            rot.append(np.array(rotation_matrix_from_vectors(x1, y1)))
-
-        one_d_results = {
-            'n_firings': n,
-            'x': x,
-            'dx': dx,
-            't': t,
-            'dv': dv,
-            'v': dxdt,
-            'mass': mass,
-            'delta_mass': dm_total
-        }
-
-        # print(one_d_results)
-        # input()
-        r = [x, y, z]
-
-        if trade_study == False:
-            jfh_path = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
-        elif trade_study == True:
-            jfh_path = self.case_dir +'jfh/' + self.get_case_key() + '.A'
-
-        # print(jfh_path)
-        print_1d_JFH(t, r, rot, jfh_path)
-
-
     def print_jfh_1d_approach(self, v_ida, v_o, r_o, trade_study = False):
         """
             Method creates JFH data for axial approach using simpified physics calculations.
@@ -1051,8 +923,7 @@ class RPOD (MissionPlanner):
         # Calculate required change in velocity.
         dv_req = v_o - v_ida
         v_e = self.calc_v_e('neg_x')
-        # forward_propagation = False
-
+        forward_propagation = False
 
         # Calculate propellant used for docking and changes in mass.
         delta_mass_jfh = self.calc_delta_mass_v_e(dv_req, v_e, forward_propagation)
