@@ -36,7 +36,7 @@ class EvaluateImpingement(om.ExplicitComponent):
         self.lm.set_stl()
         # Define LM mass distribution properties.
         self.m_dock = 14000 # kg
-        self.h = 11.04 # m
+        self.h = 8.5 # m
         self.r = 1.65 # m
         self.lm.set_inertial_props(self.m_dock, self.h, self.r)
         # Load in thruster configuration file.
@@ -136,6 +136,11 @@ class EvaluateImpingement(om.ExplicitComponent):
 
         # Increment the iteration counter to be used in graph_jfh and jfh_plume_strikes file naming
         self.rpod.count += 1
+
+
+
+
+
 
 
 # This has been having issues, disregard for now (4/2/24)

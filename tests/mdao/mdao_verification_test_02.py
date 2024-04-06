@@ -39,7 +39,7 @@ class EvaluateImpingement(om.ExplicitComponent):
         self.lm.set_stl()
         # Define LM mass distribution properties.
         self.m_dock = 14000 # kg
-        self.h = 11.04 # m
+        self.h = 8.5 # m
         self.r = 1.65 # m
         self.lm.set_inertial_props(self.m_dock, self.h, self.r)
         # Load in thruster configuration file.
@@ -158,7 +158,8 @@ class EvaluateImpingement(om.ExplicitComponent):
         
 
         # Sum the scaled values
-        
+        # If done evaluating the limits...
+
         if self.rpod.count > 2:
             # Scaling the load
             # print('self.max_load_float is', self.max_load_float)
@@ -192,6 +193,11 @@ class EvaluateImpingement(om.ExplicitComponent):
         # print('self.rpod.count is', self.rpod.count)
 
         print('\n')
+
+
+
+
+
 
 # This has been having issues, disregard for now (4/3/24)
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ prob.model.set_input_defaults('x', 0)
 prob.driver = om.ScipyOptimizeDriver()
 prob.driver.options['optimizer'] = 'SLSQP'
 
-prob.model.add_design_var('x', lower=0, upper=11.04-0.306)
+prob.model.add_design_var('x', lower=0, upper=8.5-.306)
 prob.model.add_objective('f_x')
 
 prob.setup()

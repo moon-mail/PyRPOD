@@ -972,7 +972,7 @@ class RPOD (MissionPlanner):
 
     def edit_1d_JFH(self, t_values, r,  rot):
         """
-            Helper function to RPOD.calc_jfh_1d_approach(v_ida, v_o, r_o) that is responsible for
+            Helper function to RPOD.calc_jfh_1d_approach() that is responsible for
             modifying the JFH attribute in memory with the values calculated.
 
             Parameters
@@ -1030,7 +1030,7 @@ class RPOD (MissionPlanner):
             # NOTE: all the 'xyz' values are still negative
             # Start from the required distance to slow down and approach zero
             # print('-r[0][-1] + r[0][i] is', -r[0][-1] + r[0][i])
-            self.jfh.JFH.append({'nt': str(i + 1), 'dt': str(t_values[i]), 't': str(t_values[1]), 'dcm': [list(rot[i][0]), list(rot[i][1]), list(rot[i][2])], 'xyz': [-r[0][-1] + r[0][i] - 5, -r[1][i], -r[2][i]], 'uf': 1.0, 'thrusters': [1, 2, 5, 6, 9, 10, 13, 14]})
+            self.jfh.JFH.append({'nt': str(i + 1), 'dt': str(t_values[i]), 't': str(t_values[1]), 'dcm': [list(rot[i][0]), list(rot[i][1]), list(rot[i][2])], 'xyz': [-r[0][-1] + r[0][i] - 0.5, -r[1][i], -r[2][i]], 'uf': 1.0, 'thrusters': [1, 2, 5, 6, 9, 10, 13, 14]})
 
         # Printing out the populated JFH and checking its size
         # print('self.jfh.JFH is', self.jfh.JFH)
@@ -1038,13 +1038,13 @@ class RPOD (MissionPlanner):
 
     def calc_jfh_1d_approach(self, v_ida, v_o, cant):
         """
+            The x-position represents the distance required to reach a velocity of zero.    
+        
             Method calculates JFH data for 1D approach using simpified physics calculations.
 
             This approach models one continuous firing.
 
             Kinematics and mass changes are discretized according to the thruster's minimum firing time.
-
-            The x-position tracks the distance required to reach a velocity of zero.
 
             Parameters
             ----------
@@ -1075,7 +1075,8 @@ class RPOD (MissionPlanner):
 
         # Defining a multiplier reduce time steps and make running faster
         time_multiplier = 600
-        dt = (MIB / F) * time_multiplier
+        # Multiplying by cant to make time step independent of it, this cancels it out in the F term
+        dt = (MIB / F) * time_multiplier * np.cos(MissionPlanner.cant)
         # print('dt is', dt)
         dm_firing = m_dot_sum * dt
         # print('dm_firing is', dm_firing)

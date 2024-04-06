@@ -466,16 +466,7 @@ class SweepDecelAngles:
                 combination given the inputted angling step sizes for each pitch and yaw.
         '''
 
-        # Initializing a list to hold dictionaries
-        configs_swept_angles = []
-
-        # Hard coded limits defined here should match those in cant_optimization.py
-        # cant_min, cant_max = 0, 70
-        # for cant in range(cant_min, cant_max, dcant):
-
         new_config = {}
-
-        # Rz = self.calculate_DCM(cant)
 
         for thruster, thruster_info in config.items():
             new_thruster_info = thruster_info.copy()
@@ -493,9 +484,6 @@ class SweepDecelAngles:
 
                     new_config[thruster] = new_thruster_info
 
-            # configs_swept_angles.append(new_config)
-
-        # return configs_swept_angles
         return new_config
     
     def read_swept_angles(self, swept_configs):
