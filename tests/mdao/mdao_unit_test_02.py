@@ -41,7 +41,7 @@ class CoordinateSweepCheck(unittest.TestCase):
         # creating example thruster groups, to confirm thrusters that are for decel
         thruster_groups = {
             '+x': [],
-            '-x': [],
+            'neg_x': [],
             '+y': [],
             '-y': [],
             '+z': [],
@@ -61,7 +61,7 @@ class CoordinateSweepCheck(unittest.TestCase):
             name = 'P' + str(i) + 'T1'
             exit = [0, r*np.cos((i-1)*(2 * np.pi / nthrusters)), r*np.sin((i-1)*(2 * np.pi / nthrusters))]
             config[name] = {'name': [name], 'type': ['001'], 'exit': [exit], 'dcm': dcm}
-            thruster_groups['-x'].append(name)
+            thruster_groups['neg_x'].append(name)
 
         # define step sizes for each angle
         dcant = 10 # deg
@@ -70,7 +70,7 @@ class CoordinateSweepCheck(unittest.TestCase):
         angle_sweep = SweepConfig.SweepDecelAngles(config, thruster_groups)
         
         # call sweep_long_thruster on the configuration and print the DCM's
-        config_swept_array = angle_sweep.sweep_decel_thrusters_all(config, dcant)
+        config_swept_array = angle_sweep.sweep_decel_thrusters_all(dcant)
 
         for i, config in enumerate(config_swept_array):
             # Path to directory holding data assets and results for a specific RPOD study.

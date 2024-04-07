@@ -285,14 +285,14 @@ class SweepDecelAngles:
 
         return Tx.tolist()
     
-    def cant_decel_thrusters(self, config, cant):
+    def cant_decel_thrusters(self, cant):
         """
         """
         new_config = {}
 
         Rz = self.calculate_DCM(cant)
 
-        for thruster, thruster_info in config.items():
+        for thruster, thruster_info in self.config.items():
             new_thruster_info = thruster_info.copy()
 
             Tx = self.calculate_frame_rot(new_thruster_info['name'][0])
