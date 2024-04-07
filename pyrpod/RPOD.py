@@ -277,7 +277,7 @@ class RPOD (MissionPlanner):
         for thruster in self.vv.thruster_data:
             link[str(i)] = self.vv.thruster_data[thruster]['name']
             i = i + 1
-
+        
         # Create results directory if it doesn't already exist.
         results_dir = self.case_dir + 'results'
         if not os.path.isdir(results_dir):
@@ -378,9 +378,9 @@ class RPOD (MissionPlanner):
             if trade_study == False:
                 path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl" 
             elif trade_study == True:
-                path_to_vtk = self.case_dir + "results/" + self.get_case_key() + "/jfh/firing-" + str(firing) + ".stl" 
+                path_to_stl = self.case_dir + "results/" + self.get_case_key() + "/jfh/firing-" + str(firing) + ".stl" 
 
-            path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl"
+            # path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl"
             # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
             VVmesh.save(path_to_stl)
 

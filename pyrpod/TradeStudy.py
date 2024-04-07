@@ -107,7 +107,7 @@ class TradeStudy():
 
             lm.decel_cant = cant
 
-            new_tcd = angle_sweep.cant_decel_thrusters(lm.thruster_data, cant)   
+            new_tcd = angle_sweep.cant_decel_thrusters(cant)   
             lm.set_thruster_config(new_tcd)
 
             # print(i, v_o)
@@ -126,6 +126,6 @@ class TradeStudy():
             # Reset JFH according to specific case.
             self.init_trade_study_case()              
     
-
+            self.rpod.graph_jfh(trade_study= True)
             # self.rpod.jfh_plume_strikes(trade_study = True)
             
