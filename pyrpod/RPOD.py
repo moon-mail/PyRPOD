@@ -257,7 +257,7 @@ class RPOD (MissionPlanner):
             plt.savefig('img/frame' + str(index) + '.png')
 
 
-    def graph_jfh(self): 
+    def graph_jfh(self, trade_study = False): 
         """
             Creates visualization data for the trajectory of the proposed RPOD analysis.
 
@@ -284,10 +284,25 @@ class RPOD (MissionPlanner):
             # print("results dir doesn't exist")
             os.mkdir(results_dir)
 
-        results_dir = results_dir + "/jfh"
-        if not os.path.isdir(results_dir):
-            # print("results dir doesn't exist")
-            os.mkdir(results_dir)
+
+        if not trade_study:
+            results_dir = results_dir + "/jfh"
+            if not os.path.isdir(results_dir):
+                #print("results dir doesn't exist")
+                os.mkdir(results_dir)
+
+        if trade_study:
+            v_o = ['vo_0', 'vo_1', 'vo_2', 'vo_3', 'vo_4']
+            for v in v_o:
+                results_dir_case = results_dir + "/" + v
+                if not os.path.isdir(results_dir_case):
+                    #print("results dir doesn't exist")
+                    os.mkdir(results_dir_case)  
+
+                results_dir_case = results_dir_case + '/jfh'
+                if not os.path.isdir(results_dir_case):
+                    #print("results dir doesn't exist")
+                    os.mkdir(results_dir_case) 
 
         # Save STL surface of target vehicle to local variable.
         target = self.target.mesh
@@ -360,7 +375,11 @@ class RPOD (MissionPlanner):
 
             # print(self.case_dir + self.config['stl']['vv'])
 
-            path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
+            if trade_study == False:
+                path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl" 
+            elif trade_study == True:
+                path_to_vtk = self.case_dir + "results/" + self.get_case_key() + "/jfh/firing-" + str(firing) + ".stl" 
+
             path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl"
             # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
             VVmesh.save(path_to_stl)
@@ -980,7 +999,7 @@ class RPOD (MissionPlanner):
         
 
         n_firings = len(t)
-        time_multiplier = 100 / n_firings
+        time_multiplier = 10 / n_firings
         # print('n firings:', len(t), 'time multiplier:', time_multiplier)
         return (1/time_multiplier)
 
@@ -1084,7 +1103,13 @@ class RPOD (MissionPlanner):
             # print(dxdt[-1], dxdt[-2]) # last and second to last element.
             v_avg = 0.5 * (dxdt[-1] + dxdt[-2])
             dx.append(v_avg * dt)
-            x.append(x[-1] - v_avg*dt)
+
+            curr_x  = x[-1] - v_avg*dt
+
+            # if curr_x < 0:
+            #     break
+
+            x.append(curr_x)
             y.append(0)
             z.append(0)
 
