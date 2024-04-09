@@ -1,4 +1,5 @@
 import os
+import csv
 
 from pyrpod import RPOD
 from pyrpod import JetFiringHistory
@@ -44,7 +45,40 @@ class TradeStudy():
 
         self.rpod.jfh = jfh
 
+    def print_mission_report(self):
 
+        case_key = self.rpod.get_case_key()
+
+        fuel_mass = self.rpod.fuel_mass
+
+        max_pressure = self.rpod.max_pressure
+        max_shear = self.rpod.max_shear
+        max_heat_rate = self.rpod.max_heat_rate
+        max_heat_load = self.rpod.max_heat_load
+        max_cum_heat_load = self.rpod.max_cum_heat_load
+
+        # Check if the file exists
+        report_path = self.case_dir + 'results/MissionReport.csv'
+        file_exists = os.path.isfile(report_path)
+
+        # Open CSV file in append mode
+        with open(report_path, 'a', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+
+            # Write header if the file is newly created
+            if not file_exists:
+                csv_writer.writerow(['CaseKey', 'FuelMass', 'MaxPressure', 'MaxShear', 'MaxHeatRate', 'MaxHeatLoad', 'MaxCumulativeHeatLoad'])
+
+            # Write data row
+            csv_writer.writerow([
+                case_key,
+                fuel_mass,
+                max_pressure,
+                max_shear,
+                max_heat_rate,
+                max_heat_load,
+                max_cum_heat_load
+            ])
 
     def run_axial_overshoot_sweep(self, sweep_vars, lm, tv):
         """
@@ -127,5 +161,7 @@ class TradeStudy():
             self.init_trade_study_case()              
     
             self.rpod.graph_jfh(trade_study= True)
-            # self.rpod.jfh_plume_strikes(trade_study = True)
+            self.rpod.jfh_plume_strikes(trade_study = True)
+
+            self.print_mission_report()
             

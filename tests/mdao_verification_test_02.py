@@ -40,7 +40,7 @@ class MDAOTest(unittest.TestCase):
         lm.assign_thruster_groups()
 
         # Define LM Docking conditions
-        v_ida = 0.1 # m/s (target velocity for safe docking)
+        v_ida = 0.03 # m/s (target velocity for safe docking)
         tv.set_v_ida(v_ida)
         r_o = 20 # m (initial distance at start of initial burn)
         tv.set_r_o(r_o)
