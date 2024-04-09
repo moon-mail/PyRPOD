@@ -1,5 +1,6 @@
 import os
 import csv
+import numpy as np
 
 from pyrpod import RPOD
 from pyrpod import JetFiringHistory
@@ -49,6 +50,8 @@ class TradeStudy():
 
         case_key = self.rpod.get_case_key()
 
+        max_v0 = self.max_v0
+
         fuel_mass = self.rpod.fuel_mass
 
         max_pressure = self.rpod.max_pressure
@@ -67,11 +70,12 @@ class TradeStudy():
 
             # Write header if the file is newly created
             if not file_exists:
-                csv_writer.writerow(['CaseKey', 'FuelMass', 'MaxPressure', 'MaxShear', 'MaxHeatRate', 'MaxHeatLoad', 'MaxCumulativeHeatLoad'])
+                csv_writer.writerow(['CaseKey', 'MaxV0', 'FuelMass', 'MaxPressure', 'MaxShear', 'MaxHeatRate', 'MaxHeatLoad', 'MaxCumulativeHeatLoad'])
 
             # Write data row
             csv_writer.writerow([
                 case_key,
+                max_v0,
                 fuel_mass,
                 max_pressure,
                 max_shear,
@@ -87,6 +91,7 @@ class TradeStudy():
 
         # Organize variables to sweet over.
         axial_overshoot = sweep_vars['axial_overshoot']
+        self.max_v0 = np.max(axial_overshoot)
 
         # Link elements for RPOD analysis.
         self.init_trade_study(lm, tv)
@@ -125,6 +130,7 @@ class TradeStudy():
         # Organize variables to sweet over.
         surface_cant_angles = sweep_vars['surface_cant_angles']
         v_o = sweep_vars['axial_overshoot']
+        self.max_v0 = np.max(v_o)
 
         # Link elements for RPOD analysis.
         self.init_trade_study(lm, tv)
