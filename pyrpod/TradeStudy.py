@@ -101,7 +101,7 @@ class TradeStudy():
 
             # print(i, v_o)
             # # Set unique case identifier within trade study.
-            self.rpod.set_case_key(i)
+            self.rpod.set_case_key(i, 0)
 
             # Create JFH for a given velocity.
             self.rpod.print_jfh_1d_approach_n_fire(
@@ -146,7 +146,7 @@ class TradeStudy():
 
             # print(i, v_o)
             # # Set unique case identifier within trade study.
-            self.rpod.set_case_key(i)
+            self.rpod.set_case_key(0, i)
 
             # Create JFH for a given velocity.
             self.rpod.print_jfh_1d_approach_n_fire(

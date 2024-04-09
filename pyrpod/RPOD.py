@@ -293,16 +293,13 @@ class RPOD (MissionPlanner):
 
         if trade_study:
             v_o = ['vo_0', 'vo_1', 'vo_2', 'vo_3', 'vo_4']
+            cants = ['cant_0', 'cant_1', 'cant_2', 'cant_3', 'cant_4']
             for v in v_o:
-                results_dir_case = results_dir + "/" + v
-                if not os.path.isdir(results_dir_case):
-                    #print("results dir doesn't exist")
-                    os.mkdir(results_dir_case)  
-
-                results_dir_case = results_dir_case + '/jfh'
-                if not os.path.isdir(results_dir_case):
-                    #print("results dir doesn't exist")
-                    os.mkdir(results_dir_case) 
+                for cant in cants:
+                    results_dir_case = results_dir + "/" + v + '_' + cant
+                    if not os.path.isdir(results_dir_case):
+                        #print("results dir doesn't exist")
+                        os.mkdir(results_dir_case)
 
         # Save STL surface of target vehicle to local variable.
         target = self.target.mesh
@@ -596,16 +593,18 @@ class RPOD (MissionPlanner):
 
         if trade_study:
             v_o = ['vo_0', 'vo_1', 'vo_2', 'vo_3', 'vo_4']
+            cants = ['cant_0', 'cant_1', 'cant_2', 'cant_3', 'cant_4']
             for v in v_o:
-                results_dir_case = results_dir + "/" + v
-                if not os.path.isdir(results_dir_case):
-                    #print("results dir doesn't exist")
-                    os.mkdir(results_dir_case)  
+                for cant in cants:
+                    results_dir_case = results_dir + "/" + v + '_' + cant
+                    if not os.path.isdir(results_dir_case):
+                        #print("results dir doesn't exist")
+                        os.mkdir(results_dir_case)  
 
-                results_dir_case = results_dir_case + '/strikes'
-                if not os.path.isdir(results_dir_case):
-                    #print("results dir doesn't exist")
-                    os.mkdir(results_dir_case) 
+                    results_dir_case = results_dir_case + '/strikes'
+                    if not os.path.isdir(results_dir_case):
+                        #print("results dir doesn't exist")
+                        os.mkdir(results_dir_case) 
 
         # Save STL surface of target vehicle to local variable.
         target = self.target.mesh
@@ -1339,9 +1338,9 @@ class RPOD (MissionPlanner):
     def get_case_key(self):
         return self.case_key
 
-    def set_case_key(self, i):
+    def set_case_key(self, v0_iter, cant_iter):
 
-        self.case_key = 'vo_' + str(i)
+        self.case_key = 'vo_' + str(v0_iter) + '_cant_' + str(cant_iter)
 
         return
 
