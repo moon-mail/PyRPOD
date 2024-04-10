@@ -181,7 +181,12 @@ class TradeStudy():
                                 )
 
             # Reset JFH according to specific case.
-            self.init_trade_study_case()              
+            self.init_trade_study_case()   
+            self.rpod.graph_jfh(trade_study= True)
+            self.rpod.jfh_plume_strikes(trade_study = True)
+
+            self.print_mission_report()
+        self.interpret_mission_report()           
     
 
             # self.rpod.jfh_plume_strikes(trade_study = True)
