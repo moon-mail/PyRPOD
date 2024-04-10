@@ -82,6 +82,7 @@ def print_JFH(t_values, r,  rot, file_name):
             print()
             # print(rot[i])
             # print()
+    sys.stdout = orig_stdout
 
 def print_test_JFH(t_values, r,  rot, file_name):
 
@@ -163,6 +164,7 @@ def print_test_JFH(t_values, r,  rot, file_name):
             print()
             # print(rot[i])
             # print()
+    sys.stdout = orig_stdout
 
 def print_1d_JFH(t_values, r,  rot, file_name):
     '''
@@ -243,3 +245,4 @@ def print_1d_JFH(t_values, r,  rot, file_name):
             print()
             # print(rot[i])
             # print()
+    sys.stdout = orig_stdout

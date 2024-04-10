@@ -1,6 +1,8 @@
 import os
 import csv
 import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
 
 from pyrpod import RPOD
 from pyrpod import JetFiringHistory
@@ -83,6 +85,67 @@ class TradeStudy():
                 max_heat_load,
                 max_cum_heat_load
             ])
+
+    def graph_mission_report(self, report_results):
+        """
+        """
+        # Extract the first column (assuming it's the parameter you want to plot against)
+        first_column = report_results.columns[0]
+        # Convert DataFrame columns to NumPy arrays for indexing
+        x_values = report_results[first_column].to_numpy()
+        print(report_results)
+        # Plot each parameter against the first parameter
+        for column in report_results.columns[1:8]:
+            y_values = report_results[column].to_numpy()
+            plt.figure()  # Create a new figure for each plot
+            plt.plot(x_values,y_values, label=column)
+            plt.xlabel(first_column)
+            plt.ylabel(column)
+            plt.title(f'{column} vs {first_column}')
+            plt.legend()
+            plt.grid(True)
+
+        # Show all plots
+        plt.show()
+
+
+    def interpret_mission_report(self):
+        """
+        """
+        report_path = self.case_dir + 'results/MissionReport.csv'
+        report_results = pd.read_csv(report_path)
+
+        max_pressure = float(self.rpod.config['tv']['normal_pressure'])
+        max_shear = float(self.rpod.config['tv']['shear_pressure'])
+        max_heat_rate = float(self.rpod.config['tv']['heat_flux'])
+        # max_heat_load = float(self.rpod.config['tv'][]) no such constraint
+        max_cum_heat_load = float(self.rpod.config['tv']['heat_flux_load'])
+
+        plume_status = []
+        plume_failure_mode = []
+
+        for i, row in report_results.iterrows():
+            if row['MaxPressure'] > max_pressure:
+                plume_status.append('fail')
+                plume_failure_mode.append('pressure')
+            elif row['MaxShear'] > max_shear:
+                plume_status.append('fail')
+                plume_failure_mode.append('shear')
+            elif row['MaxHeatRate'] > max_heat_rate:
+                plume_status.append('fail')
+                plume_failure_mode.append('heat_flux')
+            # elif report_results['MaxHeatLoad'] > max_heat_load:  no such constraint
+            #     plume_status.append('fail')
+            elif row['MaxCumulativeHeatLoad'] > max_cum_heat_load:
+                plume_status.append('fail')
+                plume_failure_mode.append('cumulative_heat_flux_load')
+            else:
+                plume_status.append('pass')
+                plume_failure_mode.append('none')
+
+        report_results['PlumeStatus'] = plume_status
+        report_results['PlumeFailureMode'] = plume_failure_mode
+        self.graph_mission_report(report_results)
 
     def run_axial_overshoot_sweep(self, sweep_vars, lm, tv):
         """
@@ -170,4 +233,4 @@ class TradeStudy():
             self.rpod.jfh_plume_strikes(trade_study = True)
 
             self.print_mission_report()
-            
+        self.interpret_mission_report()
