@@ -923,11 +923,13 @@ class RPOD (MissionPlanner):
         # print('m_dot_sum is', m_dot_sum)
         MIB = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['MIB']
         # print('MIB is', MIB)
-        F = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
-        # print('F is', F)
+        F_thruster = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
+        F = F_thruster * np.cos(self.vv.decel_cant)
+        n_thrusters = len(self.vv.rcs_groups['neg_x'])
+        F = F * n_thrusters
 
         # Defining a multiplier reduce time steps and make running faster
-        dt = (MIB / F)
+        dt = (MIB / F_thruster)
         # print('dt is', dt)
         dm_firing = m_dot_sum * dt
         # print('dm_firing is', dm_firing)
@@ -1046,12 +1048,15 @@ class RPOD (MissionPlanner):
         # print('m_dot_sum is', m_dot_sum)
         MIB = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['MIB']
         # print('MIB is', MIB)
-        F = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
+        F_thruster = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
+        F = F_thruster * np.cos(self.vv.decel_cant)
+        n_thrusters = len(self.vv.rcs_groups['neg_x'])
+        F = F * n_thrusters
         # print('F is', F)
 
         # Defining a multiplier reduce time steps and make running faster
         time_multiplier = self.calc_time_multiplier(v_ida, v_o, r_o)
-        dt = (MIB / F) * time_multiplier
+        dt = (MIB / F_thruster) * time_multiplier
         # print('dt is', dt)
         dm_firing = m_dot_sum * dt
         # print('dm_firing is', dm_firing)
