@@ -213,6 +213,7 @@ class TradeStudy():
         # Loop through over shoot velocities to test.
         for i, cant in enumerate(surface_cant_angles):
 
+            cant = np.deg2rad(cant)
             lm.decel_cant = cant
 
             new_tcd = angle_sweep.cant_decel_thrusters(cant)   
