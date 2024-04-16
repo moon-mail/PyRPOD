@@ -1,12 +1,12 @@
 # Nicholas A. Palumbo
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 4-3-24
+# Last Changed: 4-9-24
 
 # ========================
-# PyRPOD: tests/mdao/mdao_verification_test_02.py
+# PyRPOD: tests/mdao/mdao_verification_test_03.py
 # ========================
-# Cant angle optimizer
+# Axial + Cant Evaluator
 
 
 from pyrpod import JetFiringHistory, TargetVehicle, LogisticsModule, RPOD, SweepConfig, MissionPlanner
@@ -16,8 +16,9 @@ import openmdao.api as om
 class EvaluateImpingement(om.ExplicitComponent):
 
     """
-        Minimizes the max heat flux load for a 1D approach by increasing the
-        cant angling of the deceleration thrusters.
+        Evaluates the performance of a RCS configuration given the axial positioning and
+        cant angle of the deceleration thrusters, outputting parameters such as max
+        cumulative heat flux load and JFH propellant expenditure for a 1D approach.
 
         NOTE: The first two stl and vtu groups saved will be
             for the min and max cant angle respectively.
@@ -64,12 +65,29 @@ class EvaluateImpingement(om.ExplicitComponent):
     def setup(self):
 
         self.add_input('x', val=0)
+        self.add_input('y', val=0)
 
-        self.add_output('fuel')
+        self.add_output('dt')
 
-        self.add_output('load')
+        self.add_output('pressure')
+        self.add_output('shear stress')
+        self.add_output('heat flux rate')
+        self.add_output('heat flux load')
+        self.add_output('cumulative heat flux load')
+        self.add_output('propellant')
 
-        self.add_output('f_x', val=0)
+        self.add_output('scaled_pressure')
+        self.add_output('scaled_shear_stress')
+        self.add_output('scaled_heat_flux_rate')
+        self.add_output('scaled_heat_flux_load')
+        self.add_output('scaled_cum_heat_flux_load')
+        self.add_output('scaled_propellant')
+
+        self.add_output('scaled_pressure_sum')
+        self.add_output('scaled_shear_stress_sum')
+        self.add_output('scaled_heat_flux_rate_sum')
+        self.add_output('scaled_heat_flux_load_sum')
+        self.add_output('scaled_cum_heat_flux_load_sum')
 
 
     def setup_partials(self):
@@ -79,12 +97,15 @@ class EvaluateImpingement(om.ExplicitComponent):
 
     def compute(self, inputs, outputs):
         
-        # Load design variable.
+        # Load design variables.
         x = inputs['x']
+        y = inputs['y']
         
         # TEMP printing out the design variables steps
         x_print = "%.3f" % float(x)
-        print('The current cant angle being evaluated is', x_print, 'degrees.')
+        y_print = "%.3f" % float(y)
+        print('--- Cant angle:', x_print, 'deg --- Axial position:', y_print, 'm ---')
+
 
         # Update the thrusters cant angle in the thruster_data dictionary attribute
         # Instantiate SweepAngles object.
@@ -96,6 +117,10 @@ class EvaluateImpingement(om.ExplicitComponent):
         
         # Update VisitingVehicle's thruster_data attribute.
         self.lm.set_thruster_config(self.new_tcf)
+
+
+        # Update the nozzle's exit position in the thruster_data dictionary attribute
+        self.lm.change_cluster_config(-y)
 
 
         # Resetting the inertial properties.
@@ -117,75 +142,84 @@ class EvaluateImpingement(om.ExplicitComponent):
         # Lets no longer pass in r_0 and instead start from zero and find
             # the distance required to slow down
         self.rpod.calc_jfh_1d_approach(v_ida, v_o, float(x))
-
+        outputs['dt'] = self.rpod.dt
         # Load STLs in Paraview.
         self.rpod.graph_jfh()
         # Run plume strike analysis.
         self.rpod.jfh_plume_strikes()
 
+
+
         # Initialization.
+        max_pressure = 0
+        max_shear_stress = 0
+        max_heat_flux_rate = 0
+        max_heat_flux_load = 0
         max_cum_heat_flux_load = 0
+
         # print('self.rpod.cellData["heat_flux_load"][0] is', self.rpod.cellData["heat_flux_load"][0])
 
-        # Find the max_cum_heat_flux_load for a given approach.
+        # print('len(self.rpod.cellData) is', len(self.rpod.cellData))
+        
+        # print('len(self.rpod.cellData["max_pressures"]) is', len(self.rpod.cellData["max_pressures"]))
+        # print('len(self.rpod.cellData["max_shear_force"]) is', len(self.rpod.cellData["max_shear_force"]))
+        # print('len(self.rpod.cellData["heat_flux_rate"]) is', len(self.rpod.cellData["heat_flux_rate"]))
+        # print('len(self.rpod.cellData["heat_flux_load"]) is', len(self.rpod.cellData["heat_flux_load"]))
+        # print('len(self.rpod.cellData["cum_heat_flux_load"]) is', len(self.rpod.cellData["cum_heat_flux_load"]))
+
+        # Find the max plume parameters for a given approach.
         for i in range(len(self.rpod.cellData["cum_heat_flux_load"])):
+            if self.rpod.cellData["pressures"][i] > max_pressure:
+                max_pressure = self.rpod.cellData["pressures"][i]
+            if self.rpod.cellData["shear_stress"][i] > max_shear_stress:
+                max_shear_stress = self.rpod.cellData["shear_stress"][i]
+            if self.rpod.cellData["heat_flux_rate"][i] > max_heat_flux_rate:
+                max_heat_flux_rate = self.rpod.cellData["heat_flux_rate"][i]
+            if self.rpod.cellData["heat_flux_load"][i] > max_heat_flux_load:
+                max_heat_flux_load = self.rpod.cellData["heat_flux_load"][i]
             if self.rpod.cellData["cum_heat_flux_load"][i] > max_cum_heat_flux_load:
                 max_cum_heat_flux_load = self.rpod.cellData["cum_heat_flux_load"][i]
-        max_cum_heat_flux_load_print = "%.2f" % max_cum_heat_flux_load
-        print('The corresponding max cumulative heat flux load is', max_cum_heat_flux_load_print, 'J/m^2.')
-        # print('len(self.rpod.cellData["heat_flux_load"]) is', len(self.rpod.cellData["heat_flux_load"]))
+
+        # TEMP print statements for plume parameters
+        # max_pressures_print = "%.2f" % max_pressures
+        # max_shear_print = "%.2f" % max_shear
+        # max_heat_flux_rate_print = "%.2f" % max_heat_flux_rate
+        # max_heat_flux_load_print = "%.2f" % max_heat_flux_load
+        # max_cum_heat_flux_load_print = "%.2f" % max_cum_heat_flux_load
+        # print('The max pressure is', max_pressures_print, 'Pa.')
+        # print('The max shear stress is', max_shear_print, 'Pa.')
+        # print('The max heat flux rate is', max_heat_flux_rate_print, 'W/m^2.')
+        # print('The max heat flux load is', max_heat_flux_load_print, 'J/m^2.')
+        # print('The max cumulative heat flux load is', max_cum_heat_flux_load_print, 'J/m^2.')
         
+
+
         # Set JFH to be used in propellant mass calculations.
         self.mp.set_jfh(self.jfh)
         # Assigns inertial properties to an attribute of mp, vv, to be used in propellant mass calculations.
         self.mp.set_lm(self.lm)
+
+        # Define a boolean to decide whether flight plan propellant usage is calculated
+            # with an additional 10% of translational propellant per maneuver for rotations
+        self.mp.rotational_maneuvers = True
+
         # Calculate the propellant mass required for all maneuvers.
         self.mp.calc_total_delta_mass()
 
         # TEMP print statements for propellant expenditure
         # print('The total propellant expended over the flight plan is', self.mp.dm_total, 'kg')
-        dm_jfh_total_print = "%.2f" % self.mp.dm_jfh_total
-        print('The corresponding JFH propellant expenditure is', dm_jfh_total_print, 'kg.\n')
+        # dm_jfh_total_print = "%.2f" % self.mp.dm_jfh_total
+        # print('The JFH propellant expenditure is', dm_jfh_total_print, 'kg.')
 
 
         # Evaluate impingement.
-        outputs['load'] = max_cum_heat_flux_load
-        # print("outputs['load'] is", outputs['load'])
-
-        # Define the propellant expenditure
-        outputs['fuel'] = self.mp.dm_jfh_total
-        # print("outputs['fuel'] is", outputs['fuel'])
-        
-
-
-        if self.rpod.count > 2:
-            # Scaling the load
-            # print('self.max_load_float is', self.max_load_float)
-            # print('self.min_load_float is', self.min_load_float)
-            scaled_load = (outputs['load'] - self.min_load_float) / (self.max_load_float - self.min_load_float)
-            # print('scaled_load is', scaled_load)
-
-            # Scaling the fuel
-            # print('self.max_fuel_float is', self.max_fuel_float)
-            # print('self.min_fuel_float is', self.min_fuel_float)
-            scaled_fuel = (outputs['fuel'] - self.min_fuel_float) / (self.max_fuel_float - self.min_fuel_float)
-            # print('scaled_fuel is', scaled_fuel)
-
-            # Multiplying the scaled values by their respective user-defined factors of importance
-
-            # Hardcoding a 0.5 factor of importance
-            weighted_scaled_load = 0.5 * float(scaled_load)
-            # print('weighted_scaled_load is', weighted_scaled_load)
-
-            # Hardcoding a 0.5 factor of importance
-            weighted_scaled_fuel = 0.5 * float(scaled_fuel)
-            # print('weighted_scaled_fuel is', weighted_scaled_fuel)
-            # print('self.fuel_factor is', self.fuel_factor)
-
-            weighted_scaled_parameter_sum = weighted_scaled_load + weighted_scaled_fuel
-            print('weighted_scaled_parameter_sum is', weighted_scaled_parameter_sum)
-
-            outputs['f_x'] = weighted_scaled_parameter_sum
+        outputs['pressure'] = max_pressure
+        outputs['shear stress'] = max_shear_stress
+        outputs['heat flux rate'] = max_heat_flux_rate
+        outputs['heat flux load'] = max_heat_flux_load
+        outputs['cumulative heat flux load'] = max_cum_heat_flux_load
+        # Define the propellant expenditure.
+        outputs['propellant'] = self.mp.dm_total
 
 
         # Increment the iteration counter to be used in graph_jfh and jfh_plume_strikes file naming.

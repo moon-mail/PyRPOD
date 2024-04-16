@@ -1,7 +1,7 @@
 # Nicholas A. Palumbo
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
-# Last Changed: 4-3-24
+# Last Changed: 4-9-24
 
 # ========================
 # PyRPOD: tests/mdao/mdao_verification_test_01.py
@@ -60,7 +60,7 @@ class EvaluateImpingement(om.ExplicitComponent):
 
     def setup(self):
 
-        self.add_input('x', val=0)
+        self.add_input('x', val=0.1)
 
         self.add_output('f_x', val=0)
     
@@ -100,6 +100,7 @@ class EvaluateImpingement(om.ExplicitComponent):
         v_ida = 0.03 # Docking velocity (m/s)
         
         # New function to edit self.jfh.JFH
+        # 3rd input is cant angle
         self.rpod.calc_jfh_1d_approach(v_ida, v_o, 0)
 
         # Load STLs in Paraview
@@ -129,7 +130,7 @@ class EvaluateImpingement(om.ExplicitComponent):
         # TEMP print statements for propellant expenditure
         # print('The total propellant expended over the flight plan is', self.mp.dm_total, 'kg')
         dm_jfh_total_print = "%.6f" % self.mp.dm_jfh_total
-        print('The corresponding JFH propellant expenditure is', dm_jfh_total_print, 'kg.\n')
+        print('The corresponding JFH propellant expenditure is', dm_jfh_total_print, 'kg.')
 
         # Evaluate impingement
         outputs['f_x'] = max_cum_heat_flux_load

@@ -1030,6 +1030,7 @@ class RPOD (MissionPlanner):
             # NOTE: all the 'xyz' values are still negative
             # Start from the required distance to slow down and approach zero
             # print('-r[0][-1] + r[0][i] is', -r[0][-1] + r[0][i])
+            # NOTE: The thrusters are currently hardcoded, but should be changed to the thrusters indicated in the neg_x group in the tgf
             self.jfh.JFH.append({'nt': str(i + 1), 'dt': str(t_values[i]), 't': str(t_values[1]), 'dcm': [list(rot[i][0]), list(rot[i][1]), list(rot[i][2])], 'xyz': [-r[0][-1] + r[0][i] - 0.5, -r[1][i], -r[2][i]], 'uf': 1.0, 'thrusters': [1, 2, 5, 6, 9, 10, 13, 14]})
 
         # Printing out the populated JFH and checking its size
@@ -1073,12 +1074,15 @@ class RPOD (MissionPlanner):
         F = np.cos(MissionPlanner.cant) * self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
         # print('F is', F)
 
+
+
+        # IMPORTANT IMPORTANT IMPORTANT IMPORTANT IMPORTANT
         # Defining a multiplier reduce time steps and make running faster
-        time_multiplier = 600
+        time_multiplier = 100
         # Multiplying by cant to make time step independent of it, this cancels it out in the F term
-        dt = (MIB / F) * time_multiplier * np.cos(MissionPlanner.cant)
+        self.dt = (MIB / F) * time_multiplier * np.cos(MissionPlanner.cant)
         # print('dt is', dt)
-        dm_firing = m_dot_sum * dt
+        dm_firing = m_dot_sum * self.dt
         # print('dm_firing is', dm_firing)
         docking_mass = self.vv.mass
         # print('docking mass is', docking_mass)
@@ -1144,7 +1148,7 @@ class RPOD (MissionPlanner):
             # print('mass_f is', mass_f)
 
             # Calculate velocity change per firing.
-            dv_firing = self.calc_delta_v(dt, v_e, m_dot_sum, mass_o)
+            dv_firing = self.calc_delta_v(self.dt, v_e, m_dot_sum, mass_o)
             dv.append(dv_firing)
             # print('dv is', dv_firing)
             # print(round(dxdt[-1] - dv_firing, 2))
@@ -1154,8 +1158,8 @@ class RPOD (MissionPlanner):
             # Calculate distance traveled per firing
             # print(dxdt[-1], dxdt[-2]) # last and second to last element.
             v_avg = 0.5 * (dxdt[-1] + dxdt[-2])
-            dx.append(v_avg * dt)
-            x.append(x[-1] + v_avg*dt)
+            dx.append(v_avg * self.dt)
+            x.append(x[-1] + v_avg * self.dt)
             y.append(0)
             z.append(0)
 
@@ -1166,10 +1170,10 @@ class RPOD (MissionPlanner):
             dm_total.append(dm_total[-1] + dm_firing)
 
             # Calculate current firing.
-            n.append(n[-1]+1)
+            n.append(n[-1] + 1)
 
             # Add time data.
-            t.append(t[-1] + dt)
+            t.append(t[-1] + self.dt)
 
             rot.append(np.array(rotation_matrix_from_vectors(x1, y1)))
 

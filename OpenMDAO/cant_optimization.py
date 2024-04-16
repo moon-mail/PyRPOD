@@ -78,7 +78,6 @@ min_fuel = prob.get_val('impingement.fuel')
 EvaluateImpingement.min_fuel_float = float(min_fuel)
 # print(f'Minimum propellant expenditure is {EvaluateImpingement.min_fuel_float:.2f} kg.')
 
-
 # Run the max limit case
 print('----- Evaluating the maximum cant angle -----')
 prob.set_val('x', 60)
@@ -90,6 +89,12 @@ max_fuel = prob.get_val('impingement.fuel')
 EvaluateImpingement.max_fuel_float = float(max_fuel)
 # print(f'Maximum propellant expenditure is {EvaluateImpingement.max_fuel_float:.2f} kg.')
 
+# Run a middle case
+print('----- Evaluating the middle case -----')
+prob.set_val('x', 30)
+prob.run_model()
+load = prob.get_val('impingement.load')
+load_float = float(load)
 
 # # Begin optimization
 # print('----- Beginning optimization -----')

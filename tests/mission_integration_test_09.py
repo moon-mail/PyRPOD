@@ -43,6 +43,10 @@ class CalculatePropellantUsage(unittest.TestCase):
         # Assigns inertial properties to an attribute of mp, vv, to be used in propellant mass calculations.
         mp.set_lm(lm)
         mp.read_flight_plan()
+
+        # Set a mp cant attribute
+        mp.cant = 0
+
         # Calculate the propellant mass required for all maneuvers
         dm_total = mp.calc_total_delta_mass()
 
