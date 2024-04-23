@@ -33,7 +33,10 @@ prob.setup()
 
 # Initialize lists for general case information
 case_number_list = []
-for i in range(1, 22):
+# for i in range(1, 22): # Change 1
+for i in range(18, 22):
+    case_number_list.append(i)
+for i in range(23, 27):
     case_number_list.append(i)
 # print(case_number_list)
 ordered_cant_angle_list = []
@@ -52,11 +55,16 @@ propellant_list = []
 
 # Create lists for the double for loop
 cant_angle_list = []
-for i in range(0, 7):
-# for i in range(0, 2):
-    cant_angle_list.append("%.1f" % (cant_upper_bound * (i / 6)))
+# for i in range(0, 7): # Change 2
+# for i in range(0, 2): # test run
+    # cant_angle_list.append("%.1f" % (cant_upper_bound * (i / 6)))
+for i in range(24, 31, 2):
+    cant_angle_list.append(i)
+for i in range(33, 40, 2):
+    cant_angle_list.append(i)
 # print(cant_angle_list)
-axial_pos_list = [0, 0.5*axial_upper_bound, axial_upper_bound]
+# axial_pos_list = [0, 0.5*axial_upper_bound, axial_upper_bound] # Change 3
+axial_pos_list = [axial_upper_bound]
 
 
 

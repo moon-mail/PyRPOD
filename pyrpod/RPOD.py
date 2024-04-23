@@ -1030,6 +1030,8 @@ class RPOD (MissionPlanner):
             # NOTE: all the 'xyz' values are still negative
             # Start from the required distance to slow down and approach zero
             # print('-r[0][-1] + r[0][i] is', -r[0][-1] + r[0][i])
+
+            
             # NOTE: The thrusters are currently hardcoded, but should be changed to the thrusters indicated in the neg_x group in the tgf
             self.jfh.JFH.append({'nt': str(i + 1), 'dt': str(t_values[i]), 't': str(t_values[1]), 'dcm': [list(rot[i][0]), list(rot[i][1]), list(rot[i][2])], 'xyz': [-r[0][-1] + r[0][i] - 0.5, -r[1][i], -r[2][i]], 'uf': 1.0, 'thrusters': [1, 2, 5, 6, 9, 10, 13, 14]})
 
