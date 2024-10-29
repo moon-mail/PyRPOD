@@ -809,8 +809,9 @@ class MissionPlanner:
         if forward_propagation == True:
             if group == 'pos_pitch' or group == 'pos_yaw':
                 self.vv.set_inertial_props(self.vv.mass, self.vv.height, self.vv.radius)
-                t_firing = (self.vv.I_y*dw)/(self.vv.radius*(self.calc_thrust_sum(group) / 2)) # I_y is pitch/yaw
-                dm = (self.calc_m_dot_sum(group) / 2)*t_firing
+                # M = I*alpha -> Fr = I*omega/t
+                t_firing = (self.vv.I_y*dw)/(self.vv.radius*self.calc_thrust_sum(group)) # I_y is pitch/yaw
+                dm = self.calc_m_dot_sum(group)*t_firing
                 self.vv.mass -= dm
             if group == 'roll':
                 print('ERROR: functionality not added for a roll rotation')
@@ -874,6 +875,7 @@ class MissionPlanner:
         if group == 'neg_x' or group == 'pos_pitch':
             for thruster_name in self.vv.rcs_groups[group]:
                 thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
+                # print('thruster_type is', thruster_type)
                 thrust = np.cos(self.cant) * self.vv.thruster_metrics[thruster_type]['F']
                 # print('thrust is', thrust)
                 thrust_sum += thrust
@@ -1045,7 +1047,7 @@ class MissionPlanner:
             next = 2
             next_step = 1
 
-            # Loop to initialize inertial_state
+            # Loop to populate inertial_state with values from the flight plan dataframe
             for k in range(len(inertial_state)):
                 # Any index in inertial_state < len(inertial_state) - 5 has just one delta-v
                 if k < len(inertial_state) - 5:
@@ -1056,6 +1058,8 @@ class MissionPlanner:
                     inertial_state[k] = firing[keys_list[len(inertial_state) - 4 + next_step]] + firing[keys_list[len(inertial_state) - 4 + 1 + next_step]]
                     next_step += 2
 
+
+            # Simplified to all positive because expenditure magnitude is independent of direction
             # DLT groups
             if len(inertial_state) == 8:
                 groups = ['mae', 'me', 'ae', 'pos_y', 'pos_z', 'pos_roll', 'pos_pitch', 'pos_yaw']
@@ -1075,6 +1079,9 @@ class MissionPlanner:
                         v_e = self.calc_v_e(groups[i])
                         dm = self.calc_delta_mass_v_e(state, v_e, forward_propagation)
                         # print('dm_translation is', dm)
+
+
+
 
                         if self.rotational_maneuvers == True:
                             # Make 10% of the propellant usage for a given translational maneuver be directed towards rotations
@@ -1100,16 +1107,24 @@ class MissionPlanner:
                             # print('dm_sum_rot is', dm_sum_rot)
                             # print('dm_rotation + dm_translation is', dm)
 
+
+
+
                     # Any index in inertial_state > (len(inertial_state) - 4) is an angular velocity
                     if i > (len(inertial_state) - 4):
+                        # print('self.vv.mass before is', self.vv.mass)
                         discretizing_resolution = 0.0001 # rad / s
                         dm_sum_rot = 0
                         # Currently the rotation calculation is hardcoded for the pitch maneuver, which is why two is subtracted
                         num_iters = round(inertial_state[len(inertial_state) - 2] / discretizing_resolution)
                         
                         for j in range(num_iters):
+                            # if j == 1:
+                            #     print('self.vv.I_y is', self.vv.I_y)
                             dm_rot = self.calc_delta_mass_rotation(discretizing_resolution, groups[i], forward_propagation)
                             dm_sum_rot += dm_rot
+                        # print('dm_sum_rot is', dm_sum_rot)
+                        # print('self.vv.mass after is', self.vv.mass)
                         dm += dm_sum_rot
 
             # print('dm is', dm)

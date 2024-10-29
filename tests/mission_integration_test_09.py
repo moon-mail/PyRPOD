@@ -22,7 +22,7 @@ class CalculatePropellantUsage(unittest.TestCase):
         lm = LogisticsModule.LogisticsModule(case_dir)
         # Define LM mass distribution properties.
         m_dock = 14000 # kg
-        h = 11 # m
+        h = 8.5 # m
         r = 1.65 # m
         lm.set_inertial_props(m_dock, h, r)
         # Load in thruster configuration file.
@@ -46,6 +46,10 @@ class CalculatePropellantUsage(unittest.TestCase):
 
         # Set a mp cant attribute
         mp.cant = 0
+
+        # Define a boolean to decide whether flight plan propellant usage is calculated
+            # with an additional 10% of translational propellant per maneuver for pitch|yaw rotations
+        mp.rotational_maneuvers = True
 
         # Calculate the propellant mass required for all maneuvers
         dm_total = mp.calc_total_delta_mass()

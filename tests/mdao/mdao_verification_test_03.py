@@ -200,7 +200,7 @@ class EvaluateImpingement(om.ExplicitComponent):
         self.mp.set_lm(self.lm)
 
         # Define a boolean to decide whether flight plan propellant usage is calculated
-            # with an additional 10% of translational propellant per maneuver for rotations
+            # with an additional 10% of translational propellant per maneuver for pitch|yaw rotations
         self.mp.rotational_maneuvers = True
 
         # Calculate the propellant mass required for all maneuvers.
