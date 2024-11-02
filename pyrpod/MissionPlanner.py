@@ -637,7 +637,7 @@ class MissionPlanner:
                     firing_array = np.array(firing[1])
 
                     # save firing ID
-                    nth_firing = np.array(firing[1][0])
+                    nth_firing = np.array(firing[1].iloc[0])
                     # print('Firing number', nth_firing)
 
                     # calculate required change in translational velcoity
