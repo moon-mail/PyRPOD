@@ -2,11 +2,11 @@
 Python Based Analysis of Rendezvous, Proximity, Operation, and Docking Maneuvers (PyRPOD)
 
 ## Overview
-This code simulates jet firing histories, vehicle dynamics, and plume impingement interactions to study RPOD (Rendezvous, Proximity Operations, and Docking) maneuvers relevant to active space-station operation. 
+This code simulates jet firing histories, vehicle dynamics, and plume impingement interactions to study RPOD (Rendezvous, Proximity Operations, and Docking) maneuvers relevant to active space-station operations.
 
-The objective is to enable rapid analysis of early vehicle designs to assess complaince with competing mission requirements and exploration of design spaces for iteration towrds an optimal design. Ideally this tool is aimed at increasing the operational safety of active spacestation operation. The project features parameterized simulation cases, fuel efficiency calculations, plume-surface interaction modeling, and automated transformations between STL and VTK formats to support flexible data visualization. 
- 
-It utilizes scientific libraries such as NumPy, SciPy, Matplotlib, and PyMesh, with outputs in STL and VTK formats suitable for visualization in ParaView and MeshLab. Modular testing and validation cases ensure accuracy across different configurations. The target audience of this code is researchers and engineers in aerospace engineering and computational modeling.
+The objective is to enable rapid analysis of early vehicle designs to assess compliance with competing mission requirements and to explore design spaces for iteration toward an optimal design. Ideally, this tool aims to increase operational safety and decrease design costs of active space-station operation. The project features parameterized simulation cases, fuel efficiency calculations, plume-surface interaction modeling, and automated transformations between STL and VTK formats to support flexible data visualization.
+
+PyRPOD utilizies scientific libraries such as NumPy, SciPy, Matplotlib, and PyMesh, with outputs in STL and VTK formats suitable for visualization in ParaView. Modular testing and validation cases ensures accuracy code resiliency for future developments. The target audience for this code is researchers and engineers in aerospace engineering and computational modeling.
 
 ## Directory Structure
 
