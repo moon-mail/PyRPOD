@@ -1,0 +1,72 @@
+name: ChatGPT Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+env:
+  OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+jobs:
+  code_review:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Collect modified files
+        id: collect_files
+        run: |
+          # List modified files
+          git diff --name-only ${{ github.event.before }} ${{ github.sha }} > modified_files.txt
+
+      - name: Send files to ChatGPT and get review
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          # Read the modified files
+          files=$(cat modified_files.txt)
+
+          # Prepare the code for the ChatGPT prompt
+          content="Please review the following code changes and provide suggestions:\n\n"
+          for file in $files; do
+            content+="--- $file ---\n"
+            content+="$(cat $file)\n\n"
+          done
+
+          # Send the prompt to ChatGPT
+          response=$(curl -s -X POST https://api.openai.com/v1/chat/completions \
+            -H "Authorization: Bearer $OPENAI_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "model": "gpt-4",
+              "messages": [{"role": "user", "content": "'"$content"'"}]
+            }')
+
+          # Extract the response text
+          echo "$response" > response.json
+          review_comment=$(jq -r '.choices[0].message.content' response.json)
+
+      - name: Post review comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Post the review as a comment on the pull request
+          curl -s -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            -d "{\"body\": \"$review_comment\"}"
+
