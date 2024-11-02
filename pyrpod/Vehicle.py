@@ -1,10 +1,5 @@
-import pandas as pd
-
 from stl import mesh
-from mpl_toolkits import mplot3d
-from matplotlib import pyplot as plt
 import numpy as np
-import math
 import os
 import configparser
 

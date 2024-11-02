@@ -1,10 +1,6 @@
 import numpy as np
-import pandas as pd
 import os
 import math
-import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
-import configparser
 
 from stl import mesh
 

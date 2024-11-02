@@ -1,15 +1,4 @@
-import pandas as pd
-
 from stl import mesh
-from mpl_toolkits import mplot3d
-from matplotlib import pyplot as plt
-import numpy as np
-import math
-import os
-
-from pyevtk.hl import unstructuredGridToVTK
-from pyevtk.vtk import VtkTriangle, VtkQuad
-
 from pyrpod.Vehicle import Vehicle
 
 class TargetVehicle(Vehicle):
