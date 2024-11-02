@@ -1,5 +1,5 @@
 # Project Name
-Python Based Analysis of Rendeszvous, Proximity, Operation, and Docking Maneuvers (PyRPOD)
+Python Based Analysis of Rendezvous, Proximity, Operation, and Docking Maneuvers (PyRPOD)
 
 ## Overview
 This code simulates jet firing histories, vehicle dynamics, and plume impingement interactions to study RPOD (Rendezvous, Proximity Operations, and Docking) maneuvers relevant to active space-station operation. 
@@ -20,7 +20,7 @@ It utilizes scientific libraries such as NumPy, SciPy, Matplotlib, and PyMesh, w
 ## Getting Started
 1. Clone the repository:
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/moon-mail/PyRPOD
    ```
 2. Install dependencies:
    ```bash
