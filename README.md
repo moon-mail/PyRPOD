@@ -1,4 +1,4 @@
-# Project Name
+# PyRPOD
 Python Based Analysis of Rendezvous, Proximity, Operation, and Docking Maneuvers (PyRPOD)
 
 ## Overview
