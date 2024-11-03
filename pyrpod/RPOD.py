@@ -838,7 +838,7 @@ class RPOD (MissionPlanner):
                 cellData["heat_flux_load"] = heat_flux_load
                 cellData["cum_heat_flux_load"] = cum_heat_flux_load
 
-            path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
+            path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing)
 
             # print(cellData)
             # input()
