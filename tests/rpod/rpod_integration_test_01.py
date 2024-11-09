@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(filename='rpod_integration_test_01.log', level=logging.INFO, format='%(message)s')
+
 # Andy Torres, Nicholas Palumbo
 # University of Central Florida
 # Department of Mechanical and Aerospace Engineering
@@ -54,7 +57,46 @@ class OneDimTransApproachChecks(unittest.TestCase):
         # Read in JFH and conduct RPOD analysis.
         jfh.read_jfh()
         rpod.graph_jfh()
-        rpod.jfh_plume_strikes()
+        strikes = rpod.jfh_plume_strikes()
+
+        # Debug print statements to understand data structure.
+        # logging.info(len(strikes.keys()))
+        # logging.info(strikes)
+        # logging.info(strikes['strikes'].sum())
+        # logging.info(strikes['cum_strikes'].sum())
+        # logging.info(strikes.shape())
+
+        # Assert expected strike values for each firing in the JFH.
+        expected_strikes = {
+            '1': 1504.0,
+            '2': 1350.0,
+            '3': 1052.0,
+            '4': 772.0,
+            '5': 564.0,
+            '6': 402.0,
+            '7': 276.0,
+            '8': 192.0,
+            '9': 132.0,
+            '10': 94.0,
+            '11': 60.0,
+            '12': 40.0,
+            '13': 32.0,
+            '14': 30.0,
+            '15': 30.0 
+        }
+
+        for key in strikes.keys():
+
+            # Print statements for debugging.
+            # logging.info(key)
+            # logging.info(len(strikes[key]['strikes']))
+            # logging.info(strikes[key]['strikes'].sum())
+            # logging.info(strikes[key]['cum_strikes'].max())
+
+            self.assertEqual(
+                strikes[key]['strikes'].sum(),
+                expected_strikes[key]
+                )
 
 if __name__ == '__main__':
     unittest.main()

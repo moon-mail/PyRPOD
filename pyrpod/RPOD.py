@@ -633,8 +633,7 @@ class RPOD (MissionPlanner):
                 # keep track of current window size for heatflux
                 heat_flux_cur_window = 0
 
-        # print(len(cum_strikes))
-
+        firing_data = {}
 
         # Loop through each firing in the JFH.
         for firing in range(len(self.jfh.JFH)):
@@ -669,7 +668,6 @@ class RPOD (MissionPlanner):
             # Calculate strikes for active thrusters. 
             for thruster in thrusters:
             # for thruster in tqdm(thrusters, desc='Current firing'):
-
 
                 # Save thruster id using indexed thruster value.
                 # Could naming/code be more clear?
@@ -829,6 +827,8 @@ class RPOD (MissionPlanner):
                 "cum_strikes": cum_strikes
             }
 
+            firing_data[str(firing+1)] = cellData
+
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
                 cellData["max_pressures"] = max_pressures
@@ -842,12 +842,14 @@ class RPOD (MissionPlanner):
 
             # print(cellData)
             # input()
-            self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData, target)
+            self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData.copy(), target)
     
-        if self.config['pm']['kinetics'] != 'None' and checking_constraints:
-            if not failed_constraints:
-                constraint_file.write(f"All impingement constraints met.")
-            constraint_file.close()
+        # if self.config['pm']['kinetics'] != 'None' and checking_constraints:
+        #     if not failed_constraints:
+        #         constraint_file.write(f"All impingement constraints met.")
+        #     # constraint_file.close()
+
+        return firing_data
 
     def print_jfh_1d_approach(self, v_ida, v_o, r_o):
         """
