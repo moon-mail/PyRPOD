@@ -771,6 +771,13 @@ class RPOD (MissionPlanner):
                             heat_flux_load[i] += heat_flux_cur * firing_time
                             cum_heat_flux_load[i] += heat_flux_cur * firing_time
 
+            # Save surface data to be saved at each cell of the STL mesh.  
+            cellData = {
+                "strikes": strikes,
+                "cum_strikes": cum_strikes.copy()
+            }
+            firing_data[str(firing+1)] = cellData
+
             # if checking constraints:
             # save all new pressure and heat flux values into each cell's respective queue
             # add pressure and heat_flux into each cell's window sum
@@ -821,13 +828,6 @@ class RPOD (MissionPlanner):
                         constraint_file.write(f"Heat flux load reached {heat_flux_window_sums[queue_index]}.\n\n")
                         failed_constraints = 1
 
-            # Save surface data to be saved at each cell of the STL mesh.  
-            cellData = {
-                "strikes": strikes,
-                "cum_strikes": cum_strikes
-            }
-
-            firing_data[str(firing+1)] = cellData
 
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
