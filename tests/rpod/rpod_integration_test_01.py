@@ -2,14 +2,14 @@ import logging
 logging.basicConfig(filename='rpod_integration_test_01.log', level=logging.INFO, format='%(message)s')
 
 # Andy Torres, Nicholas Palumbo
-# University of Central Florida
-# Department of Mechanical and Aerospace Engineering
-# Last Changed: 03-29-24
+# Last Changed: 11-09-24
 
 # ========================
 # PyRPOD: tests/rpod/rpod_integration_test_01.py
 # ========================
-# Test case to analyze notional 1DOF approach. (WIP)
+# Test case to analyze a notional 1DOF approach, representing a simple docking sequence.
+# The test assert expected number cell strikes onto a flat plate STL as a notional
+# VV approaches it. The aproach JFH asserts strike counts across 15 distinct firings.
 
 import test_header
 import unittest, os, sys
@@ -18,6 +18,7 @@ from pyrpod import LogisticsModule, JetFiringHistory, TargetVehicle, RPOD
 class OneDimTransApproachChecks(unittest.TestCase):
     def test_1d_approach_performance(self):
 
+    # 1. Set Up
         # Path to directory holding data assets and results for a specific RPOD study.
         case_dir = '../case/1d_approach/'
 
@@ -54,18 +55,15 @@ class OneDimTransApproachChecks(unittest.TestCase):
         v_ida = 0.03 # Docking velocity (m/s)
         rpod.print_jfh_1d_approach(v_ida, v_o, r_o)
 
-        # Read in JFH and conduct RPOD analysis.
+        # Read in JFH.
         jfh.read_jfh()
+
+    # 2. Execute
+        # Conduct RPOD analysis
         rpod.graph_jfh()
         strikes = rpod.jfh_plume_strikes()
 
-        # Debug print statements to understand data structure.
-        # logging.info(len(strikes.keys()))
-        # logging.info(strikes)
-        # logging.info(strikes['strikes'].sum())
-        # logging.info(strikes['cum_strikes'].sum())
-        # logging.info(strikes.shape())
-
+    # 3. Assert
         # Assert expected strike values for each firing in the JFH.
         expected_strikes = {
             '1': 1504.0,
@@ -86,17 +84,11 @@ class OneDimTransApproachChecks(unittest.TestCase):
         }
 
         for key in strikes.keys():
+            # Number of strikes for a given time step.
+            n_strikes = strikes[key]['strikes'].sum()
 
-            # Print statements for debugging.
-            # logging.info(key)
-            # logging.info(len(strikes[key]['strikes']))
-            # logging.info(strikes[key]['strikes'].sum())
-            # logging.info(strikes[key]['cum_strikes'].max())
-
-            self.assertEqual(
-                strikes[key]['strikes'].sum(),
-                expected_strikes[key]
-                )
+            # Assert that is matches the expected value.
+            self.assertEqual(n_strikes, expected_strikes[key])
 
 if __name__ == '__main__':
     unittest.main()
