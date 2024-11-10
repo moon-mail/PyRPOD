@@ -1,44 +1,95 @@
-# Andy Torres
-# University of Central Florida
-# Department of Mechanical and Aerospace Engineering
-# Last Changed: 03-16-24
+import logging
+logging.basicConfig(filename='rpod_integration_test_02.log', level=logging.INFO, format='%(message)s')
+
+# Andy Torres, Nicholas Palumbo
+# Last Changed: 11-10-24
 
 # ========================
 # PyRPOD: tests/rpod/rpod_integration_test_02.py
 # ========================
-# Test case to analyze Keep Out Zone Impingement. (WIP)
-
+# This test asserts the expected number of cell strikes on a flat plate STL
+# as a notional VV approaches it via a direct trajectory solved using 1D physics. This 1D
+# trajectory reperesents a VV firing its adverse thrusters to slow down in preperation for docking.
+# The test uses JFH data to assert expected strike counts across 15 distinct firings.
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, MissionPlanner
+from pyrpod import LogisticsModule, JetFiringHistory, TargetVehicle, RPOD
 
-class KeepOutZoneChecks(unittest.TestCase):
-    def test_keep_out_zone(self):
+class OneDimTransApproachChecks(unittest.TestCase):
+    def test_1d_approach_performance(self):
 
-        # set case directory
-        case_dir = '../case/flight_envelopes/'
+    # 1. Set Up
+        # Path to directory holding data assets and results for a specific RPOD study.
+        case_dir = '../case/1d_approach/'
+
+        # Instantiate JetFiringHistory object.
+        jfh = JetFiringHistory.JetFiringHistory(case_dir)
+
+        # Load Target Vehicle.
+        tv = TargetVehicle.TargetVehicle(case_dir)
+        tv.set_stl()
 
         # Instantiate LogisticModule object.
         lm = LogisticsModule.LogisticsModule(case_dir)
 
-        # Define LM mass distrubtion properties.
-        m = 0.45*30000 # lb converted to kg
-        h = 14 # m
-        r = 4.0/2.0 # m
+        # Define LM mass distribution properties.
+        m = 14000 # kg
+        h = 11 # m
+        r = 2 # m
         lm.set_inertial_props(m, h, r)
 
-        # Load in thruster configuration data from text file
+        # Load in thruster configuration file.
         lm.set_thruster_config()
-
-        # Draco/Hypergolic thrusters.
-        lm.add_thruster_performance(400, 300)
+        # Load in thruster data file
+        lm.set_thruster_metrics()
+        # Use TCD to group DOF
         lm.assign_thruster_groups()
 
-        mp = MissionPlanner.MissionPlanner(case_dir)
-        mp.set_lm(lm)
-        mp.read_flight_plan()
+        # Instantiate RPOD object.
+        rpod = RPOD.RPOD(case_dir)
+        rpod.study_init(jfh, tv, lm)
 
+        # Produce JFH using 1D physics
+        r_o = 40 # initial distance (m)
+        v_o = 2.1 # Initial velocity (m/s)
+        v_ida = 0.03 # Docking velocity (m/s)
+        rpod.print_jfh_1d_approach(v_ida, v_o, r_o)
+
+        # Read in JFH.
+        jfh.read_jfh()
+
+    # 2. Execute
+        # Conduct RPOD analysis
+        rpod.graph_jfh()
+        strikes = rpod.jfh_plume_strikes()
+
+    # 3. Assert
+        # Assert expected strike values for each firing in the JFH.
+        expected_strikes = {
+            '1': 1504.0,
+            '2': 1350.0,
+            '3': 1052.0,
+            '4': 772.0,
+            '5': 564.0,
+            '6': 402.0,
+            '7': 276.0,
+            '8': 192.0,
+            '9': 132.0,
+            '10': 94.0,
+            '11': 60.0,
+            '12': 40.0,
+            '13': 32.0,
+            '14': 30.0,
+            '15': 30.0
+        }
+
+        for key in strikes.keys():
+            # Number of strikes for a given time step.
+            n_strikes = strikes[key]['strikes'].sum()
+
+            # Assert that it matches the expected value.
+            self.assertEqual(n_strikes, expected_strikes[key])
 
 if __name__ == '__main__':
     unittest.main()

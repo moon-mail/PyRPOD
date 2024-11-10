@@ -2,25 +2,26 @@ import logging
 logging.basicConfig(filename='rpod_integration_test_01.log', level=logging.INFO, format='%(message)s')
 
 # Andy Torres, Nicholas Palumbo
-# Last Changed: 11-09-24
+# Last Changed: 11-10-24
 
 # ========================
 # PyRPOD: tests/rpod/rpod_integration_test_01.py
 # ========================
 # This test asserts the expected number of cell strikes on a flat plate STL
-# as a notional VV approaches it via a direct trajectory (1D). The approach
-# uses JFH data to assert expected strike counts across 15 distinct firings.
+# for a notional trajectories meant to reperesent a "sweep" above it. This
+# is also establish as the base case for RPOD plumt impingement analysis.
+# The test uses JFH data to assert expected strike counts across 20 distinct firings.
 
 import test_header
 import unittest, os, sys
 from pyrpod import LogisticsModule, JetFiringHistory, TargetVehicle, RPOD
 
-class OneDimTransApproachChecks(unittest.TestCase):
-    def test_1d_approach_performance(self):
+class BaseCaseChecks(unittest.TestCase):
+    def test_base_case(self):
 
     # 1. Set Up
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/1d_approach/'
+        case_dir = '../case/base_case/'
 
         # Instantiate JetFiringHistory object.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)
@@ -32,28 +33,12 @@ class OneDimTransApproachChecks(unittest.TestCase):
         # Instantiate LogisticModule object.
         lm = LogisticsModule.LogisticsModule(case_dir)
 
-        # Define LM mass distribution properties.
-        m = 14000 # kg
-        h = 11 # m
-        r = 2 # m
-        lm.set_inertial_props(m, h, r)
-
         # Load in thruster configuration file.
         lm.set_thruster_config()
-        # Load in thruster data file
-        lm.set_thruster_metrics()
-        # Use TCD to group DOF
-        lm.assign_thruster_groups()
 
         # Instantiate RPOD object.
         rpod = RPOD.RPOD(case_dir)
         rpod.study_init(jfh, tv, lm)
-
-        # Produce JFH using 1D physics
-        r_o = 40 # initial distance (m)
-        v_o = 2.1 # Initial velocity (m/s)
-        v_ida = 0.03 # Docking velocity (m/s)
-        rpod.print_jfh_1d_approach(v_ida, v_o, r_o)
 
         # Read in JFH.
         jfh.read_jfh()
@@ -66,26 +51,35 @@ class OneDimTransApproachChecks(unittest.TestCase):
     # 3. Assert
         # Assert expected strike values for each firing in the JFH.
         expected_strikes = {
-            '1': 1504.0,
-            '2': 1350.0,
-            '3': 1052.0,
-            '4': 772.0,
-            '5': 564.0,
-            '6': 402.0,
-            '7': 276.0,
-            '8': 192.0,
-            '9': 132.0,
-            '10': 94.0,
-            '11': 60.0,
-            '12': 40.0,
-            '13': 32.0,
-            '14': 30.0,
-            '15': 30.0 
+                            '1':  282.0,
+                            '2':  279.0,
+                            '3':  285.0,
+                            '4':  282.0,
+                            '5':  280.0,
+                            '6':  284.0,
+                            '7':  281.0,
+                            '8':  280.0,
+                            '9':  282.0,
+                            '10':  280.0,
+                            '11':  280.0,
+                            '12':  277.0,
+                            '13':  283.0,
+                            '14':  282.0,
+                            '15':  279.0,
+                            '16':  285.0,
+                            '17':  282.0,
+                            '18':  280.0,
+                            '19':  284.0,
+                            '20':  282.0
         }
 
-        for key in strikes.keys():
+        for n_firing in strikes.keys():
+            # Development statements used to write comparison entries in expected_strikes
+            # string = '\''+str(key)+'\': ' + ' ' +str(strikes[key]['strikes'].sum()) +','
+            # logging.info(string)
+
             # Number of strikes for a given time step.
-            n_strikes = strikes[key]['strikes'].sum()
+            n_strikes = strikes[n_firing]['strikes'].sum()
 
             # Assert that it matches the expected value.
             self.assertEqual(n_strikes, expected_strikes[key])
