@@ -7,9 +7,9 @@ logging.basicConfig(filename='rpod_integration_test_01.log', level=logging.INFO,
 # ========================
 # PyRPOD: tests/rpod/rpod_integration_test_01.py
 # ========================
-# Test case to analyze a notional 1DOF approach, representing a simple docking sequence.
-# The test assert expected number cell strikes onto a flat plate STL as a notional
-# VV approaches it. The aproach JFH asserts strike counts across 15 distinct firings.
+# This test asserts the expected number of cell strikes on a flat plate STL
+# as a notional VV approaches it via a direct trajectory (1D). The approach
+# uses JFH data to assert expected strike counts across 15 distinct firings.
 
 import test_header
 import unittest, os, sys
@@ -87,7 +87,7 @@ class OneDimTransApproachChecks(unittest.TestCase):
             # Number of strikes for a given time step.
             n_strikes = strikes[key]['strikes'].sum()
 
-            # Assert that is matches the expected value.
+            # Assert that it matches the expected value.
             self.assertEqual(n_strikes, expected_strikes[key])
 
 if __name__ == '__main__':
