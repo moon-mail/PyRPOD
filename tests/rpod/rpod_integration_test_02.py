@@ -64,32 +64,70 @@ class OneDimTransApproachChecks(unittest.TestCase):
         rpod.graph_jfh()
         strikes = rpod.jfh_plume_strikes()
 
+        logging.info(len(strikes['1']['cum_strikes']))  
+
     # 3. Assert
         # Assert expected strike values for each firing in the JFH.
         expected_strikes = {
-            '1': 1504.0,
-            '2': 1350.0,
-            '3': 1052.0,
-            '4': 772.0,
-            '5': 564.0,
-            '6': 402.0,
-            '7': 276.0,
-            '8': 192.0,
-            '9': 132.0,
-            '10': 94.0,
-            '11': 60.0,
-            '12': 40.0,
-            '13': 32.0,
-            '14': 30.0,
-            '15': 30.0
+            '1':  11964.0,
+            '2':  10636.0,
+            '3':  8196.0,
+            '4':  6056.0,
+            '5':  4336.0,
+            '6':  3100.0,
+            '7':  2124.0,
+            '8':  1436.0,
+            '9':  952.0,
+            '10':  656.0,
+            '11':  452.0,
+            '12':  304.0,
+            '13':  236.0,
+            '14':  216.0,
+            '15':  224.0
         }
 
-        for key in strikes.keys():
+        # Assert expected cumulative strike values for each firing in the JFH.
+        expected_cum_strikes = {
+            '1':  11964.0,
+            '2':  22600.0,
+            '3':  30796.0,
+            '4':  36852.0,
+            '5':  41188.0,
+            '6':  44288.0,
+            '7':  46412.0,
+            '8':  47848.0,
+            '9':  48800.0,
+            '10':  49456.0,
+            '11':  49908.0,
+            '12':  50212.0,
+            '13':  50448.0,
+            '14':  50664.0,
+            '15':  50888.0
+        }
+
+        for n_firing in strikes.keys():
+            # Development statements used to write comparison entries in expected_strikes
+            # n_cum_strikes = 0
+            # logging.info('n_firing ' + str(n_firing))
+            # for i in range(len(strikes[n_firing]['cum_strikes'])):
+            #     n_cum_strikes += strikes[n_firing]['cum_strikes'][i]
+            #     curr_i = i
+            #     logging.info('======================================')
+            #     logging.info('n_firing = ' + str(n_firing) + ' i = ' + str(curr_i))
+            #     logging.info('cum_strikes for current cell ' + str(strikes[n_firing]['cum_strikes'][i]))
+            #     logging.info('cum_strikes for entire surface ' + str(n_cum_strikes))
+
+            # Development statements used to write comparison entries in expected_strikes
+            # string = '\''+str(n_firing)+'\': ' + ' ' +str(strikes[n_firing]['strikes'].sum()) +','
+            # logging.info(string)
+
             # Number of strikes for a given time step.
-            n_strikes = strikes[key]['strikes'].sum()
+            n_strikes = strikes[n_firing]['strikes'].sum()
+            n_cum_strikes = strikes[n_firing]['cum_strikes'].sum()
 
             # Assert that it matches the expected value.
-            self.assertEqual(n_strikes, expected_strikes[key])
+            self.assertEqual(n_strikes, expected_strikes[n_firing])
+            self.assertEqual(n_cum_strikes, expected_cum_strikes[n_firing])
 
 if __name__ == '__main__':
     unittest.main()

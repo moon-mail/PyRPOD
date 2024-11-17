@@ -746,8 +746,8 @@ class RPOD (MissionPlanner):
                     facing_thruster = surface_dot_plume < 0
                     
                     if (within_distance and within_theta and facing_thruster):
-                        cum_strikes[i] = cum_strikes[i] + 1
-                        strikes[i] = 1
+                        cum_strikes[i] = int(cum_strikes[i] + 1)
+                        strikes[i] = strikes[i] + 1
 
                         # if Simplified gas kinetics model is enabled, get relevant parameters
                         # pass parameters and thruster info to SimplifiedGasKinetics and record returns of pressures and heat flux
