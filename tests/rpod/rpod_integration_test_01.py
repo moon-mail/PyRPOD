@@ -2,14 +2,14 @@ import logging
 logging.basicConfig(filename='rpod_integration_test_01.log', level=logging.INFO, format='%(message)s')
 
 # Andy Torres, Nicholas Palumbo
-# Last Changed: 11-10-24
+# Last Changed: 11-17-24
 
 # ========================
 # PyRPOD: tests/rpod/rpod_integration_test_01.py
 # ========================
 # This test asserts the expected number of cell strikes on a flat plate STL
-# for a notional trajectories meant to reperesent a "sweep" above it. This
-# is also establish as the base case for RPOD plumt impingement analysis.
+# for a notional trajectory meant to reperesent a "sweep" above it. This
+# is also established as the base case for RPOD plume impingement analysis.
 # The test uses JFH data to assert expected strike counts across 20 distinct firings.
 
 import test_header
