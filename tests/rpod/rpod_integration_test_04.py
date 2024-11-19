@@ -14,7 +14,7 @@ import unittest, os, sys
 import pandas as pd
 from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
 
-class LoadJFHChecks(unittest.TestCase):
+class HollowCubeChecks(unittest.TestCase):
     def test_hollow_cube(self):
 
     # 1. Set Up    
@@ -63,7 +63,7 @@ class LoadJFHChecks(unittest.TestCase):
                     expected_strikes[cur_firing].append(int(line))
 
         # # Development statements used to write comparison entries in expected_strikes
-        # for n_firing in strikes.keys():
+        for n_firing in strikes.keys():
         #     logging.info('n_firing ' + str(n_firing))
         #     for i in range(len(strikes[n_firing]['strikes'])):
         #         if strikes[n_firing]['strikes'][i] > 0:
