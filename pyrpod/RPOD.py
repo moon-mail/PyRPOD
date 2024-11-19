@@ -1,10 +1,6 @@
 import numpy as np
-import pandas as pd
 import os
 import math
-import matplotlib.pyplot as plt
-from mpl_toolkits import mplot3d
-import configparser
 
 from stl import mesh
 
@@ -679,6 +675,9 @@ class RPOD (MissionPlanner):
             self.max_heat_load = 0
             self.max_cum_heat_load = 0
 
+        firing_data = {}
+
+
         # Loop through each firing in the JFH.
         n_firings = len(self.jfh.JFH)
         curr_firing = 1.0
@@ -716,7 +715,6 @@ class RPOD (MissionPlanner):
             # Calculate strikes for active thrusters. 
             for thruster in thrusters:
             # for thruster in tqdm(thrusters, desc='Current firing'):
-
 
                 # Save thruster id using indexed thruster value.
                 # Could naming/code be more clear?
@@ -795,8 +793,8 @@ class RPOD (MissionPlanner):
                     facing_thruster = surface_dot_plume < 0
                     
                     if (within_distance and within_theta and facing_thruster):
-                        cum_strikes[i] = cum_strikes[i] + 1
-                        strikes[i] = 1
+                        cum_strikes[i] = int(cum_strikes[i] + 1)
+                        strikes[i] = strikes[i] + 1
 
                         # if Simplified gas kinetics model is enabled, get relevant parameters
                         # pass parameters and thruster info to SimplifiedGasKinetics and record returns of pressures and heat flux
@@ -819,6 +817,13 @@ class RPOD (MissionPlanner):
                             heat_flux[i] += heat_flux_cur
                             heat_flux_load[i] += heat_flux_cur * firing_time
                             cum_heat_flux_load[i] += heat_flux_cur * firing_time
+
+            # Save surface data to be saved at each cell of the STL mesh.  
+            cellData = {
+                "strikes": strikes,
+                "cum_strikes": cum_strikes.copy()
+            }
+            firing_data[str(firing+1)] = cellData
 
             # if checking constraints:
             # save all new pressure and heat flux values into each cell's respective queue
@@ -870,11 +875,6 @@ class RPOD (MissionPlanner):
             #             constraint_file.write(f"Heat flux load reached {heat_flux_window_sums[queue_index]}.\n\n")
             #             failed_constraints = 1
 
-            # Save surface data to be saved at each cell of the STL mesh.  
-            cellData = {
-                "strikes": strikes,
-                "cum_strikes": cum_strikes
-            }
 
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
@@ -884,14 +884,14 @@ class RPOD (MissionPlanner):
                 cellData["heat_flux_rate"] = heat_flux
                 cellData["heat_flux_load"] = heat_flux_load
                 cellData["cum_heat_flux_load"] = cum_heat_flux_load
-
+                
             if trade_study == False:
                 path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
             elif trade_study == True:
                 path_to_vtk = self.case_dir + "results/" + self.get_case_key() + "/strikes/firing-" + str(firing) + ".vtu" 
             # print(cellData)
             # input()
-            self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData, target)
+            self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData.copy(), target)
     
         # if self.config['pm']['kinetics'] != 'None' and checking_constraints:
         #     if not failed_constraints:
@@ -1021,7 +1021,9 @@ class RPOD (MissionPlanner):
 
             rot.append(np.array(rotation_matrix_from_vectors(x1, y1)))
 
-        
+        #     # constraint_file.close()
+
+        return firing_data
 
         n_firings = len(t)
         time_multiplier = 10 / n_firings
