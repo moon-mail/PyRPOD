@@ -17,7 +17,7 @@ import unittest, os, sys
 from pyrpod import LogisticsModule, JetFiringHistory, TargetVehicle, RPOD
 
 class OneDimTransApproachChecks(unittest.TestCase):
-    def test_1d_approach_performance(self):
+    def test_1d_approach(self):
 
     # 1. Set Up
         # Path to directory holding data assets and results for a specific RPOD study.
@@ -64,7 +64,7 @@ class OneDimTransApproachChecks(unittest.TestCase):
         rpod.graph_jfh()
         strikes = rpod.jfh_plume_strikes()
 
-        logging.info(len(strikes['1']['cum_strikes']))  
+        # logging.info(len(strikes['1']['cum_strikes']))  
 
     # 3. Assert
         # Assert expected strike values for each firing in the JFH.
@@ -105,20 +105,34 @@ class OneDimTransApproachChecks(unittest.TestCase):
             '15':  50888.0
         }
 
+        # Read in expected strikes from text file.
+        file_path = 'rpod/rpod_int_test_02_expected_strikes.log'
+        expected_strike_ids = {}
+        with open(file_path, 'r') as file:
+            file_content = file.readlines()
+
+            cur_firing = ''
+
+            for line in file_content:
+                # Make a an array of data to orgnaize strike data by firing.
+                if 'n_firing' in line:
+                    cur_firing = str(line.split()[1])
+                    expected_strike_ids[cur_firing] = []
+                else:
+                    expected_strike_ids[cur_firing].append(int(line))
+
         for n_firing in strikes.keys():
             # Development statements used to write comparison entries in expected_strikes
-            # n_cum_strikes = 0
-            # logging.info('n_firing ' + str(n_firing))
-            # for i in range(len(strikes[n_firing]['cum_strikes'])):
-            #     n_cum_strikes += strikes[n_firing]['cum_strikes'][i]
-            #     curr_i = i
-            #     logging.info('======================================')
-            #     logging.info('n_firing = ' + str(n_firing) + ' i = ' + str(curr_i))
-            #     logging.info('cum_strikes for current cell ' + str(strikes[n_firing]['cum_strikes'][i]))
-            #     logging.info('cum_strikes for entire surface ' + str(n_cum_strikes))
+            logging.info('n_firing ' + str(n_firing))
+            for i in range(len(strikes[n_firing]['strikes'])):
+                if strikes[n_firing]['strikes'][i] > 0:
+                    # string = 'strikes[' + str(i) + '] = ' + str(strikes[n_firing]['cum_strikes'][i])
+                    # logging.info(string)
 
+                    # logging.info(str(i))
+                    self.assertIn(i, expected_strike_ids[n_firing])
             # Development statements used to write comparison entries in expected_strikes
-            # string = '\''+str(n_firing)+'\': ' + ' ' +str(strikes[n_firing]['strikes'].sum()) +','
+            # string = '\''+str(n_firing)+'\': ' + ' ' +str(strikes[n_firing]['cum_strikes'].sum()) +','
             # logging.info(string)
 
             # Number of strikes for a given time step.
