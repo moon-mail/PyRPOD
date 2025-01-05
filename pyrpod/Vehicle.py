@@ -1,10 +1,5 @@
-import pandas as pd
-
 from stl import mesh
-from mpl_toolkits import mplot3d
-from matplotlib import pyplot as plt
 import numpy as np
-import math
 import os
 import configparser
 
@@ -50,7 +45,7 @@ class Vehicle:
             Method doesn't currently return anything. Simply sets class members as needed.
             Does the method need to return a status message? or pass similar data?
         """
-        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['stl']
+        path_to_stl = self.case_dir + 'stl/' + self.config['vv']['stl_lm']
 
         self.mesh = mesh.Mesh.from_file(path_to_stl)
         self.path_to_stl = path_to_stl

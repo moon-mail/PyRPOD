@@ -122,9 +122,12 @@ class SweepCoordinates:
                 print(f'{thruster}: {config[thruster]["exit"][0] }')
             print(f'\n')
 
-class SweepAngles:
+class SweepDecelAngles:
     '''
-    Class responsible for axially sweeping a ring of thrusters in a given configuration
+    Class responsible for symmetrically sweeping the cant angels of deceleration thrusters
+
+    decel pitch thrusters are pitched (canted about z-axis)
+    decel yaw thrusters are yawed (canted about y-axis)
 
     Attributes
     ----------
@@ -148,24 +151,23 @@ class SweepAngles:
     -------
     standardize_thruster_normal(thruster)
         Method grabs a thruster's group and sets its DCM such that the thruster is pointed
-        directly opposite to the translational direction.
+        directly opposite to the translational direction. Identity matrix for decel.
+
+    calculate_DCM(cant)
+        Calculates the DCM of a thruster from a "cant" about z-axis.
+
+    calculate_frame_rot(thruster_name)
+        Calculates the transformation matrix of a frame about x-axis.
     
-    calculate_init_angles(DCM)
-        Calculates the "pitch" and "yaw" in the spherical coordinate system from the DCM.
-
-    calculate_DCM(thruster_name, pitch, yaw)
-        Calculates the DCM of a thruster from a "pitcch" and "yaw" in the spherical coordinate system.
-
-    sweep_long_thrusters(config, dpitch, dyaw)
-        Sweeps the given config by angles - these include yawing the yaw thrusters symmetrically
-        as well as pitching the pitch thrusters symmetrically. These are nested. These are performed 
-        over the min and max angles allowed.
+    sweep_decel_thrusters_all(self, config, dcant):
+        Sweeps the given config by angles - all thrusters are canted simultaneously and symmetrically.
+        These are performed over the min and max angles allowed.
 
     read_swept_angles(swept_configs)
-        Prints to terminal the DCM of all thrusters for all the swept cofigurations.
+        Prints to terminal the DCM of all thrusters for all the swept cofigurations
     '''
 
-    def __init__(self, r, config, thruster_groups):
+    def __init__(self, config, thruster_groups):
         '''
             Simple constructor.
             Standardizes each thruster to normalize how cant sweeps are performed.
@@ -187,23 +189,20 @@ class SweepAngles:
             -------
             None.
         '''
-        self.r = r
-        self.init_yaws = {}
-        self.init_pitches = {}
         self.thruster_groups = thruster_groups
+
+        self.config = config
 
         for thruster in config:
             standardized_thruster = self.standardize_thruster_normal(config[thruster])
             config[thruster] = standardized_thruster
-            init_pitch, init_yaw = self.calculate_init_angles(config[thruster]['dcm'])
-            self.init_yaws[thruster] = init_yaw
-            self.init_pitches[thruster] = init_pitch
 
     def standardize_thruster_normal(self, thruster):
             '''
                 Method grabs a thruster's group and sets its DCM such that the thruster is pointed
                 directly opposite to the translational direction. 
                 This is to standardize configurations to this initial setup and sweep angles from here.
+                Since only looking at decel thrusters, this dcm is the identity matrix.
 
                 Parameters
                 ----------
@@ -218,275 +217,78 @@ class SweepAngles:
                     A thruster configuration dictionary with the updated DCMs by thruster groups.
             '''
             
-            if thruster['name'][0] in self.thruster_groups['+x']:
-                dcm = thruster['dcm']
-                dcm[0][2], dcm[1][2], dcm[2][2] = -1, 0, 0
-                thruster['dcm'] = dcm
-                return thruster
-            
             if thruster['name'][0] in self.thruster_groups['-x']:
-                dcm = thruster['dcm']
-                dcm[0][2], dcm[1][2], dcm[2][2] = 1, 0, 0
-                thruster['dcm'] = dcm
-                return thruster
-            
-            if thruster['name'][0] in self.thruster_groups['+y']:
-                dcm = thruster['dcm']
-                dcm[0][2], dcm[1][2], dcm[2][2] = 0, -1, 0
-                thruster['dcm'] = dcm
-                return thruster
-            
-            if thruster['name'][0] in self.thruster_groups['-y']:
-                dcm = thruster['dcm']
-                dcm[0][2], dcm[1][2], dcm[2][2] = 0, 1, 0
-                thruster['dcm'] = dcm
-                return thruster
-            
-            if thruster['name'][0] in self.thruster_groups['+z']:
-                dcm = thruster['dcm']
-                dcm[0][2], dcm[1][2], dcm[2][2] = 0, 0, -1
-                thruster['dcm'] = dcm
-                return thruster
-            
-            if thruster['name'][0] in self.thruster_groups['-z']:
-                dcm = thruster['dcm']
-                dcm[0][2], dcm[1][2], dcm[2][2] = 0, 0, 1
+                dcm = np.eye(3)
                 thruster['dcm'] = dcm
                 return thruster
             
             return thruster
 
-    def calculate_init_angles(self, DCM):
+    def calculate_DCM(self, cant):
         '''
-            Anglings are handled by incrementing a thruster's azimuth and polar angles 
-            (here called pitch and yaw, instead). Since these changes are incremental, 
-            and the DCM is defined wrt to an LM-fixed coord system - 
-            angles of the initial positions of thrusters are logged, such that they can be 
-            added to.
-
-            Parameters
-            ----------
-            DCM : array
-                    The direction cosine matrix, defining the thruster's orientation.
-
-            Returns
-            -------
-            float, float
-                The initial "pitch" (deg) and "yaw" (deg) for a thruster defined wrt to 
-                the LM-fixed coordinate system.
-        '''
-        z_x = DCM[0][2]
-        z_y = DCM[1][2]
-        z_z = DCM[2][2]
-
-        n_t_mag = np.sqrt(z_x ** 2 + z_y ** 2 + z_z ** 2)
-
-        pitch = np.arcsin(z_z / n_t_mag)
-        if(z_y == 0):
-            yaw = np.arccos((z_x / n_t_mag) / np.cos(pitch))
-        else:
-            yaw = np.arcsin((z_y / n_t_mag) / np.cos(pitch))
-
-        pitch = np.rad2deg(pitch)
-        yaw = np.rad2deg(yaw)
-
-        return pitch, yaw
-
-    #[x_t; y_t; z_t] = [z_x; z_y; z_z] = [DCM][0; 0; 1]
-    def calculate_DCM(self, thruster_name, pitch, yaw):
-        '''
-            Given the pitch and yaw (rly a version of azimuth and polar angles):
-            calculate the DCM for that thruster.
+            Given the cant angle:
+            calculate the DCM to angle that thruster "cant" deg about z axis.
             
             Parameters
             ----------
-            thruster : string
-                    the thruster name or ID
-            pitch : float
-                    amount of additional angle to "pitch" the thruster's orientation (deg)
-            yaw : float
-                    amount of additional angle to "yaw" the thruster's orientation (deg)
+            cant : float
+                    amount of additional angle to "cant" the thruster's orientation (deg)
             
             Returns
             -------
             array
-                The DCM of the thruster as adjusted with the increments in "pitch" and "yaw".
+                The DCM of the thruster as adjusted with the increments in "cant".
         '''
 
-        init_pitch = self.init_pitches[thruster_name]
-        init_yaw = self.init_yaws[thruster_name]
+        cant = np.radians(cant)
 
-        pitch += init_pitch
-        yaw += init_yaw
-
-        pitch = np.radians(pitch)
-        yaw = np.radians(yaw)
-
-        DCM = np.zeros((3,3))
-
-        DCM[0][2] = np.cos(pitch) * np.cos(yaw)
-        DCM[1][2] = np.cos(pitch) * np.sin(yaw)
-        DCM[2][2] = np.sin(pitch)
-
+        DCM = np.array([
+            [np.cos(cant), -np.sin(cant), 0],
+            [np.sin(cant), np.cos(cant), 0],
+            [0, 0, 1]
+        ])
+        
         return DCM.tolist()
-
-    '''
-    #with the Y and Z coords of a thruster, can determine the limits of a sweep in deg
-    def pos_long_angle_limits(self, exit):
-
-        y, z = exit[1], exit[2]
-
-        if(y == self.r):
-            pitch_min, pitch_max = -45, 45
-            yaw_min, yaw_max = -45, 0
-            return pitch_min, pitch_max, yaw_min, yaw_max
-
-        if(z == self.r):
-            pitch_min, pitch_max = 0, 45
-            yaw_min, yaw_max = -45, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        if(-y == self.r):
-            pitch_min, pitch_max = -45, 45
-            yaw_min, yaw_max = 0, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        if(-z == self.r):
-            pitch_min, pitch_max = -45, 0
-            yaw_min, yaw_max = -45, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #on Q1
-        if(z > 0 and y > 0):
-            pitch_min, pitch_max = 0, 45
-            yaw_min, yaw_max = -45, 0
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #on Q2
-        if(z > 0):
-            pitch_min, pitch_max = 0, 45
-            yaw_min, yaw_max = 0, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #on Q3
-        if(y < 0):
-            pitch_min, pitch_max = -45, 0
-            yaw_min, yaw_max = 0, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #on Q4
-        pitch_min, pitch_max = -45, 0
-        yaw_min, yaw_max = -45, 0
-        return pitch_min, pitch_max, yaw_min, yaw_max
     
-    #with the Y and Z coords of a thruster, can determine the limits of a sweep in deg
-    def neg_long_angle_limits(self, exit):
-
-        y, z = exit[1], exit[2]
-
-        if(y == self.r):
-            pitch_min, pitch_max = -45, 45
-            yaw_min, yaw_max = 0, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-
-        if(z == self.r):
-            pitch_min, pitch_max = 0, 45
-            yaw_min, yaw_max = -45, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        if(-y == self.r):
-            pitch_min, pitch_max = -45, 45
-            yaw_min, yaw_max = -45, 0
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        if(-z == self.r):
-            pitch_min, pitch_max = -45, 0
-            yaw_min, yaw_max = -45, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #on Q1
-        if(z > 0 and y > 0):
-            pitch_min, pitch_max = 0, 45
-            yaw_min, yaw_max = 0, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #on Q2
-        if(z > 0):
-            pitch_min, pitch_max = 0, 45
-            yaw_min, yaw_max = -45, 0
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #on Q3
-        if(y < 0):
-            pitch_min, pitch_max = -45, 0
-            yaw_min, yaw_max = -45, 0
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #on Q4
-        pitch_min, pitch_max = -45, 0
-        yaw_min, yaw_max = 0, 45
-        return pitch_min, pitch_max, yaw_min, yaw_max
-
-    def lat_angle_limits(self, exit):
-
-        y, z = exit[1], exit[2]
-
-        yaw_min, yaw_max = -45, 45
-
-        if(y == self.r):
-            pitch_min, pitch_max = -45, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        if(z == self.r):
-            pitch_min, pitch_max = 0, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        if(-y == self.r):
-            pitch_min, pitch_max = -45, 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        if(-z == self.r):
-            pitch_min, pitch_max = -45, 0
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #Q1 and Q2
-        if(z > 0):
-            pitch_min = -0.5 * np.arccos(z/self.r)
-            pitch_max = 45
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #Q3 and Q4
-        pitch_min = -45
-        pitch_max = 0.5 * (180 - np.rad2deg(np.arccos(z/self.r)))
-        return pitch_min, pitch_max, yaw_min, yaw_max
-    
-    #arguably, the vert thrusters should not be allowed to yaw. issues with asymmetry.
-    def vert_angle_limits(self, exit):
-
-        y, z = exit[1], exit[2]
-
-        pitch_min, pitch_max = -45, 45
-
-        if(np.abs(z) == self.r):
-            yaw_min, yaw_max = -180, 180
-            return pitch_min, pitch_max, yaw_min, yaw_max
-
-        #Q1 and Q4
-        if(y >= 0):
-            yaw_min, yaw_max = 0, 180
-            return pitch_min, pitch_max, yaw_min, yaw_max
-        
-        #Q2 and Q3
-        yaw_min, yaw_max = -180, 0
-        return pitch_min, pitch_max, yaw_min, yaw_max
-    '''
-
-    #probably should move this method to another file? call this from RPOD.py?
-    def sweep_long_thrusters(self, config, dpitch, dyaw):
+    def calculate_frame_rot(self, thruster_name):
         '''
-            Sweeps the given config by angles - these include yawing the yaw thrusters symmetrically
-            as well as pitching the pitch thrusters symmetrically. These are nested. These are performed 
-            over the min and max angles allowed. TODO currently hard coded.
+            Given the thruster_name,
+            determine the matrix by which to rotate the coordinate frame.
+            Frame rotates about +x axis, until it's Y-axis is colinear with 
+            the line made between the LM's center and the thruster exit position (on the YZ plane).
+            
+            Parameters
+            ----------
+            thruster_name : string
+                    the thruster name or ID
+            
+            Returns
+            -------
+            array
+                The transformation matrix to rotate frames about the x-axis.
+        '''
+        exit_coords = self.config[thruster_name]['exit'][0]
+        y = exit_coords[1]
+        z = exit_coords[2]
+        if y == 0 and z > 0:
+            theta = np.pi/2
+        elif y == 0 and z < 0:
+            theta = -np.pi/2
+        else:
+            theta = np.arctan2(z, y)
+
+        Tx = np.array([
+            [1, 0, 0],
+            [0, np.cos(theta), -np.sin(theta)],
+            [0, np.sin(theta), np.cos(theta)]
+        ])
+
+        return Tx.tolist()
+
+    def sweep_decel_thrusters_all(self, config, dcant):
+        '''
+            Sweeps the given config by angle. Performed over min and max allowed. 
+            All thrusters are canted simultaneously.
             
             Parameters
             ----------
@@ -494,10 +296,8 @@ class SweepAngles:
                     Holds keys of thrusters, with values on their configuraiton information.
                     This information includes: name, type, nozzle exit center position, and DCM.
                     See test_case_sweep_angles.py for an example.
-            dpitch : float
-                    step size for the "pitch" canting sweep (deg)
-            dyaw : float
-                    step size for the "yaw" canting sweep (deg)
+            dcant : float
+                    step size for the canting sweep (deg)
 
             Returns
             -------
@@ -509,49 +309,24 @@ class SweepAngles:
         #basic case: look at +x thrusters, pitch the pitch group symmetrically
         configs_swept_angles = []
 
-        neg_pos_pitch = []
-        neg_neg_pitch = []
-        neg_pos_yaw = []
-        neg_neg_yaw = []
-        for thruster in config:
-            if thruster in self.thruster_groups['-x']:
-                if thruster in self.thruster_groups['+pitch']:
-                    neg_pos_pitch.append(thruster)
-                if thruster in self.thruster_groups['-pitch']:
-                    neg_neg_pitch.append(thruster)
-                if thruster in self.thruster_groups['+yaw']:
-                    neg_pos_yaw.append(thruster)
-                if thruster in self.thruster_groups['-yaw']:
-                    neg_neg_yaw.append(thruster)
-
         #hard coded limits for the meantime
-        pitch_min, pitch_max, yaw_min, yaw_max = 0, 45, 0, 45
-        for pitch in range(pitch_min, pitch_max + dpitch, dpitch):
-            for yaw in range(yaw_min, yaw_max + dyaw, dyaw):
-                new_config = {}
+        cant_min, cant_max = 0, 70
+        for cant in range(cant_min, cant_max + dcant, dcant):
+            new_config = {}
 
-                for thruster, thruster_info in config.items():
-                    new_thruster_info = thruster_info.copy()
-                    if thruster in neg_pos_yaw:
-                        dcm = self.calculate_DCM(new_thruster_info['name'][0], 0, -yaw)
-                        new_thruster_info['dcm'] = dcm
-                    elif thruster in neg_neg_yaw:
-                        dcm = self.calculate_DCM(new_thruster_info['name'][0], 0, yaw)
-                        new_thruster_info['dcm'] = dcm
-                    new_config[thruster] = new_thruster_info
+            Rz = self.calculate_DCM(cant)
 
-                configs_swept_angles.append(new_config)
+            for thruster, thruster_info in config.items():
+                new_thruster_info = thruster_info.copy()
 
-            if pitch == pitch_max:
-                break
+                Tx = self.calculate_frame_rot(new_thruster_info['name'][0])
 
-            for thruster in config:
-                if thruster in neg_pos_pitch:
-                    dcm = self.calculate_DCM(new_thruster_info['name'][0], -pitch - dpitch, 0)
-                    config[thruster]['dcm'] = dcm
-                elif thruster in neg_neg_pitch:
-                    dcm = self.calculate_DCM(new_thruster_info['name'][0], pitch + dpitch, 0)
-                    config[thruster]['dcm'] = dcm
+                dcm = np.dot(Tx, Rz)
+                new_thruster_info['dcm'] = dcm
+
+                new_config[thruster] = new_thruster_info
+
+            configs_swept_angles.append(new_config)
 
         return configs_swept_angles
     
