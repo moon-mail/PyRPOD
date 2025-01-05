@@ -27,7 +27,7 @@ pandas==2.2.2
 pillow==10.3.0
 pyevtk==1.6.0
 PyGObject==3.42.1
-PyJWT==2.3.0
+PyJWT==2.4.0
 pyparsing==2.4.7
 python-apt==2.4.0+ubuntu2
 python-dateutil==2.9.0.post0
