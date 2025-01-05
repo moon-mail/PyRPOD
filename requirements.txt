@@ -1,7 +1,7 @@
 blinker==1.4
 command-not-found==0.3
 contourpy==1.2.1
-cryptography==3.4.8
+cryptography==44.0.0
 cycler==0.12.1
 dbus-python==1.2.18
 distro==1.7.0
