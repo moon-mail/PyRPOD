@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(filename='rpod_integration_test_01.log', level=logging.INFO, format='%(message)s')
+logging.basicConfig(filename='rpod/rpod_integration_test_01.log', level=logging.INFO, format='%(message)s')
 
 # Andy Torres, Nicholas Palumbo
 # Last Changed: 11-17-24
@@ -115,7 +115,7 @@ class BaseCaseChecks(unittest.TestCase):
 
         for n_firing in strikes.keys():
             # Development statements used to write comparison entries in expected_strikes
-            logging.info('n_firing ' + str(n_firing))
+            # logging.info('n_firing ' + str(n_firing))
             for i in range(len(strikes[n_firing]['strikes'])):
                 if strikes[n_firing]['strikes'][i] > 0:
                     # string = 'strikes[' + str(i) + '] = ' + str(strikes[n_firing]['cum_strikes'][i])
