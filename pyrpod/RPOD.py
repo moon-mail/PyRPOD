@@ -602,7 +602,10 @@ class RPOD (MissionPlanner):
                         #print("results dir doesn't exist")
                         os.mkdir(results_dir_case) 
 
-        # Save STL surface of target vehicle to local variable.
+        #for surface_num, submesh in enumerate(self.target.mesh):
+            # Save STL surface of target vehicle to local variable.
+
+            #target = submesh
         target = self.target.mesh
         target_normals = target.get_unit_normals()
 
@@ -706,7 +709,7 @@ class RPOD (MissionPlanner):
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
             # print("thrusters", thrusters)
-             
+            
             # Load visiting vehicle position and orientation
             vv_pos = self.jfh.JFH[firing]['xyz']
 
@@ -815,8 +818,18 @@ class RPOD (MissionPlanner):
 
                             heat_flux_cur = simple_plume.get_heat_flux()
                             heat_flux[i] += heat_flux_cur
+                            # cum_heat_flux[i] += heat_flux_cur
+                        # print("unit plume normal", unit_plume_normal)
+
+                        # print("unit distance", unit_distance)
+                        # print("theta", theta)
+                        # input()
+                        # print('centroid', centroid, 'distance', distance, 'norm distance', norm_distance)
+                        # input("strike!")
+
                             heat_flux_load[i] += heat_flux_cur * firing_time
                             cum_heat_flux_load[i] += heat_flux_cur * firing_time
+
 
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {

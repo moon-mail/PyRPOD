@@ -42,7 +42,9 @@ class TargetVehicle(Vehicle):
             Does the method need to return a status message? or pass similar data?
         """
         path_to_stl = self.case_dir + 'stl/' + self.config['tv']['stl']
-        self.mesh = mesh.Mesh.from_file(path_to_stl)
+        meshes = mesh.Mesh.from_multi_file(path_to_stl)
+        self.mesh = next(meshes)
+        #self.mesh = next(meshes)
         self.path_to_stl = path_to_stl
         return
 
