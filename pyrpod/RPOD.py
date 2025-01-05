@@ -771,7 +771,7 @@ class RPOD (MissionPlanner):
 
                             heat_flux_cur = simple_plume.get_heat_flux()
                             heat_flux[i] += heat_flux_cur
-                            cum_heat_flux[i] += heat_flux_cur
+                            # cum_heat_flux[i] += heat_flux_cur
                         # print("unit plume normal", unit_plume_normal)
 
                         # print("unit distance", unit_distance)
