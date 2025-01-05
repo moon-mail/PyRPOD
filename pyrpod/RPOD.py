@@ -253,7 +253,7 @@ class RPOD (MissionPlanner):
             plt.savefig('img/frame' + str(index) + '.png')
 
 
-    def graph_jfh(self): 
+    def graph_jfh(self, trade_study = False): 
         """
             Creates visualization data for the trajectory of the proposed RPOD analysis.
 
@@ -273,17 +273,29 @@ class RPOD (MissionPlanner):
         for thruster in self.vv.thruster_data:
             link[str(i)] = self.vv.thruster_data[thruster]['name']
             i = i + 1
-
+        
         # Create results directory if it doesn't already exist.
         results_dir = self.case_dir + 'results'
         if not os.path.isdir(results_dir):
             # print("results dir doesn't exist")
             os.mkdir(results_dir)
 
-        results_dir = results_dir + "/jfh"
-        if not os.path.isdir(results_dir):
-            # print("results dir doesn't exist")
-            os.mkdir(results_dir)
+
+        if not trade_study:
+            results_dir = results_dir + "/jfh"
+            if not os.path.isdir(results_dir):
+                #print("results dir doesn't exist")
+                os.mkdir(results_dir)
+
+        if trade_study:
+            v_o = ['vo_0', 'vo_1', 'vo_2', 'vo_3', 'vo_4']
+            cants = ['cant_0', 'cant_1', 'cant_2', 'cant_3', 'cant_4']
+            for v in v_o:
+                for cant in cants:
+                    results_dir_case = results_dir + "/" + v + '_' + cant
+                    if not os.path.isdir(results_dir_case):
+                        #print("results dir doesn't exist")
+                        os.mkdir(results_dir_case)
 
         # Save STL surface of target vehicle to local variable.
         target = self.target.mesh
@@ -356,8 +368,12 @@ class RPOD (MissionPlanner):
 
             # print(self.case_dir + self.config['stl']['vv'])
 
-            path_to_vtk = self.case_dir + "results/jfh/firing-" + str(firing) + ".vtu" 
-            path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl"
+            if trade_study == False:
+                path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl" 
+            elif trade_study == True:
+                path_to_stl = self.case_dir + "results/" + self.get_case_key() + "/jfh/firing-" + str(firing) + ".stl" 
+
+            # path_to_stl = self.case_dir + "results/jfh/firing-" + str(firing) + ".stl"
             # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
             VVmesh.save(path_to_stl)
 
@@ -476,70 +492,70 @@ class RPOD (MissionPlanner):
             # self.vv.convert_stl_to_vtk(path_to_vtk, mesh =VVmesh)
             VVmesh.save(path_to_stl)
 
-    def update_window_queue(self, window_queue, cur_window, firing_time, window_size):
-        """
-            Takes the most recent window of time size, and adds the new firing time to the sum, and the window_queue.
-            If the new window is larger than the allowed window_size, then earleist firing times are removed
-            from the queue and subtracted from the cur_window sum, until the sum fits within the window size.
-            A counter for how many firing times are removed and subtracted is recorded.
+    # def update_window_queue(self, window_queue, cur_window, firing_time, window_size):
+    #     """
+    #         Takes the most recent window of time size, and adds the new firing time to the sum, and the window_queue.
+    #         If the new window is larger than the allowed window_size, then earleist firing times are removed
+    #         from the queue and subtracted from the cur_window sum, until the sum fits within the window size.
+    #         A counter for how many firing times are removed and subtracted is recorded.
 
-            Parameters
-            ----------
-            window_queue : Queue
-                    Queue holding the tracked firing times
-            cur_window : float
-                    sum of the tracked firing times (s)
-            firing_time : float
-                    length of current firing (s)
-            window_size : float
-                    max length of a window of time to track (s)
+    #         Parameters
+    #         ----------
+    #         window_queue : Queue
+    #                 Queue holding the tracked firing times
+    #         cur_window : float
+    #                 sum of the tracked firing times (s)
+    #         firing_time : float
+    #                 length of current firing (s)
+    #         window_size : float
+    #                 max length of a window of time to track (s)
 
-            Returns
-            -------
-            Queue
-                Stores tracked firing times after update
-            float
-                sum of tracked firing times after update
-            int
-                number of firings removed from the queue 
-        """
-        window_queue.put(firing_time)
-        cur_window += firing_time
-        get_counter = 0
-        while cur_window > window_size:
-            old_firing_time = window_queue.get()
-            cur_window -= old_firing_time
-            get_counter +=1
-        return window_queue, cur_window, get_counter
+    #         Returns
+    #         -------
+    #         Queue
+    #             Stores tracked firing times after update
+    #         float
+    #             sum of tracked firing times after update
+    #         int
+    #             number of firings removed from the queue 
+    #     """
+    #     window_queue.put(firing_time)
+    #     cur_window += firing_time
+    #     get_counter = 0
+    #     while cur_window > window_size:
+    #         old_firing_time = window_queue.get()
+    #         cur_window -= old_firing_time
+    #         get_counter +=1
+    #     return window_queue, cur_window, get_counter
     
-    def update_parameter_queue(self, param_queue, param_window_sum, get_counter):
-        """
-            Takes the current parameter_queue, and removes the earliest tracked parameters from the front of the queue.
-            This occurs "get_counter" times. Each time a parameter is popped from the queue, the sum is also updated,
-            as to not track the removed parameter (ie. subtract the value)
+    # def update_parameter_queue(self, param_queue, param_window_sum, get_counter):
+    #     """
+    #         Takes the current parameter_queue, and removes the earliest tracked parameters from the front of the queue.
+    #         This occurs "get_counter" times. Each time a parameter is popped from the queue, the sum is also updated,
+    #         as to not track the removed parameter (ie. subtract the value)
 
-            Parameters
-            ----------
-            param_queue : Queue
-                    Queue holding the tracked parameters per firing
-            param_window_sum : float
-                    sum of the parameters in all the tracked firings
-            get_counter : int
-                    number of times to remove a tracked parameter from the front of the queue
+    #         Parameters
+    #         ----------
+    #         param_queue : Queue
+    #                 Queue holding the tracked parameters per firing
+    #         param_window_sum : float
+    #                 sum of the parameters in all the tracked firings
+    #         get_counter : int
+    #                 number of times to remove a tracked parameter from the front of the queue
 
-            Returns
-            -------
-            Queue
-                stores tracked paramters per firing after update
-            float
-                sum of tracked parameter after update
-        """
-        for i in range(get_counter):
-            old_param = param_queue.get()
-            param_window_sum -= old_param
-        return param_queue, param_window_sum
+    #         Returns
+    #         -------
+    #         Queue
+    #             stores tracked paramters per firing after update
+    #         float
+    #             sum of tracked parameter after update
+    #     """
+    #     for i in range(get_counter):
+    #         old_param = param_queue.get()
+    #         param_window_sum -= old_param
+    #     return param_queue, param_window_sum
 
-    def jfh_plume_strikes(self):
+    def jfh_plume_strikes(self, trade_study = False):
         """
             Calculates number of plume strikes according to data provided for RPOD analysis.
             Method does not take any parameters but assumes that study assets are correctly configured.
@@ -565,11 +581,26 @@ class RPOD (MissionPlanner):
         if not os.path.isdir(results_dir):
             #print("results dir doesn't exist")
             os.mkdir(results_dir)
+        if not trade_study:
+            results_dir = results_dir + "/strikes"
+            if not os.path.isdir(results_dir):
+                #print("results dir doesn't exist")
+                os.mkdir(results_dir)
 
-        results_dir = results_dir + "/strikes"
-        if not os.path.isdir(results_dir):
-            #print("results dir doesn't exist")
-            os.mkdir(results_dir)
+        if trade_study:
+            v_o = ['vo_0', 'vo_1', 'vo_2', 'vo_3', 'vo_4']
+            cants = ['cant_0', 'cant_1', 'cant_2', 'cant_3', 'cant_4']
+            for v in v_o:
+                for cant in cants:
+                    results_dir_case = results_dir + "/" + v + '_' + cant
+                    if not os.path.isdir(results_dir_case):
+                        #print("results dir doesn't exist")
+                        os.mkdir(results_dir_case)  
+
+                    results_dir_case = results_dir_case + '/strikes'
+                    if not os.path.isdir(results_dir_case):
+                        #print("results dir doesn't exist")
+                        os.mkdir(results_dir_case) 
 
         # Save STL surface of target vehicle to local variable.
         target = self.target.mesh
@@ -592,53 +623,69 @@ class RPOD (MissionPlanner):
 
             checking_constraints = int(self.config['tv']['check_constraints'])
 
-            if checking_constraints:
-                # grab constraint values from configuration file
-                pressure_constraint = float(self.config['tv']['normal_pressure'])
-                heat_flux_constraint = float(self.config['tv']['heat_flux'])
-                shear_constraint = float(self.config['tv']['shear_pressure'])
+            # if checking_constraints:
+            #     # grab constraint values from configuration file
+            #     pressure_constraint = float(self.config['tv']['normal_pressure'])
+            #     heat_flux_constraint = float(self.config['tv']['heat_flux'])
+            #     shear_constraint = float(self.config['tv']['shear_pressure'])
 
-                pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
-                heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
+            #     pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
+            #     heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
 
-                # open an output file to record if constraints are passed or failed
-                report_dir = results_dir.replace('strikes', '')
-                constraint_file = open(report_dir + 'impingement_report.txt', 'w')
-                failed_constraints = 0
+            #     # open an output file to record if constraints are passed or failed
+            #     report_dir = results_dir.replace('strikes', '')
 
-                # Initiate array containing sum of pressures over a given window
-                pressure_window_sums = np.zeros(len(target.vectors))
-                # hold a queue of pressure values per cell
-                pressure_queues = np.empty(len(target.vectors), dtype=object)
-                for i in range(len(pressure_queues)):
-                    pressure_queues[i] = Queue()
-                # save size of pressure window in seconds
-                pressure_window_size = float(self.config['tv']['normal_pressure_window_size'])
-                # save a queue of firing times for pressure
-                pressure_window_queue = Queue()
-                # keep track of current window size for pressure
-                pressure_cur_window = 0
+            #     report_file_path = report_dir + '/' +str(self.get_case_key()) +'/impingement_report-' + '-.txt'
+            #     constraint_file = open(report_file_path,  'w')
+            #     failed_constraints = 0
 
-                # Initiate array containing sum of heat_flux over a given window
-                heat_flux_window_sums = np.zeros(len(target.vectors))
-                # Initialize an array of queues
-                heat_flux_queues = np.empty(len(target.vectors), dtype=object)
-                # Populate the array with a queue per cell
-                for i in range(len(heat_flux_queues)):
-                    heat_flux_queues[i] = Queue()
-                # save size of heat_flux queue (s)
-                heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
-                # save a queue of firing times for heat_flux
-                heat_flux_window_queue = Queue()
-                # keep track of current window size for heatflux
-                heat_flux_cur_window = 0
+                # # Initiate array containing sum of pressures over a given window
+                # pressure_window_sums = np.zeros(len(target.vectors))
+                # # hold a queue of pressure values per cell
+                # pressure_queues = np.empty(len(target.vectors), dtype=object)
+                # for i in range(len(pressure_queues)):
+                #     pressure_queues[i] = Queue()
+                # # save size of pressure window in seconds
+                # pressure_window_size = float(self.config['tv']['normal_pressure_window_size'])
+                # # save a queue of firing times for pressure
+                # pressure_window_queue = Queue()
+                # # keep track of current window size for pressure
+                # pressure_cur_window = 0
+
+                # # Initiate array containing sum of heat_flux over a given window
+                # heat_flux_window_sums = np.zeros(len(target.vectors))
+                # # Initialize an array of queues
+                # heat_flux_queues = np.empty(len(target.vectors), dtype=object)
+                # # Populate the array with a queue per cell
+                # for i in range(len(heat_flux_queues)):
+                #     heat_flux_queues[i] = Queue()
+                # # save size of heat_flux queue (s)
+                # heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
+                # # save a queue of firing times for heat_flux
+                # heat_flux_window_queue = Queue()
+                # # keep track of current window size for heatflux
+                # heat_flux_cur_window = 0
+
+        # print(len(cum_strikes))
+
+        # if checking_constraints:
+        #     self.max_pressure = 0
+        #     self.max_shear = 0
+        #     self.max_heat_rate = 0
+        #     self.max_heat_load = 0
+        #     self.max_cum_heat_load = 0
 
         firing_data = {}
 
+
         # Loop through each firing in the JFH.
+        n_firings = len(self.jfh.JFH)
+        curr_firing = 1.0
         for firing in range(len(self.jfh.JFH)):
         # for firing in tqdm(range(len(self.jfh.JFH)), desc='All firings'):
 
+            # print('Analysis is ' + str(round((curr_firing / n_firings)*100, 2)) + '% complete')
+            curr_firing += 1.0
             # print('firing =', firing+1)
 
             # reset strikes for each firing
@@ -783,50 +830,50 @@ class RPOD (MissionPlanner):
             # add pressure and heat_flux into each cell's window sum
             # update the window queues based on their max sizes, and the firing times
             # update the parameter queues based on the updates made on the window queues 
-            if self.config['pm']['kinetics'] != 'None' and checking_constraints:
-                for i in range(len(pressures)):
-                    pressure_queues[i].put(float(pressures[i]))
-                    pressure_window_sums[i] += pressures[i]
+            # if self.config['pm']['kinetics'] != 'None' and checking_constraints:
+            #     for i in range(len(pressures)):
+            #         pressure_queues[i].put(float(pressures[i]))
+            #         pressure_window_sums[i] += pressures[i]
 
-                    heat_flux_queues[i].put(float(heat_flux_load[i]))
-                    heat_flux_window_sums[i] += heat_flux_load[i]
+            #         heat_flux_queues[i].put(float(heat_flux_load[i]))
+            #         heat_flux_window_sums[i] += heat_flux_load[i]
             
-                pressure_window_queue, pressure_cur_window, pressure_get_counter = self.update_window_queue(
-                    pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
+            #     pressure_window_queue, pressure_cur_window, pressure_get_counter = self.update_window_queue(
+            #         pressure_window_queue, pressure_cur_window, firing_time, pressure_window_size)
 
-                heat_flux_window_queue, heat_flux_cur_window, heat_flux_get_counter = self.update_window_queue(
-                    heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size)
+            #     heat_flux_window_queue, heat_flux_cur_window, heat_flux_get_counter = self.update_window_queue(
+            #         heat_flux_window_queue, heat_flux_cur_window, firing_time, heat_flux_window_size)
 
-                for queue_index in range(len(pressure_queues)):
-                    if not pressure_queues[queue_index].empty():
-                        pressure_queues[queue_index], pressure_window_sums[queue_index] = self.update_parameter_queue(pressure_queues[queue_index], pressure_window_sums[queue_index], pressure_get_counter)
+            #     for queue_index in range(len(pressure_queues)):
+            #         if not pressure_queues[queue_index].empty():
+            #             pressure_queues[queue_index], pressure_window_sums[queue_index] = self.update_parameter_queue(pressure_queues[queue_index], pressure_window_sums[queue_index], pressure_get_counter)
 
-                    if not heat_flux_queues[queue_index].empty() and heat_flux_window_sums[queue_index] != 0:
-                        heat_flux_queues[queue_index], heat_flux_window_sums[queue_index] = self.update_parameter_queue(heat_flux_queues[queue_index], heat_flux_window_sums[queue_index], heat_flux_get_counter)
+            #         if not heat_flux_queues[queue_index].empty() and heat_flux_window_sums[queue_index] != 0:
+            #             heat_flux_queues[queue_index], heat_flux_window_sums[queue_index] = self.update_parameter_queue(heat_flux_queues[queue_index], heat_flux_window_sums[queue_index], heat_flux_get_counter)
                 
-                    #check if instantaneous constraints are broken
-                    if pressures[queue_index] > pressure_constraint and not failed_constraints:
-                        constraint_file.write(f"Pressure constraint failed at cell #{i}.\n")
-                        constraint_file.write(f"Pressure reached {pressures[queue_index]}.\n\n")
-                        failed_constraints = 1
-                    if shear_stresses[queue_index] > shear_constraint and not failed_constraints:
-                        constraint_file.write(f"Shear constraint failed at cell #{i}.\n")
-                        constraint_file.write(f"Shear reached {shear_stresses[queue_index]}.\n\n")
-                        failed_constraints = 1
-                    if heat_flux[queue_index] > heat_flux_constraint and not failed_constraints:
-                        constraint_file.write(f"Heat flux constraint failed at cell #{i}.\n")
-                        constraint_file.write(f"Heat flux reached {heat_flux[queue_index]}.\n\n")
-                        failed_constraints = 1
+            #         #check if instantaneous constraints are broken
+            #         if pressures[queue_index] > pressure_constraint and not failed_constraints:
+            #             constraint_file.write(f"Pressure constraint failed at cell #{i}.\n")
+            #             constraint_file.write(f"Pressure reached {pressures[queue_index]}.\n\n")
+            #             failed_constraints = 1
+            #         if shear_stresses[queue_index] > shear_constraint and not failed_constraints:
+            #             constraint_file.write(f"Shear constraint failed at cell #{i}.\n")
+            #             constraint_file.write(f"Shear reached {shear_stresses[queue_index]}.\n\n")
+            #             failed_constraints = 1
+            #         if heat_flux[queue_index] > heat_flux_constraint and not failed_constraints:
+            #             constraint_file.write(f"Heat flux constraint failed at cell #{i}.\n")
+            #             constraint_file.write(f"Heat flux reached {heat_flux[queue_index]}.\n\n")
+            #             failed_constraints = 1
 
-                    # check if window constraints are broken, and report
-                    if pressure_window_sums[queue_index] > pressure_window_constraint and not failed_constraints:
-                        constraint_file.write(f"Pressure window constraint failed at cell #{queue_index}.\n")
-                        constraint_file.write(f"Pressure winodw reached {pressure_window_sums[queue_index]}.\n\n")
-                        failed_constraints = 1
-                    if heat_flux_window_sums[queue_index] > heat_flux_window_constraint and not failed_constraints:
-                        constraint_file.write(f"Heat flux window constraint failed at cell #{queue_index}.\n")
-                        constraint_file.write(f"Heat flux load reached {heat_flux_window_sums[queue_index]}.\n\n")
-                        failed_constraints = 1
+            #         # check if window constraints are broken, and report
+            #         if pressure_window_sums[queue_index] > pressure_window_constraint and not failed_constraints:
+            #             constraint_file.write(f"Pressure window constraint failed at cell #{queue_index}.\n")
+            #             constraint_file.write(f"Pressure winodw reached {pressure_window_sums[queue_index]}.\n\n")
+            #             failed_constraints = 1
+            #         if heat_flux_window_sums[queue_index] > heat_flux_window_constraint and not failed_constraints:
+            #             constraint_file.write(f"Heat flux window constraint failed at cell #{queue_index}.\n")
+            #             constraint_file.write(f"Heat flux load reached {heat_flux_window_sums[queue_index]}.\n\n")
+            #             failed_constraints = 1
 
 
             if self.config['pm']['kinetics'] != 'None':
@@ -837,9 +884,11 @@ class RPOD (MissionPlanner):
                 cellData["heat_flux_rate"] = heat_flux
                 cellData["heat_flux_load"] = heat_flux_load
                 cellData["cum_heat_flux_load"] = cum_heat_flux_load
-
-            path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing)
-
+                
+            if trade_study == False:
+                path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing) + ".vtu" 
+            elif trade_study == True:
+                path_to_vtk = self.case_dir + "results/" + self.get_case_key() + "/strikes/firing-" + str(firing) + ".vtu" 
             # print(cellData)
             # input()
             self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData.copy(), target)
@@ -847,11 +896,294 @@ class RPOD (MissionPlanner):
         # if self.config['pm']['kinetics'] != 'None' and checking_constraints:
         #     if not failed_constraints:
         #         constraint_file.write(f"All impingement constraints met.")
+        #     constraint_file.close()
+
+            # if checking_constraints:
+            #     max_pressure = np.max(max_pressures)
+            #     if max_pressure > self.max_pressure:
+            #         self.max_pressure = max_pressure
+            #     max_shear = np.max(max_shears)
+            #     if max_shear > self.max_shear:
+            #         self.max_shear = max_shear
+            #     max_heat_rate = np.max(heat_flux)
+            #     if max_heat_rate > self.max_heat_rate:
+            #         self.max_heat_rate = max_heat_rate
+            #     max_heat_load = np.max(heat_flux_load)
+            #     if max_heat_load > self.max_heat_load:
+            #         self.max_heat_load = max_heat_load
+            #     max_cum_heat_load = np.max(cum_heat_flux_load)
+            #     if max_cum_heat_load > self.max_cum_heat_load:
+            #         self.max_cum_heat_load = max_cum_heat_load
+        return firing_data
+
+    def calc_time_multiplier(self, v_ida, v_o, r_o):
+        # Determine thruster configuration characterstics.
+        # The JFH only contains firings done by the neg_x group
+        m_dot_sum = self.calc_m_dot_sum('neg_x')
+        # print('m_dot_sum is', m_dot_sum)
+        MIB = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['MIB']
+        # print('MIB is', MIB)
+        F_thruster = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
+        F = F_thruster * np.cos(self.vv.decel_cant)
+        n_thrusters = len(self.vv.rcs_groups['neg_x'])
+        F = F * n_thrusters
+
+        # Defining a multiplier reduce time steps and make running faster
+        dt = (MIB / F_thruster)
+        # print('dt is', dt)
+        dm_firing = m_dot_sum * dt
+        # print('dm_firing is', dm_firing)
+        docking_mass = self.vv.mass
+        # print('docking mass is', docking_mass)
+
+        # Calculate required change in velocity.
+        dv_req = v_o - v_ida
+        v_e = self.calc_v_e('neg_x')
+
+        # Calculate propellant used for docking and changes in mass.
+        forward_propagation = False
+        delta_mass_jfh = self.calc_delta_mass_v_e(dv_req, v_e, forward_propagation)
+        # print('delta_mass_docking is',delta_mass_jfh)
+
+        pre_approach_mass = self.vv.mass
+        # print('pre-approach mass is', pre_approach_mass)
+
+        # Instantiate data structure to hold JFH data + physics data.
+        # Initializing position
+        x = [r_o]
+        y = [0]
+        z = [0]
+
+        # Initializing empty tracking lists
+        dx = [0]
+        t = [0]
+        dv = [0]
+
+        # Initializing inertial state
+        dxdt = [v_o]
+
+        # Initializing initial mass
+        mass = [pre_approach_mass]
+
+        # Initializing list to later sum propellant expenditure
+        dm_total = [dm_firing]
+
+        # Firing number
+        n = [1]
+
+        # Create dummy rotation matrices.
+        x1 = [1, 0, 0]
+        y1 = [1, 0, 0]
+
+        rot = [np.array(rotation_matrix_from_vectors(x1, y1))]
+
+        # Calculate JFH and 1D physics data for required firings.
+        while (dv_req > 0):
+            # print('dv_req', round(dv_req, 4), 'n firings', n[i])
+
+            # Grab last value in the JFH arrays (initial conditions for current time step)
+            # print('x, dx, dt, t, dxdt, mass, dm_total')
+            # print(x[-1], dx[-1], dt_vals[-1], t[-1], dxdt[-1], mass[-1], dm_total[-1])
+
+            # Update VV mass per firing
+            mass_o = mass[-1]
+            mass.append(mass_o - dm_firing)
+            mass_f = mass[-1]
+            # print('mass_f is', mass_f)
+
+            # Calculate velocity change per firing.
+            dv_firing = self.calc_delta_v(dt, v_e, m_dot_sum, mass_o)
+            dv.append(dv_firing)
+            # print('dv is', dv_firing)
+            # print(round(dxdt[-1] - dv_firing, 2))
+            # input()
+            dxdt.append(dxdt[-1] - dv_firing)
+
+            # Calculate distance traveled per firing
+            # print(dxdt[-1], dxdt[-2]) # last and second to last element.
+            v_avg = 0.5 * (dxdt[-1] + dxdt[-2])
+            dx.append(v_avg * dt)
+            x.append(x[-1] - v_avg*dt)
+            y.append(0)
+            z.append(0)
+
+            # Calculate left over v_req (TERMINATES LOOP)
+            dv_req -= dv_firing
+
+            # Calculate mass expended up to this point.
+            dm_total.append(dm_total[-1] + dm_firing)
+
+            # Calculate current firing.
+            n.append(n[-1]+1)
+
+            # Add time data.
+            t.append(t[-1] + dt)
+
+            rot.append(np.array(rotation_matrix_from_vectors(x1, y1)))
+
         #     # constraint_file.close()
 
         return firing_data
 
-    def print_jfh_1d_approach(self, v_ida, v_o, r_o):
+        n_firings = len(t)
+        time_multiplier = 10 / n_firings
+        # print('n firings:', len(t), 'time multiplier:', time_multiplier)
+        return (1/time_multiplier)
+
+        # one_d_results = {
+        #     'n_firings': n,
+        #     'x': x,
+        #     'dx': dx,
+        #     't': t,
+        #     'dv': dv,
+        #     'v': dxdt,
+        #     'mass': mass,
+        #     'delta_mass': dm_total
+        # }
+
+        # print(one_d_results)
+
+    def print_jfh_1d_approach_n_fire(self, v_ida, v_o, r_o, n_firings, trade_study = False):
+       # Determine thruster configuration characterstics.
+        # The JFH only contains firings done by the neg_x group
+        m_dot_sum = self.calc_m_dot_sum('neg_x')
+        # print('m_dot_sum is', m_dot_sum)
+        MIB = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['MIB']
+        # print('MIB is', MIB)
+        F_thruster = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
+        F = F_thruster * np.cos(self.vv.decel_cant)
+        n_thrusters = len(self.vv.rcs_groups['neg_x'])
+        F = F * n_thrusters
+        # print('F is', F)
+
+        # Defining a multiplier reduce time steps and make running faster
+        time_multiplier = self.calc_time_multiplier(v_ida, v_o, r_o)
+        dt = (MIB / F_thruster) * time_multiplier
+        # print('dt is', dt)
+        dm_firing = m_dot_sum * dt
+        # print('dm_firing is', dm_firing)
+        docking_mass = self.vv.mass
+        # print('docking mass is', docking_mass)
+
+        # Calculate required change in velocity.
+        dv_req = v_o - v_ida
+        v_e = self.calc_v_e('neg_x')
+
+
+        # Calculate propellant used for docking and changes in mass.
+        forward_propagation = False
+        delta_mass_jfh = self.calc_delta_mass_v_e(dv_req, v_e, forward_propagation)
+        self.fuel_mass= delta_mass_jfh
+        self.vv.mass = docking_mass
+        # print('delta_mass_docking is',delta_mass_jfh)
+
+        pre_approach_mass = self.vv.mass
+        # print('pre-approach mass is', pre_approach_mass)
+
+        # Instantiate data structure to hold JFH data + physics data.
+        # Initializing position
+        x = [r_o]
+        y = [0]
+        z = [0]
+
+        # Initializing empty tracking lists
+        dx = [0]
+        t = [0]
+        dv = [0]
+
+        # Initializing inertial state
+        dxdt = [v_o]
+
+        # Initializing initial mass
+        mass = [pre_approach_mass]
+
+        # Initializing list to later sum propellant expenditure
+        dm_total = [dm_firing]
+
+        # Firing number
+        n = [1]
+
+        # Create dummy rotation matrices.
+        x1 = [1, 0, 0]
+        y1 = [1, 0, 0]
+
+        rot = [np.array(rotation_matrix_from_vectors(x1, y1))]
+
+        # Calculate JFH and 1D physics data for required firings.
+        while (dv_req > 0):
+            # print('dv_req', round(dv_req, 4), 'n firings', n[i])
+
+            # Grab last value in the JFH arrays (initial conditions for current time step)
+            # print('x, dx, dt, t, dxdt, mass, dm_total')
+            # print(x[-1], dx[-1], dt_vals[-1], t[-1], dxdt[-1], mass[-1], dm_total[-1])
+
+            # Update VV mass per firing
+            mass_o = mass[-1]
+            mass.append(mass_o - dm_firing)
+            mass_f = mass[-1]
+            # print('mass_f is', mass_f)
+
+            # Calculate velocity change per firing.
+            dv_firing = self.calc_delta_v(dt, v_e, m_dot_sum, mass_o)
+            dv.append(dv_firing)
+            # print('dv is', dv_firing)
+            # print(round(dxdt[-1] - dv_firing, 2))
+            # input()
+            dxdt.append(dxdt[-1] - dv_firing)
+
+            # Calculate distance traveled per firing
+            # print(dxdt[-1], dxdt[-2]) # last and second to last element.
+            v_avg = 0.5 * (dxdt[-1] + dxdt[-2])
+            dx.append(v_avg * dt)
+
+            curr_x  = x[-1] - v_avg*dt
+
+            # if curr_x < 0:
+            #     break
+
+            x.append(curr_x)
+            y.append(0)
+            z.append(0)
+
+            # Calculate left over v_req (TERMINATES LOOP)
+            dv_req -= dv_firing
+
+            # Calculate mass expended up to this point.
+            dm_total.append(dm_total[-1] + dm_firing)
+
+            # Calculate current firing.
+            n.append(n[-1]+1)
+
+            # Add time data.
+            t.append(t[-1] + dt)
+
+            rot.append(np.array(rotation_matrix_from_vectors(x1, y1)))
+
+        # one_d_results = {
+        #     'n_firings': n,
+        #     'x': x,
+        #     'dx': dx,
+        #     't': t,
+        #     'dv': dv,
+        #     'v': dxdt,
+        #     'mass': mass,
+        #     'delta_mass': dm_total
+        # }
+
+        # print(one_d_results)
+        # input()
+        r = [x, y, z]
+
+        if trade_study == False:
+            jfh_path = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        elif trade_study == True:
+            jfh_path = self.case_dir +'jfh/' + self.get_case_key() + '.A'
+
+        # print(jfh_path)
+        print_1d_JFH(t, r, rot, jfh_path) 
+
+
+    def print_jfh_1d_approach(self, v_ida, v_o, r_o, trade_study = False):
         """
             Method creates JFH data for axial approach using simpified physics calculations.
 
@@ -883,10 +1215,13 @@ class RPOD (MissionPlanner):
         MIB = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['MIB']
         # print('MIB is', MIB)
         F = self.vv.thruster_metrics[self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]]['F']
+        F = F * np.cos(self.vv.decel_cant)
+        n_thrusters = len(self.vv.rcs_groups['neg_x'])
+        F = F * n_thrusters
         # print('F is', F)
 
         # Defining a multiplier reduce time steps and make running faster
-        time_multiplier = 600
+        time_multiplier = 60
         dt = (MIB / F) * time_multiplier
         # print('dt is', dt)
         dm_firing = m_dot_sum * dt
@@ -898,6 +1233,7 @@ class RPOD (MissionPlanner):
         dv_req = v_o - v_ida
         v_e = self.calc_v_e('neg_x')
         forward_propagation = False
+
 
         # Calculate propellant used for docking and changes in mass.
         delta_mass_jfh = self.calc_delta_mass_v_e(dv_req, v_e, forward_propagation)
@@ -991,15 +1327,29 @@ class RPOD (MissionPlanner):
         # }
 
         # print(one_d_results)
-
+        # input()
         r = [x, y, z]
 
-        jfh_path = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        if trade_study == False:
+            jfh_path = self.case_dir + 'jfh/' + self.config['jfh']['jfh']
+        elif trade_study == True:
+            jfh_path = self.case_dir +'jfh/' + self.get_case_key() + '.A'
+
         # print(jfh_path)
         print_1d_JFH(t, r, rot, jfh_path)
 
+        # self.
+
         return
 
+    def get_case_key(self):
+        return self.case_key
+
+    def set_case_key(self, v0_iter, cant_iter):
+
+        self.case_key = 'vo_' + str(v0_iter) + '_cant_' + str(cant_iter)
+
+        return
 
     def make_test_jfh():
 
