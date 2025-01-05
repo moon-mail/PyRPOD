@@ -668,12 +668,12 @@ class RPOD (MissionPlanner):
 
         # print(len(cum_strikes))
 
-        if checking_constraints:
-            self.max_pressure = 0
-            self.max_shear = 0
-            self.max_heat_rate = 0
-            self.max_heat_load = 0
-            self.max_cum_heat_load = 0
+        # if checking_constraints:
+        #     self.max_pressure = 0
+        #     self.max_shear = 0
+        #     self.max_heat_rate = 0
+        #     self.max_heat_load = 0
+        #     self.max_cum_heat_load = 0
 
         firing_data = {}
 
@@ -898,23 +898,23 @@ class RPOD (MissionPlanner):
         #         constraint_file.write(f"All impingement constraints met.")
         #     constraint_file.close()
 
-            if checking_constraints:
-                max_pressure = np.max(max_pressures)
-                if max_pressure > self.max_pressure:
-                    self.max_pressure = max_pressure
-                max_shear = np.max(max_shears)
-                if max_shear > self.max_shear:
-                    self.max_shear = max_shear
-                max_heat_rate = np.max(heat_flux)
-                if max_heat_rate > self.max_heat_rate:
-                    self.max_heat_rate = max_heat_rate
-                max_heat_load = np.max(heat_flux_load)
-                if max_heat_load > self.max_heat_load:
-                    self.max_heat_load = max_heat_load
-                max_cum_heat_load = np.max(cum_heat_flux_load)
-                if max_cum_heat_load > self.max_cum_heat_load:
-                    self.max_cum_heat_load = max_cum_heat_load
-        
+            # if checking_constraints:
+            #     max_pressure = np.max(max_pressures)
+            #     if max_pressure > self.max_pressure:
+            #         self.max_pressure = max_pressure
+            #     max_shear = np.max(max_shears)
+            #     if max_shear > self.max_shear:
+            #         self.max_shear = max_shear
+            #     max_heat_rate = np.max(heat_flux)
+            #     if max_heat_rate > self.max_heat_rate:
+            #         self.max_heat_rate = max_heat_rate
+            #     max_heat_load = np.max(heat_flux_load)
+            #     if max_heat_load > self.max_heat_load:
+            #         self.max_heat_load = max_heat_load
+            #     max_cum_heat_load = np.max(cum_heat_flux_load)
+            #     if max_cum_heat_load > self.max_cum_heat_load:
+            #         self.max_cum_heat_load = max_cum_heat_load
+        return firing_data
 
     def calc_time_multiplier(self, v_ida, v_o, r_o):
         # Determine thruster configuration characterstics.
