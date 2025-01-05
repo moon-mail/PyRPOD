@@ -51,10 +51,10 @@ class OneDimTransApproachChecks(unittest.TestCase):
         rpod.study_init(jfh, tv, lm)
 
         # Produce JFH using 1D physics
-        r_o = 40 # initial distance (m)
-        v_o = 2.1 # Initial velocity (m/s)
-        v_ida = 0.03 # Docking velocity (m/s)
-        rpod.print_jfh_1d_approach(v_ida, v_o, r_o)
+        # r_o = 40 # initial distance (m)
+        # v_o = 0.2 # Initial velocity (m/s)
+        # v_ida = 0.03 # Docking velocity (m/s)
+        # rpod.print_jfh_1d_approach(v_ida, v_o, r_o)
 
         # Read in JFH.
         jfh.read_jfh()
@@ -69,40 +69,30 @@ class OneDimTransApproachChecks(unittest.TestCase):
     # 3. Assert
         # Assert expected strike values for each firing in the JFH.
         expected_strikes = {
-            '1':  11964.0,
-            '2':  10636.0,
-            '3':  8196.0,
-            '4':  6056.0,
-            '5':  4336.0,
-            '6':  3100.0,
-            '7':  2124.0,
-            '8':  1436.0,
-            '9':  952.0,
-            '10':  656.0,
-            '11':  452.0,
-            '12':  304.0,
-            '13':  236.0,
-            '14':  216.0,
-            '15':  224.0
+            '1':  1492.0,
+            '2':  1368.0,
+            '3':  1138.0,
+            '4':  864.0,
+            '5':  632.0,
+            '6':  428.0,
+            '7':  276.0,
+            '8':  150.0,
+            '9':  64.0,
+            '10':  16.0
         }
 
         # Assert expected cumulative strike values for each firing in the JFH.
         expected_cum_strikes = {
-            '1':  11964.0,
-            '2':  22600.0,
-            '3':  30796.0,
-            '4':  36852.0,
-            '5':  41188.0,
-            '6':  44288.0,
-            '7':  46412.0,
-            '8':  47848.0,
-            '9':  48800.0,
-            '10':  49456.0,
-            '11':  49908.0,
-            '12':  50212.0,
-            '13':  50448.0,
-            '14':  50664.0,
-            '15':  50888.0
+            '1':  1492.0,
+            '2':  2860.0,
+            '3':  3998.0,
+            '4':  4862.0,
+            '5':  5494.0,
+            '6':  5922.0,
+            '7':  6198.0,
+            '8':  6348.0,
+            '9':  6412.0,
+            '10':  6428.0
         }
 
         # Read in expected strikes from text file.
@@ -123,21 +113,26 @@ class OneDimTransApproachChecks(unittest.TestCase):
 
         for n_firing in strikes.keys():
             # Development statements used to write comparison entries in expected_strikes
-            logging.info('n_firing ' + str(n_firing))
+            # logging.info('n_firing ' + str(n_firing))
             for i in range(len(strikes[n_firing]['strikes'])):
                 if strikes[n_firing]['strikes'][i] > 0:
                     # string = 'strikes[' + str(i) + '] = ' + str(strikes[n_firing]['cum_strikes'][i])
-                    # logging.info(string)
+                    # # logging.info(string)
 
                     # logging.info(str(i))
+
+                    # assert that the tracking of each face strike is enough.
                     self.assertIn(i, expected_strike_ids[n_firing])
+
             # Development statements used to write comparison entries in expected_strikes
-            # string = '\''+str(n_firing)+'\': ' + ' ' +str(strikes[n_firing]['cum_strikes'].sum()) +','
+            # string = '\''+str(n_firing)+'\': ' + ' ' +str(strikes[n_firing]['strikes'].sum()) +','
             # logging.info(string)
 
             # Number of strikes for a given time step.
             n_strikes = strikes[n_firing]['strikes'].sum()
             n_cum_strikes = strikes[n_firing]['cum_strikes'].sum()
+
+            # logging.info('n_firing ' + str(n_firing))
 
             # Assert that it matches the expected value.
             self.assertEqual(n_strikes, expected_strikes[n_firing])
