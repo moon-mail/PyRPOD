@@ -147,6 +147,7 @@ class VisitingVehicle(Vehicle):
         change_cluster_config()
             Alters cluster configuration data using OpenMDAO inputs.
 
+
         set_cluster_config()
             Read in cluster configuration data from the provided file path.
 

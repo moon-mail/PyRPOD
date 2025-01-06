@@ -369,6 +369,10 @@ class RPOD (MissionPlanner):
 
             active_cones = None
 
+            # Load and graph STLs of active clusters.
+            if self.vv.use_clusters == True:
+                active_clusters = self.graph_clusters(firing, vv_orientation)
+
             # Load and graph STLs of active thrusters. 
             for thruster in thrusters:
 
@@ -395,7 +399,12 @@ class RPOD (MissionPlanner):
                 # Third, according to position vector of the VV in JFH
                 plumeMesh.translate(self.jfh.JFH[firing]['xyz'])
                 
-                # Fourth, according to exit vector of current thruster id in TCD
+                # Fourth, according to position of current cluster in CCF
+                if self.vv.use_clusters == True:
+                    # thruster_id[0] = "P" and thruster_id[1] = "#", adding these gives the cluster identifier
+                    plumeMesh.translate(self.vv.cluster_data[thruster_id[0] + thruster_id[1]]['exit'][0])
+
+                # Fifth, according to exit vector of current thruster id in TCD
                 plumeMesh.translate(self.vv.thruster_data[thruster_id]['exit'][0])
 
                 # Takeaway: Do rotations before translating away from the rotation axes!   
@@ -411,10 +420,16 @@ class RPOD (MissionPlanner):
                 # print('DCM: ', self.vv.thruster_data[thruster_id]['dcm'])
                 # print('DCM: ', thruster_orientation[0], thruster_orientation[1], thruster_orientation[2])
 
-            if not active_cones == None:
-                VVmesh = mesh.Mesh(
-                    np.concatenate([VVmesh.data, active_cones.data])
-                )
+            if self.vv.use_clusters != True:
+                if not active_cones == None:
+                    VVmesh = mesh.Mesh(
+                        np.concatenate([VVmesh.data, active_cones.data])
+                    )
+            if self.vv.use_clusters == True:
+                if not active_cones == None:
+                    VVmesh = mesh.Mesh(
+                        np.concatenate([VVmesh.data, active_cones.data, active_clusters.data])
+                    )
             
             # print(self.vv.mesh)
 
