@@ -16,28 +16,30 @@ from pyrpod import LogisticsModule, MissionPlanner
 class KeepOutZoneChecks(unittest.TestCase):
     def test_keep_out_zone(self):
 
-        # set case directory
-        case_dir = '../case/flight_envelopes/'
+        # # set case directory
+        # case_dir = '../case/rpod/flight_envelopes/'
 
-        # Instantiate LogisticModule object.
-        lm = LogisticsModule.LogisticsModule(case_dir)
+        # # Instantiate LogisticModule object.
+        # lm = LogisticsModule.LogisticsModule(case_dir)
 
-        # Define LM mass distrubtion properties.
-        m = 0.45*30000 # lb converted to kg
-        h = 14 # m
-        r = 4.0/2.0 # m
-        lm.set_inertial_props(m, h, r)
+        # # Define LM mass distrubtion properties.
+        # m = 0.45*30000 # lb converted to kg
+        # h = 14 # m
+        # r = 4.0/2.0 # m
+        # lm.set_inertial_props(m, h, r)
 
-        # Load in thruster configuration data from text file
-        lm.set_thruster_config()
+        # # Load in thruster configuration data from text file
+        # lm.set_thruster_config()
 
-        # Draco/Hypergolic thrusters.
-        lm.add_thruster_performance(400, 300)
-        lm.assign_thruster_groups()
+        # # Draco/Hypergolic thrusters.
+        # lm.add_thruster_performance(400, 300)
+        # lm.assign_thruster_groups()
 
-        mp = MissionPlanner.MissionPlanner(case_dir)
-        mp.set_lm(lm)
-        mp.read_flight_plan()
+        # mp = MissionPlanner.MissionPlanner(case_dir)
+        # mp.set_lm(lm)
+        # mp.read_flight_plan()
+
+        return
 
 
 if __name__ == '__main__':

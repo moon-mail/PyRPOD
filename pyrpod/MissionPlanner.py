@@ -225,7 +225,7 @@ class MissionPlanner:
         g_0=9.81
         m_f=self.vv.mass
         a = (dv)/(isp*g_0)
-        K=(isp*g_0*m_f*(1 - np.exp(a)))
+        K=(isp*g_0*m_f*(np.exp(a) - 1))
         return K / T
 
     def plot_burn_time(self, dv):
@@ -641,7 +641,7 @@ class MissionPlanner:
                     firing_array = np.array(firing[1])
 
                     # save firing ID
-                    nth_firing = np.array(firing[1][0])
+                    nth_firing = np.array(firing[1].iloc[0])
                     # print('Firing number', nth_firing)
 
                     # calculate required change in translational velcoity

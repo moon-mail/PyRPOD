@@ -391,8 +391,27 @@ class SweepDecelAngles:
         ])
 
         return Tx.tolist()
+    
+    def cant_decel_thrusters(self, cant):
+        """
+        """
+        new_config = {}
 
-    def sweep_decel_thrusters_all(self, config, dcant):
+        Rz = self.calculate_DCM(cant)
+
+        for thruster, thruster_info in self.config.items():
+            new_thruster_info = thruster_info.copy()
+
+            Tx = self.calculate_frame_rot(new_thruster_info['name'][0])
+
+            dcm = np.dot(Tx, Rz)
+            new_thruster_info['dcm'] = dcm
+
+            new_config[thruster] = new_thruster_info
+        
+        return new_config
+
+    def sweep_decel_thrusters_all(self, dcant):
         '''
             Sweeps the given config by angle. Performed over min and max allowed. 
             All thrusters are canted simultaneously.
@@ -418,6 +437,8 @@ class SweepDecelAngles:
 
         # Hard coded limits defined here should match those in cant_optimization.py
         cant_min, cant_max = 0, 70
+
+        # from axial_pos branch.
         for cant in range(cant_min, cant_max, dcant):
 
             new_config = {}
@@ -440,6 +461,10 @@ class SweepDecelAngles:
 
                         new_config[thruster] = new_thruster_info
                         
+        # From master branch
+        for cant in range(cant_min, cant_max + dcant, dcant):
+            new_config = self.cant_decel_thrusters(cant)
+
 
             configs_swept_angles.append(new_config)
 

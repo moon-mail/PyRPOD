@@ -171,6 +171,8 @@ class JetFiringHistory:
 
                 JFH.append(time_step)
             self.JFH = JFH
+            f.close()
+        return
 
 
     def graph_param_curve(self, t, r_of_t):
