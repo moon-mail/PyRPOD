@@ -8,6 +8,7 @@ import math
 import os
 
 from pyrpod.Vehicle import Vehicle
+from pyrpod import SweepConfig
 
 # Adapted from
 # https://stackoverflow.com/questions/54616049/converting-a-rotation-matrix-to-euler-angles-and-back-special-case
@@ -185,6 +186,56 @@ class VisitingVehicle(Vehicle):
         self.mesh = mesh.Mesh.from_file(path_to_stl)
         self.path_to_stl = path_to_stl
         return
+
+    def get_thruster_cant(self, thruster_name):
+        """
+            Finds the cant angle defined as angle from the LM surface tangent.
+            Takes the thruster's DCM, undoes the frame transformation
+            ie. the frame made by the surface tangent and the line from the LM's 
+            axial surface to the exit coordinate, is rotated about x to match the universal YZ axes.
+            Then the DCM is decomposed to grab the cant angling.
+
+            Parameters
+            ----------
+            thruster_name : string
+                name of the thruster of interest
+            
+            Returns
+            -------
+            float
+                cant angle in rad
+        """
+        # find frame rotation (Tx)
+        # taken directly from SweepConfig.SweepDecelAngles.calculate_frame_rot()
+        exit_coords = self.thruster_data[thruster_name]['exit'][0]
+        y = exit_coords[1]
+        z = exit_coords[2]
+
+        if y == 0 and z > 0:
+            theta = np.pi/2
+        elif y == 0 and z < 0:
+            theta = -np.pi/2
+        else:
+            theta = np.arctan2(z, y)
+
+        Tx = np.array([
+            [1, 0, 0],
+            [0, np.cos(theta), -np.sin(theta)],
+            [0, np.sin(theta), np.cos(theta)]
+        ])
+
+        # Find the inverse of Tx
+        inv_Tx = np.linalg.inv(Tx)
+
+        # undo the frame rotation
+        DCM = self.thruster_data[thruster_name]['dcm']
+        Rz = np.dot(inv_Tx, DCM)
+
+        # resulting matrix representes the rotation of DCM about z-axis
+        # Rz -> cant angle
+        cant = np.arccos(Rz[0][0])
+
+        return cant
 
     def set_thruster_config(self, thruster_data=None):
         """

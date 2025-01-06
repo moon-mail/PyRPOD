@@ -20,7 +20,7 @@ class STLtoVTKChecks(unittest.TestCase):
 
     # 1. Setup 
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/stl_to_vtk/'
+        case_dir = '../case/rpod/stl_to_vtk/'
 
         # Load mission planner and vehicle object data for analysis
         mp = MissionPlanner.MissionPlanner(case_dir)

@@ -16,7 +16,7 @@ class LoadJFHChecks(unittest.TestCase):
     def test_plume_constraints(self):
 
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/multi_thrusters_square/'
+        case_dir = '../case/rpod/multi_thrusters_square/'
 
         # Load JFH data.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)

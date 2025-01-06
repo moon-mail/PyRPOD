@@ -82,6 +82,7 @@ def print_JFH(t_values, r,  rot, file_name):
             print()
             # print(rot[i])
             # print()
+    sys.stdout = orig_stdout
 
 def print_test_JFH(t_values, r,  rot, file_name):
 
@@ -163,6 +164,7 @@ def print_test_JFH(t_values, r,  rot, file_name):
             print()
             # print(rot[i])
             # print()
+    sys.stdout = orig_stdout
 
 def print_1d_JFH(t_values, r,  rot, file_name):
     '''
@@ -232,8 +234,8 @@ def print_1d_JFH(t_values, r,  rot, file_name):
             # Print thrusters to be turned on.
 
             # thruster = i%16+1
-            thruster = '1 2 5 6 9 10 13 14'
-            print('8  ', thruster, end = '')
+            thruster = '1 2 3 4'
+            print('4  ', thruster, end = '')
 
             # group = i % 4
             # for j in range(4):
@@ -243,3 +245,4 @@ def print_1d_JFH(t_values, r,  rot, file_name):
             print()
             # print(rot[i])
             # print()
+    sys.stdout = orig_stdout

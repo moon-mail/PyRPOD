@@ -18,7 +18,7 @@ class ProduceJFHChecks(unittest.TestCase):
     def test_jfh_setter(self):
 
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/base_case/'
+        case_dir = '../case/rpod/base_case/'
 
         t = sp.symbols('t')
 

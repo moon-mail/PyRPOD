@@ -145,40 +145,50 @@ class LogisticsModule(VisitingVehicle):
 
     def calc_thruster_performance(self):
         """
-            Calculates performance of each thruster fired inidividually.
+        Calculates performance of each thruster fired individually.
 
-            Simple method ignores changes in propellant mass. This must be addressed.
+        This simple method ignores changes in propellant mass, which should be addressed in future iterations.
+        Returns a list of dictionaries containing performance data for each thruster.
         """
-        # TODO: add similar methods that include fuel usage, self impingement, cant angle sweep + vector analysis.
-        for thruster in self.thruster_data:
-            # print('thruster id', thruster)
-            # print(self.thruster_data[thruster])
-            # Select current thruster from dictionary 
-            cur_thruster = self.thruster_data[thruster]
+        # TODO: Add similar methods that include fuel usage, self-impingement, cant angle sweep, and vector analysis.
+        thruster_performance_data = []
 
-            # Extract the normal vector 
+        for thruster_id, thruster_info in self.thruster_data.items():
+            # Select current thruster from dictionary
+            cur_thruster = thruster_info
+
+            # Extract the normal vector
             dcm = cur_thruster['dcm']
             n = [dcm[0][2], dcm[1][2], dcm[2][2]]
-            # print('thruster normal vector', n)
-
-            # Calculate thruster force vector
-            F_truster = -1*np.array(n)*self.thrust
-            # print('thruster force vector', F_truster)
             
-            # Calculate acceleration performance 
-            a_x = round(F_truster[0] / self.mass, 3)
-            a_y = round(F_truster[1] / self.mass, 3)
-            a_z = round(F_truster[2] / self.mass, 3)
-            a = np.array([a_x, a_y, a_z])
-            # print('resultant translational acceleration', a)
+            # Calculate thruster force vector
+            F_thruster = -1 * np.array(n) * self.thrust
+            
+            # Calculate acceleration performance
+            a_x = round(F_thruster[0] / self.mass, 3)
+            a_y = round(F_thruster[1] / self.mass, 3)
+            a_z = round(F_thruster[2] / self.mass, 3)
+            translational_acceleration = np.array([a_x, a_y, a_z])
             
             # Calculate torque vector
-            r = cur_thruster['exit'][0] # thruster position vector 
-            T_x = F_truster[1]*r[2] + F_truster[2]*r[1]
-            T_y = F_truster[0]*r[2] + F_truster[2]*r[0]
-            T_z = F_truster[0]*r[1] + F_truster[1]*r[0]
-            T = np.array([T_x, T_y, T_z])
-            # print('resultant rotational acceleration', T/self.I_x)
+            r = cur_thruster['exit'][0]  # Thruster position vector
+            T_x = F_thruster[1] * r[2] + F_thruster[2] * r[1]
+            T_y = F_thruster[0] * r[2] + F_thruster[2] * r[0]
+            T_z = F_thruster[0] * r[1] + F_thruster[1] * r[0]
+            torque = np.array([T_x, T_y, T_z]) / self.I_x  # Rotational acceleration
+
+            # Store calculated data in a dictionary for this thruster
+            thruster_data = {
+                'thruster_id': thruster_id,
+                'normal_vector': n,
+                'force_vector': F_thruster,
+                'translational_acceleration': translational_acceleration,
+                'torque': torque
+            }
+            
+            thruster_performance_data.append(thruster_data)
+
+        return thruster_performance_data
 
     def rcs_group_str_to_list(self, working_group):
         """
@@ -273,6 +283,9 @@ class LogisticsModule(VisitingVehicle):
         # Assign thruster groups according provided grouping data.
         for group in group_ids:
             self.assign_thrusters(group)
+        
+        decel_thruster_name = next(iter(self.rcs_groups['neg_x']))
+        self.decel_cant = self.get_thruster_cant(decel_thruster_name)
 
     def plot_active_thrusters(self, active_thrusters, working_group, normals):
         """
@@ -377,3 +390,26 @@ class LogisticsModule(VisitingVehicle):
             self.plot_thruster_group(group)
             # print()
         return
+
+    def calc_overshoot_v_range(self, v_ida, r_o):
+        mass = self.mass
+        # print(len(self.rcs_groups['neg_x']))
+
+        F_decel = 0
+        for thruster in self.rcs_groups['neg_x']:
+            thruster_type = self.thruster_data[thruster]['type'][0]
+            thruster_metrics = self.thruster_metrics[thruster_type]
+
+            cant = self.decel_cant
+
+            F_decel += (thruster_metrics['F'] * np.cos(cant))
+
+        print(F_decel)
+        a_decel = F_decel / mass
+
+        v_o = np.sqrt(v_ida**2 + 2 * a_decel * r_o)
+        print(v_o)
+
+        vo_range = [0.1*v_o, 0.25*v_o, 0.5*v_o, 0.75*v_o, v_o]
+        print(vo_range)
+        return vo_range
