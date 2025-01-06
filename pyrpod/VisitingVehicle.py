@@ -144,6 +144,10 @@ class VisitingVehicle(Vehicle):
         set_thruster_config()
             Reads the thruster configuration file from the config.ini for the Visiting Vehicle and saves it as class members.
 
+        change_cluster_config()
+            Alters cluster configuration data using OpenMDAO inputs.
+
+
         set_cluster_config()
             Read in cluster configuration data from the provided file path.
 
@@ -169,6 +173,17 @@ class VisitingVehicle(Vehicle):
         check_thruster_configuration()
             Plots visiting vehicle and all thrusters in RCS configuration.
     """
+
+    def print_info(self):
+        """Simple method to format printing of vehicle info."""
+
+        print('number of thrusters:', self.num_thrusters)
+        print('thruster units:', self.thruster_units)
+        print('center of gravity:', self.cog)
+        print('grapple coordinate:', self.grapple)
+        print('number of dual jet interactions:', self.jet_interactions)
+        return
+    
     def set_stl(self):
         """
             Reads in Vehicle surface mesh from STL file.
@@ -288,6 +303,25 @@ class VisitingVehicle(Vehicle):
         self.use_clusters = False
         
         return
+    
+    def change_cluster_config(self, x):
+        """
+            Alters cluster configuration data using OpenMDAO inputs.
+
+            Parameters
+            ----------
+            x : array
+                Axial position (along the x axis) of the nozzle exit with respect to the LM's docking adapter.
+            
+            Returns
+            -------
+            Method doesn't currently return anything.
+        """
+        # print('len(self.cluster_data) is', len(self.cluster_data))
+        # print('float(x) is', float(x))
+        for cluster in self.cluster_data:
+            # print('cluster is', cluster)
+            self.cluster_data[cluster]["exit"][0][0] = float(x)
 
     def set_cluster_config(self):
         """

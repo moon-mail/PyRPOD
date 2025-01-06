@@ -1,1 +1,3 @@
-firing #, total time, time step, idk, next 9 is the dcm wrt LM, next 3 are (x,y,z), idk, # of thrusters firing, which thrusters are firing
+offsetted    number of firings    idk
+*thrown away*
+firing #, total time, time step, *thrown away*, next 9 is the dcm wrt LM, next 3 are (x,y,z), uncertainty factor, # of thrusters firing, which thrusters are firing

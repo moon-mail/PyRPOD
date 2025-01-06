@@ -79,6 +79,10 @@ class MissionPlanner:
         calc_delta_v(dt, v_e, m_dot)
             Calculates change in velocity from the Tsiolkovsky equation given change in time (dt), exhaust velocity (v_e), and mass flow rate (m_dot).
 
+        calc_delta_omega_rotation(dm, group)
+            Calculates the angular velocity by discretizing the propellant expenditure
+            and iteratively solving the rotational form of Newton's Second Law with updated moments of inertia.
+
         calc_delta_mass_rotation(dw, group, forward_propagation)
             Calculates propellant usage for a rotational maneuver by discretizing the desired angular velocity
             and iteratively solving the rotational form of Newton's Second Law with updated moments of inertia.
@@ -741,6 +745,33 @@ class MissionPlanner:
         dv = v_e*np.log(((m_dot*dt)/m_current)+1)
         return dv
     
+    def calc_delta_omega_rotation(self, dm, group):
+        """
+            Calculates the angular velocity by discretizing the propellant expenditure
+            and iteratively solving the rotational form of Newton's Second Law with updated moments of inertia.
+
+            Parameters
+            ----------
+            dm : float
+                Specified propellant usage value.
+
+            group : string
+                Thruster group from flight plan.
+
+            Returns
+            -------
+            dw : float
+                Change in angular velocity.
+        """
+        if group == 'pos_pitch' or group == 'pos_yaw':
+            self.vv.set_inertial_props(self.vv.mass, self.vv.height, self.vv.radius)
+            t_firing = dm / (self.calc_m_dot_sum(group) / 2)
+            dw = (t_firing*self.vv.radius*(self.calc_thrust_sum(group) / 2)) / self.vv.I_y
+        if group == 'roll':
+            print('ERROR: functionality not added for a roll rotation')
+        
+        return dw
+
     def calc_delta_mass_rotation(self, dw, group, forward_propagation):
         """
             Calculates propellant usage for a rotational maneuver by discretizing the desired angular velocity
@@ -752,7 +783,7 @@ class MissionPlanner:
             Parameters
             ----------
             dw : float
-                Specified change in velocity value.
+                Specified change in angular velocity (rad / s) value.
 
             group : string
                 Thruster group from flight plan.
@@ -766,14 +797,22 @@ class MissionPlanner:
                 Change in mass.
         """
         if forward_propagation == False:
-            print('ERROR: functionality not added for a rotation in back propagation')
+            if group == 'pos_pitch' or group == 'pos_yaw':
+                self.vv.set_inertial_props(self.vv.mass, self.vv.height, self.vv.radius)
+                t_firing = (self.vv.I_y*dw)/(self.vv.radius*(self.calc_thrust_sum(group) / 2)) # I_y is pitch/yaw
+                dm = (self.calc_m_dot_sum(group) / 2)*t_firing
+                self.vv.mass += dm
+            if group == 'roll':
+                print('ERROR: functionality not added for a roll rotation')
+        
+
         if forward_propagation == True:
             if group == 'pos_pitch' or group == 'pos_yaw':
-                if forward_propagation == True:
-                    self.vv.set_inertial_props(self.vv.mass, self.vv.height, self.vv.radius)
-                    t_firing = (self.vv.I_y*dw)/(self.vv.radius*(self.calc_thrust_sum(group) / 2)) # I_y is pitch/yaw
-                    dm = (self.calc_m_dot_sum(group) / 2)*t_firing
-                    self.vv.mass -= dm
+                self.vv.set_inertial_props(self.vv.mass, self.vv.height, self.vv.radius)
+                # M = I*alpha -> Fr = I*omega/t
+                t_firing = (self.vv.I_y*dw)/(self.vv.radius*self.calc_thrust_sum(group)) # I_y is pitch/yaw
+                dm = self.calc_m_dot_sum(group)*t_firing
+                self.vv.mass -= dm
             if group == 'roll':
                 print('ERROR: functionality not added for a roll rotation')
         return dm
@@ -799,6 +838,7 @@ class MissionPlanner:
                 Change in mass.
         """
         m_current = self.vv.mass
+        # print('m_current is', m_current)
         dm = m_current*(np.exp(dv/v_e)-1)
 
         if forward_propagation == False:
@@ -810,7 +850,7 @@ class MissionPlanner:
         return dm
 
     def calc_thrust_sum(self, group):
-            """
+        """
             Calculates thrust sum for a thruster group.
 
             Parameters
@@ -822,12 +862,24 @@ class MissionPlanner:
             -------
             Thrust sum.
         """
-            thrust_sum = 0
+        # print('self.vv.thruster_data is', self.vv.thruster_data)
+        thrust_sum = 0
+        if group == 'pos_x':
             for thruster_name in self.vv.rcs_groups[group]:
                 thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
                 thrust = self.vv.thruster_metrics[thruster_type]['F']
+                # print('thrust is', thrust)
                 thrust_sum += thrust
-            return thrust_sum
+
+
+        if group == 'neg_x' or group == 'pos_pitch':
+            for thruster_name in self.vv.rcs_groups[group]:
+                thruster_type = self.vv.thruster_data[thruster_name]['type'][0]
+                # print('thruster_type is', thruster_type)
+                thrust = np.cos(self.cant) * self.vv.thruster_metrics[thruster_type]['F']
+                # print('thrust is', thrust)
+                thrust_sum += thrust
+        return thrust_sum
 
     def calc_m_dot_sum(self, group):
         """
@@ -885,7 +937,8 @@ class MissionPlanner:
             Total change in mass.
         """
         # Initialization
-        dm_total = 0
+        self.dm_total = 0
+        dm_jfh_total = 0
         payload_mass = 5400
         # Docking mass and post delivery mass
         initial_masses = [self.vv.mass, self.vv.mass - payload_mass]
@@ -911,7 +964,7 @@ class MissionPlanner:
                     thruster_type = self.vv.thruster_data[self.vv.rcs_groups['neg_x'][0]]['type'][0]
                     m_dot_sum = self.calc_m_dot_sum('neg_x')
                     v_e = self.calc_v_e('neg_x')
-                    dt = int(self.jfh.JFH[0]['t'])
+                    dt = float(self.jfh.JFH[0]['t'])
 
                     # Change in x velocity (axial)
                     dv_x = self.calc_delta_v(dt, v_e, m_dot_sum, initial_masses[m])
@@ -927,6 +980,10 @@ class MissionPlanner:
                             # If the last firing in the JFH has been accounted for, then m_approach has been found
                             if f == len(self.jfh.JFH) - 1:
                                 m_approach = initial_masses[m]
+                                # print('self.dm_total is', self.dm_total)
+                                # print('dm is', dm)
+                                self.dm_jfh_total = self.dm_total + dm
+                                # print('dm_jfh_total is', dm_jfh_total)
                         # If forward propagating, then subtract the propellant mass expended
                         if m == 1:
                             initial_masses[m] -= dm
@@ -934,7 +991,11 @@ class MissionPlanner:
                             if f == len(self.jfh.JFH) - 1:
                                 m_departure = initial_masses[m]
 
-                    dm_total += dm
+                    self.dm_total += dm
+
+        # print('JFH prop usage is', self.dm_total)
+
+
 
         # Saving the flight plan into a Pandas dataframe
         try:
@@ -986,7 +1047,7 @@ class MissionPlanner:
             next = 2
             next_step = 1
 
-            # Loop to initialize inertial_state
+            # Loop to populate inertial_state with values from the flight plan dataframe
             for k in range(len(inertial_state)):
                 # Any index in inertial_state < len(inertial_state) - 5 has just one delta-v
                 if k < len(inertial_state) - 5:
@@ -997,6 +1058,8 @@ class MissionPlanner:
                     inertial_state[k] = firing[keys_list[len(inertial_state) - 4 + next_step]] + firing[keys_list[len(inertial_state) - 4 + 1 + next_step]]
                     next_step += 2
 
+
+            # Simplified to all positive because expenditure magnitude is independent of direction
             # DLT groups
             if len(inertial_state) == 8:
                 groups = ['mae', 'me', 'ae', 'pos_y', 'pos_z', 'pos_roll', 'pos_pitch', 'pos_yaw']
@@ -1004,6 +1067,7 @@ class MissionPlanner:
             if len(inertial_state) == 6:
                 groups = ['pos_x', 'pos_y', 'pos_z', 'pos_roll', 'pos_pitch', 'pos_yaw']
             
+            # print('inertial_state is', inertial_state)
 
             # Calculate fuel usage for each change in inertial state.
             for i, state in enumerate(inertial_state):
@@ -1011,33 +1075,74 @@ class MissionPlanner:
                     # Subtracting 3 because the last 3 inertial state array values are rotational
                     # Any index in inertial_state < len(inertial_state) - 3 is a translational velocity
                     if i < len(inertial_state) - 3:
+                        # print('groups[i] is', groups[i])
                         v_e = self.calc_v_e(groups[i])
                         dm = self.calc_delta_mass_v_e(state, v_e, forward_propagation)
+                        # print('dm_translation is', dm)
+
+
+
+
+                        if self.rotational_maneuvers == True:
+                            # Make 10% of the propellant usage for a given translational maneuver be directed towards rotations
+                            # print('-------- dm / 10 is', (dm / 10))
+                            # Disregarding minimum duty cycle, discretize the dm
+                            discretizing_resolution = 0.0001 # kg / s
+                            dw_sum_rot = 0 # rad / s
+                            num_iters = round(((dm / 10) / np.cos(self.cant)) / (discretizing_resolution))
+                            for i in range(num_iters):
+                                dw_rot = self.calc_delta_omega_rotation(discretizing_resolution, 'pos_pitch')
+                                dw_sum_rot += dw_rot
+                            # print('dw_sum_rot is', dw_sum_rot)
+                            
+                            discretizing_resolution = 0.0001 # rad / s
+                            dm_sum_rot = 0
+                            # Currently the rotation calculation is hardcoded for the pitch maneuver, which is why two is subtracted
+                            num_iters = round(dw_sum_rot / discretizing_resolution)
+                            
+                            for j in range(num_iters):
+                                dm_rot = self.calc_delta_mass_rotation(discretizing_resolution, 'pos_pitch', forward_propagation)
+                                dm_sum_rot += dm_rot
+                            dm += dm_sum_rot
+                            # print('dm_sum_rot is', dm_sum_rot)
+                            # print('dm_rotation + dm_translation is', dm)
+
+
+
+
                     # Any index in inertial_state > (len(inertial_state) - 4) is an angular velocity
                     if i > (len(inertial_state) - 4):
-                        discretizing_resolution = 0.0001
+                        # print('self.vv.mass before is', self.vv.mass)
+                        discretizing_resolution = 0.0001 # rad / s
                         dm_sum_rot = 0
                         # Currently the rotation calculation is hardcoded for the pitch maneuver, which is why two is subtracted
-                        num_iters = round(inertial_state[len(inertial_state) - 2]/discretizing_resolution)
+                        num_iters = round(inertial_state[len(inertial_state) - 2] / discretizing_resolution)
                         
                         for j in range(num_iters):
+                            # if j == 1:
+                            #     print('self.vv.I_y is', self.vv.I_y)
                             dm_rot = self.calc_delta_mass_rotation(discretizing_resolution, groups[i], forward_propagation)
                             dm_sum_rot += dm_rot
-                        dm = dm_sum_rot
-            
-            dm_total += dm
+                        # print('dm_sum_rot is', dm_sum_rot)
+                        # print('self.vv.mass after is', self.vv.mass)
+                        dm += dm_sum_rot
+
+            # print('dm is', dm)
+            self.dm_total += dm
+
+        # print('self.dm_total is', self.dm_total)
 
 
-        # Create results directory if it doesn't already exist.
-        results_dir = self.case_dir + 'results'
-        if not os.path.isdir(results_dir):
-            #print("results dir doesn't exist")
-            os.mkdir(results_dir)
+        # # Create results directory if it doesn't already exist.
+        # results_dir = self.case_dir + 'results'
+        # if not os.path.isdir(results_dir):
+        #     #print("results dir doesn't exist")
+        #     os.mkdir(results_dir)
 
-        # Save results to rudimentary log file.
-        with open(self.case_dir + 'results/prop_usage.txt', 'w') as f:
-            dm_total = round(dm_total, 3)
-            message = "The total propellant expended over the flight plan is " +  str(dm_total) + " kg"
-            f.write(message)
+        # # Save results to rudimentary log file.
+        # with open(self.case_dir + 'results/prop_usage.txt', 'w') as f:
+        #     self.dm_total = round(self.dm_total, 3)
+        #     message = "The total propellant expended over the flight plan is " +  str(self.dm_total) + " kg"
+        #     f.write(message)
 
-        return dm_total
+        return
