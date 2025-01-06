@@ -78,7 +78,7 @@ class IndividualThrusterChecks(unittest.TestCase):
     def test_performance_per_thruster(self):
 
         # set case directory
-        case_dir = '../case/flight_envelopes/'
+        case_dir = '../case/mission/flight_envelopes/'
 
         # Instantiate LogisticModule object.
         lm = LogisticsModule.LogisticsModule(case_dir)

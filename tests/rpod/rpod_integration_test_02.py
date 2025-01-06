@@ -21,7 +21,7 @@ class OneDimTransApproachChecks(unittest.TestCase):
 
     # 1. Set Up
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/1d_approach/'
+        case_dir = '../case/rpod/1d_approach/'
 
         # Instantiate JetFiringHistory object.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)

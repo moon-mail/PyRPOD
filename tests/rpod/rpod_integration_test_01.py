@@ -21,7 +21,7 @@ class BaseCaseChecks(unittest.TestCase):
 
     # 1. Set Up
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/base_case/'
+        case_dir = '../case/rpod/base_case/'
 
         # Instantiate JetFiringHistory object.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)

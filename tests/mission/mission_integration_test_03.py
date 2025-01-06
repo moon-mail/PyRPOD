@@ -16,7 +16,7 @@ class FlightPlanChecks(unittest.TestCase):
     def test_rcs_flight_performance(self):
 
         # set case directory
-        case_dir = '../case/flight_envelopes/'
+        case_dir = '../case/mission/flight_envelopes/'
 
         # Instantiate LogisticModule object.
         lm = LogisticsModule.LogisticsModule(case_dir)

@@ -74,7 +74,7 @@ class CoordinateSweepCheck(unittest.TestCase):
 
         for i, config in enumerate(config_swept_array):
             # Path to directory holding data assets and results for a specific RPOD study.
-            case_dir = '../case/cant_sweep/'
+            case_dir = '../case/mdao/cant_sweep/'
 
             # Load JFH data.
             jfh = JetFiringHistory.JetFiringHistory(case_dir)

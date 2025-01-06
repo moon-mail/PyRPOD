@@ -19,7 +19,7 @@ class HollowCubeChecks(unittest.TestCase):
 
     # 1. Set Up    
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/hollow_cube/'
+        case_dir = '../case/rpod/hollow_cube/'
 
         # Load JFH data.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)

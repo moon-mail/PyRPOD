@@ -51,7 +51,7 @@ class LoadJFHChecks(unittest.TestCase):
     def test_jfh_reader(self):
 
         # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/base_case/'
+        case_dir = '../case/rpod/base_case/'
 
         # Load JFH data.
         jfh = JetFiringHistory.JetFiringHistory(case_dir)

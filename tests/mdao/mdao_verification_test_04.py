@@ -20,7 +20,7 @@ class MDAOTest(unittest.TestCase):
 
     # # 1. Set Up
     #     # Load in Fixed LM and thruster configuation for trade study.
-    #     case_dir = '../case/trade_study/'
+    #     case_dir = '../case/mdao/trade_study/'
 
     #     # Load Target Vehicle.
     #     tv = TargetVehicle.TargetVehicle(case_dir)
