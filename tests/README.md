@@ -7,37 +7,39 @@ This dashboard provides an overview of all tests in the PyRPOD project, categori
 ## **MDAO Tests**
 | Test Name                       | Type           | Description                                   | Status |
 |---------------------------------|----------------|-----------------------------------------------|--------|
-| `mdao_integration_test_01.py`   | Integration    | Tests the integration of MDAO subsystems.    | ✅     |
-| `mdao_unit_test_01.py`          | Unit           | Verifies individual MDAO functionalities.    | ✅     |
-| `mdao_unit_test_02.py`          | Unit           | Ensures MDAO parameter calculations work.    | ✅     |
-| `mdao_verification_test_02.py`  | Verification   | Confirms outputs align with requirements.    | ❌     |
-| `mdao_verification_test_03.py`  | Verification   | Validates design constraints in MDAO.        | ❌     |
-| `mdao_verification_test_04.py`  | Verification   | Ensures optimization results are correct.    | ✅     |
+| `mdao_unit_test_01.py`          | Unit           | empty.                                                              | ❌     |
+| `mdao_unit_test_02.py`          | Unit           | Generate RCS configs by sweeping cant angle.                        | ⏳     |
+| `mdao_integration_test_01.py`   | Integration    | empty.                                                              | ❌     |
+| `mdao_verification_test_01.py`  | Verification   | Minimizes heat flux by varying axial position of RCS pack.          | ⏳     |
+| `mdao_verification_test_02.py`  | Verification   | Minimizes heat flux by varying cant angle of RCS pack.              | ⏳     |
+| `mdao_verification_test_03.py`  | Verification   | Evaluates RCS performance by varying cant angle and axial position. | ⏳     |
+| `mdao_verification_test_04.py`  | Verification   | Evaluates RCS performance in axial-overshoot study.                 | ⏳     |
+| `mdao_verification_test_05.py`  | Verification   | ????? no idea.                                                      | ❌     |
+| `mdao_verification_test_06.py`  | Verification   | axial over shoot?                                                   | ❌     |
 
 ---
 
 ## **Mission Tests**
 | Test Name                       | Type           | Description                                   | Status |
 |---------------------------------|----------------|-----------------------------------------------|--------|
-| `mission_integration_test_01.py`| Integration    | Tests mission logic under nominal conditions.| ✅     |
-| `mission_integration_test_02.py`| Integration    | Verifies inter-system mission data flow.     | ❌     |
-| `mission_integration_test_03.py`| Integration    | Tests fault-tolerant mission execution.      | ✅     |
-| `mission_integration_test_04.py`| Integration    | Simulates edge-case mission scenarios.       | ✅     |
-| `mission_integration_test_05.py`| Integration    | Evaluates performance during long missions.  | ❌     |
-| `mission_integration_test_06.py`| Integration    | Validates automated mission recovery.        | ✅     |
-| `mission_integration_test_07.py`| Integration    | Tests mission re-planning capabilities.      | ❌     |
-| `mission_integration_test_08.py`| Integration    | Assesses mission data collection.            | ✅     |
-| `mission_integration_test_09.py`| Integration    | Tests payload integration in missions.       | ❌     |
-| `mission_unit_test_01.py`       | Unit           | Verifies basic mission operations.           | ✅     |
-| `mission_verification_test_01.py`| Verification  | Confirms compliance with mission objectives. | ✅     |
+| `mission_integration_test_01.py`| Integration    | Assesrts 6DOF performance of individual thrusters.     | ⏳     |
+| `mission_integration_test_02.py`| Integration    | Assesrts 6DOF performance of thruster groups.          | ⏳     |
+| `mission_integration_test_03.py`| Integration    | Assersts Δv requirements for an RCS system (1D).       | ⏳     |
+| `mission_integration_test_04.py`| Integration    | Assersts Δv requirements for an RCS system (2D).       | ⏳     |
+| `mission_integration_test_05.py`| Integration    | Assersts thrust requirements for an RCS system.        | ⏳     |
+| `mission_integration_test_06.py`| Integration    | Assersts mass requirements for an RCS system.          | ⏳     |
+| `mission_integration_test_07.py`| Integration    | Contours RCS performance (thrust vs ISP).              | ⏳     |
+| `mission_integration_test_08.py`| Integration    | Contours propellant usage for all Δv in a flight plan. | ⏳     |
+| `mission_unit_test_01.py`       | Unit           | empty.                                                 | ❌     |
+| `mission_verification_test_01.py`| Verification  | empty.                                                 | ❌     |
 
 ---
 
 ## **Plume Tests**
 | Test Name                       | Type           | Description                                   | Status |
 |---------------------------------|----------------|-----------------------------------------------|--------|
-| `plume_integration_test_01.py`  | Integration    | Tests plume modeling in integrated systems.  | ✅     |
-| `plume_unit_test_01.py`         | Unit           | Verifies individual plume calculation methods.| ✅     |
+| `plume_integration_test_01.py`  | Integration    | Tests plume modeling in integrated systems.  | ❌     |
+| `plume_unit_test_01.py`         | Unit           | Verifies individual plume calculation methods.| ❌     |
 | `plume_verification_test_01.py` | Verification   | Validates plume outputs against benchmarks.  | ❌     |
 
 ---
@@ -45,31 +47,34 @@ This dashboard provides an overview of all tests in the PyRPOD project, categori
 ## **RPOD Tests**
 | Test Name                       | Type           | Description                                   | Status |
 |---------------------------------|----------------|-----------------------------------------------|--------|
-| `rpod_integration_test_01.py`   | Integration    | Simulates nominal rendezvous scenarios.      | ✅     |
-| `rpod_integration_test_02.py`   | Integration    | Tests proximity operations under stress.     | ❌     |
-| `rpod_integration_test_03.py`   | Integration    | Verifies docking sequence and safety.        | ✅     |
-| `rpod_integration_test_04.py`   | Integration    | Evaluates advanced rendezvous maneuvers.     | ❌     |
-| `rpod_unit_test_01.py`          | Unit           | Verifies core RPOD calculations.             | ✅     |
-| `rpod_unit_test_02.py`          | Unit           | Tests position tracking during docking.      | ✅     |
-| `rpod_unit_test_03.py`          | Unit           | Assesses collision-avoidance algorithms.     | ❌     |
-| `rpod_verification_test_03.py`  | Verification   | Confirms compliance with docking requirements.| ✅     |
-| `rpod_verification_test_04.py`  | Verification   | Validates safety protocols during docking.   | ❌     |
+| `rpod_integration_test_01.py`   | Integration    | Asserts plume strikes for RPOD "base case".          | ✅     |
+| `rpod_integration_test_02.py`   | Integration    | Asserts plume strikes for notional 1D approach.      | ✅     |
+| `rpod_integration_test_03.py`   | Integration    | Asserts plume strikes using KOZ geometry.            | ❌     |
+| `rpod_integration_test_04.py`   | Integration    | Asserts plume strikes using hollow cube geometry.    | ✅     |
+| `rpod_unit_test_01.py`          | Unit           | Verifies STL to VTK data conversion.                 | ✅     |
+| `rpod_unit_test_02.py`          | Unit           | Verifiy nehavior of JFH reader.                      | ⏳     |
+| `rpod_unit_test_03.py`          | Unit           | Produces JFH data according to produced equation.    | ⏳     |
+| `rpod_verification_test_03.py`  | Verification   | Tests strike counting from multiple thrusters.       | ⏳     |
+| `rpod_verification_test_04.py`  | Verification   | Asserts plume strikes after TCD decoupling.          | ⏳     |
 
 ---
 
 ## **Legacy/Old Tests**
 | Test Name                       | Type           | Description                                   | Status |
 |---------------------------------|----------------|-----------------------------------------------|--------|
-| `test_case_15.py`               | Miscellaneous  | Old test for deprecated functionality.       | ❌     |
-| `test_case_17.py`               | Miscellaneous  | Tests legacy feature interactions.           | ✅     |
-| `test_case_19.py`               | Miscellaneous  | Validates compatibility of old methods.      | ❌     |
-| `test_case_sweep_cants.py`      | Sweep Test     | Evaluates various canting angles.            | ✅     |
-| `test_case_sweep_coords.py`     | Sweep Test     | Tests coordinate system transformations.     | ❌     |
+| `test_case_15.py`               | Miscellaneous  | Old test for deprecated functionality.       | ⏳     |
+| `test_case_17.py`               | Miscellaneous  | Tests legacy feature interactions.           | ⏳     |
+| `test_case_19.py`               | Miscellaneous  | Validates compatibility of old methods.      | ⏳     |
+| `test_case_sweep_cants.py`      | Sweep Test     | Evaluates various canting angles.            | ⏳     |
+| `test_case_sweep_coords.py`     | Sweep Test     | Tests coordinate system transformations.     | ⏳     |
 
 ---
 
 ## **Status Legend**
 - ✅ = Passed
-- ❌ = Failed/Requires Attention
+- ❌ = Not Started
+- ⏳ = In Progress
+- ⚙️ = Under Review
+- 🛠️ = Requires Fixes
 
 This dashboard serves as a quick reference for test organization and tracking within PyRPOD. Update the statuses regularly to ensure it reflects the latest testing outcomes.
