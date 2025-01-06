@@ -1,5 +1,6 @@
 # PyRPOD
 Python Based Analysis of Rendezvous, Proximity, Operation, and Docking Maneuvers (PyRPOD)
+![PyRPOD Logo](img/PyRPOD.png)
 
 ## Overview
 This code simulates jet firing histories, vehicle dynamics, and plume impingement interactions to study RPOD (Rendezvous, Proximity Operations, and Docking) maneuvers relevant to active space-station operations.
