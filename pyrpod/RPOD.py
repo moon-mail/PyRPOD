@@ -641,7 +641,7 @@ class RPOD (MissionPlanner):
     #         param_window_sum -= old_param
     #     return param_queue, param_window_sum
 
-    def jfh_plume_strikes(self, trade_study = False):
+    def jfh_plume_strikes(self):
         """
             Calculates number of plume strikes according to data provided for RPOD analysis.
             Method does not take any parameters but assumes that study assets are correctly configured.
@@ -667,31 +667,13 @@ class RPOD (MissionPlanner):
         if not os.path.isdir(results_dir):
             #print("results dir doesn't exist")
             os.mkdir(results_dir)
-        if not trade_study:
-            results_dir = results_dir + "/strikes"
-            if not os.path.isdir(results_dir):
-                #print("results dir doesn't exist")
-                os.mkdir(results_dir)
 
-        if trade_study:
-            v_o = ['vo_0', 'vo_1', 'vo_2', 'vo_3', 'vo_4']
-            cants = ['cant_0', 'cant_1', 'cant_2', 'cant_3', 'cant_4']
-            for v in v_o:
-                for cant in cants:
-                    results_dir_case = results_dir + "/" + v + '_' + cant
-                    if not os.path.isdir(results_dir_case):
-                        #print("results dir doesn't exist")
-                        os.mkdir(results_dir_case)  
+        results_dir = results_dir + "/strikes"
+        if not os.path.isdir(results_dir):
+            #print("results dir doesn't exist")
+            os.mkdir(results_dir)
 
-                    results_dir_case = results_dir_case + '/strikes'
-                    if not os.path.isdir(results_dir_case):
-                        #print("results dir doesn't exist")
-                        os.mkdir(results_dir_case) 
-
-        #for surface_num, submesh in enumerate(self.target.mesh):
-            # Save STL surface of target vehicle to local variable.
-
-            #target = submesh
+        # Save STL surface of target vehicle to local variable.
         target = self.target.mesh
         target_normals = target.get_unit_normals()
 
@@ -712,69 +694,53 @@ class RPOD (MissionPlanner):
 
             checking_constraints = int(self.config['tv']['check_constraints'])
 
-            # if checking_constraints:
-            #     # grab constraint values from configuration file
-            #     pressure_constraint = float(self.config['tv']['normal_pressure'])
-            #     heat_flux_constraint = float(self.config['tv']['heat_flux'])
-            #     shear_constraint = float(self.config['tv']['shear_pressure'])
+            if checking_constraints:
+                # grab constraint values from configuration file
+                pressure_constraint = float(self.config['tv']['normal_pressure'])
+                heat_flux_constraint = float(self.config['tv']['heat_flux'])
+                shear_constraint = float(self.config['tv']['shear_pressure'])
 
-            #     pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
-            #     heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
+                pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
+                heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
 
-            #     # open an output file to record if constraints are passed or failed
-            #     report_dir = results_dir.replace('strikes', '')
+                # open an output file to record if constraints are passed or failed
+                report_dir = results_dir.replace('strikes', '')
+                constraint_file = open(report_dir + 'impingement_report.txt', 'w')
+                failed_constraints = 0
 
-            #     report_file_path = report_dir + '/' +str(self.get_case_key()) +'/impingement_report-' + '-.txt'
-            #     constraint_file = open(report_file_path,  'w')
-            #     failed_constraints = 0
+                # Initiate array containing sum of pressures over a given window
+                pressure_window_sums = np.zeros(len(target.vectors))
+                # hold a queue of pressure values per cell
+                pressure_queues = np.empty(len(target.vectors), dtype=object)
+                for i in range(len(pressure_queues)):
+                    pressure_queues[i] = Queue()
+                # save size of pressure window in seconds
+                pressure_window_size = float(self.config['tv']['normal_pressure_window_size'])
+                # save a queue of firing times for pressure
+                pressure_window_queue = Queue()
+                # keep track of current window size for pressure
+                pressure_cur_window = 0
 
-                # # Initiate array containing sum of pressures over a given window
-                # pressure_window_sums = np.zeros(len(target.vectors))
-                # # hold a queue of pressure values per cell
-                # pressure_queues = np.empty(len(target.vectors), dtype=object)
-                # for i in range(len(pressure_queues)):
-                #     pressure_queues[i] = Queue()
-                # # save size of pressure window in seconds
-                # pressure_window_size = float(self.config['tv']['normal_pressure_window_size'])
-                # # save a queue of firing times for pressure
-                # pressure_window_queue = Queue()
-                # # keep track of current window size for pressure
-                # pressure_cur_window = 0
-
-                # # Initiate array containing sum of heat_flux over a given window
-                # heat_flux_window_sums = np.zeros(len(target.vectors))
-                # # Initialize an array of queues
-                # heat_flux_queues = np.empty(len(target.vectors), dtype=object)
-                # # Populate the array with a queue per cell
-                # for i in range(len(heat_flux_queues)):
-                #     heat_flux_queues[i] = Queue()
-                # # save size of heat_flux queue (s)
-                # heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
-                # # save a queue of firing times for heat_flux
-                # heat_flux_window_queue = Queue()
-                # # keep track of current window size for heatflux
-                # heat_flux_cur_window = 0
-
-        # print(len(cum_strikes))
-
-        # if checking_constraints:
-        #     self.max_pressure = 0
-        #     self.max_shear = 0
-        #     self.max_heat_rate = 0
-        #     self.max_heat_load = 0
-        #     self.max_cum_heat_load = 0
+                # Initiate array containing sum of heat_flux over a given window
+                heat_flux_window_sums = np.zeros(len(target.vectors))
+                # Initialize an array of queues
+                heat_flux_queues = np.empty(len(target.vectors), dtype=object)
+                # Populate the array with a queue per cell
+                for i in range(len(heat_flux_queues)):
+                    heat_flux_queues[i] = Queue()
+                # save size of heat_flux queue (s)
+                heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
+                # save a queue of firing times for heat_flux
+                heat_flux_window_queue = Queue()
+                # keep track of current window size for heatflux
+                heat_flux_cur_window = 0
 
         firing_data = {}
 
-
         # Loop through each firing in the JFH.
-        n_firings = len(self.jfh.JFH)
-        curr_firing = 1.0
         for firing in range(len(self.jfh.JFH)):
         # for firing in tqdm(range(len(self.jfh.JFH)), desc='All firings'):
 
-            # print('Analysis is ' + str(round((curr_firing / n_firings)*100, 2)) + '% complete')
-            curr_firing += 1.0
             # print('firing =', firing+1)
 
             # reset strikes for each firing
@@ -795,22 +761,21 @@ class RPOD (MissionPlanner):
             # Save active thrusters for current firing. 
             thrusters = self.jfh.JFH[firing]['thrusters']
             # print("thrusters", thrusters)
-            
+             
             # Load visiting vehicle position and orientation
             vv_pos = self.jfh.JFH[firing]['xyz']
 
             vv_orientation = np.array(self.jfh.JFH[firing]['dcm']).transpose()
 
             # Calculate strikes for active thrusters. 
-            # for thruster in tqdm(thrusters, desc='Current firing'):
             for thruster in thrusters:
-
-                thruster_id = link[str(thruster)][0]
-
+            # for thruster in tqdm(thrusters, desc='Current firing'):
 
                 # Save thruster id using indexed thruster value.
                 # Could naming/code be more clear?
                 # print('thruster num', thruster, 'thruster id', link[str(thruster)][0])
+                thruster_id = link[str(thruster)][0]
+
 
                 # Load data to calculate plume transformations
                 
@@ -826,13 +791,9 @@ class RPOD (MissionPlanner):
                 # print("plume normal: ", plume_normal)
                 
                 # calculate thruster exit coordinate with respect to the Target Vehicle.
-
-                # print('thruster_id[0] + thruster_id[1] is', thruster_id[0] + thruster_id[1])
-                # print("self.vv.cluster_data[thruster_id[0] + thruster_id[1]]['exit'][0] is ", self.vv.cluster_data[thruster_id[0] + thruster_id[1]]['exit'][0])
-                # print('self.vv.thruster_data[thruster_id] is', self.vv.thruster_data[thruster_id])
+                
+                # print(self.vv.thruster_data[thruster_id])
                 thruster_pos = vv_pos + np.array(self.vv.thruster_data[thruster_id]['exit'])
-                if self.vv.use_clusters == True:
-                    thruster_pos += (self.vv.cluster_data[thruster_id[0] + thruster_id[1]]['exit'][0])
                 thruster_pos = thruster_pos[0]
                 # print('thruster position', thruster_pos)
 
@@ -909,18 +870,8 @@ class RPOD (MissionPlanner):
 
                             heat_flux_cur = simple_plume.get_heat_flux()
                             heat_flux[i] += heat_flux_cur
-                            # cum_heat_flux[i] += heat_flux_cur
-                        # print("unit plume normal", unit_plume_normal)
-
-                        # print("unit distance", unit_distance)
-                        # print("theta", theta)
-                        # input()
-                        # print('centroid', centroid, 'distance', distance, 'norm distance', norm_distance)
-                        # input("strike!")
-
                             heat_flux_load[i] += heat_flux_cur * firing_time
                             cum_heat_flux_load[i] += heat_flux_cur * firing_time
-
 
             # Save surface data to be saved at each cell of the STL mesh.  
             cellData = {
@@ -980,7 +931,6 @@ class RPOD (MissionPlanner):
             #             failed_constraints = 1
 
 
-
             if self.config['pm']['kinetics'] != 'None':
                 cellData["pressures"] = pressures
                 cellData["max_pressures"] = max_pressures
@@ -989,9 +939,12 @@ class RPOD (MissionPlanner):
                 cellData["heat_flux_rate"] = heat_flux
                 cellData["heat_flux_load"] = heat_flux_load
                 cellData["cum_heat_flux_load"] = cum_heat_flux_load
-                
-        path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing)
-        self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData.copy(), target)
+
+            path_to_vtk = self.case_dir + "results/strikes/firing-" + str(firing)
+
+            # print(cellData)
+            # input()
+            self.target.convert_stl_to_vtk_strikes(path_to_vtk, cellData.copy(), target)
     
         # if self.config['pm']['kinetics'] != 'None' and checking_constraints:
         #     if not failed_constraints:
