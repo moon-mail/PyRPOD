@@ -52,7 +52,7 @@ This dashboard provides an overview of all tests in the PyRPOD project, categori
 | `rpod_integration_test_03.py`   | Integration    | Asserts plume strikes using KOZ geometry.            | ✅     |
 | `rpod_integration_test_04.py`   | Integration    | Asserts plume strikes using hollow cube geometry.    | ✅     |
 | `rpod_unit_test_01.py`          | Unit           | Verifies STL to VTK data conversion.                 | ✅     |
-| `rpod_unit_test_02.py`          | Unit           | Verifiy nehavior of JFH reader.                      | ⏳     |
+| `rpod_unit_test_02.py`          | Unit           | Verifiy behavior of JFH reader.                      | ⏳     |
 | `rpod_unit_test_03.py`          | Unit           | Produces JFH data according to produced equation.    | ⏳     |
 | `rpod_verification_test_03.py`  | Verification   | Tests strike counting from multiple thrusters.       | ⏳     |
 | `rpod_verification_test_04.py`  | Verification   | Asserts plume strikes after TCD decoupling.          | ⏳     |
