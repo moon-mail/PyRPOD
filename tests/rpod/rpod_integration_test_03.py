@@ -11,33 +11,41 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, MissionPlanner
+from pyrpod import LogisticsModule, MissionPlanner, JetFiringHistory, TargetVehicle, RPOD
 
 class KeepOutZoneChecks(unittest.TestCase):
     def test_keep_out_zone(self):
 
-        # # set case directory
-        # case_dir = '../case/rpod/flight_envelopes/'
+    # 1. Set Up
+        # Path to directory holding data assets and results for a specific RPOD study.
+        case_dir = '../case/rpod/koz/'
 
-        # # Instantiate LogisticModule object.
-        # lm = LogisticsModule.LogisticsModule(case_dir)
+        # Instantiate JetFiringHistory object.
+        jfh = JetFiringHistory.JetFiringHistory(case_dir)
 
-        # # Define LM mass distrubtion properties.
-        # m = 0.45*30000 # lb converted to kg
-        # h = 14 # m
-        # r = 4.0/2.0 # m
-        # lm.set_inertial_props(m, h, r)
+        # Load Target Vehicle.
+        tv = TargetVehicle.TargetVehicle(case_dir)
+        # print(tv.config.items)
 
-        # # Load in thruster configuration data from text file
-        # lm.set_thruster_config()
+        tv.set_stl()
 
-        # # Draco/Hypergolic thrusters.
-        # lm.add_thruster_performance(400, 300)
-        # lm.assign_thruster_groups()
+        # Instantiate LogisticModule object.
+        lm = LogisticsModule.LogisticsModule(case_dir)
 
-        # mp = MissionPlanner.MissionPlanner(case_dir)
-        # mp.set_lm(lm)
-        # mp.read_flight_plan()
+        # Load in thruster configuration file.
+        lm.set_thruster_config()
+
+        # Instantiate RPOD object.
+        rpod = RPOD.RPOD(case_dir)
+        rpod.study_init(jfh, tv, lm)
+
+        # Read in JFH.
+        jfh.read_jfh()
+
+    # 2. Execute
+        # Conduct RPOD analysis
+        rpod.graph_jfh()
+        strikes = rpod.jfh_plume_strikes()
 
         return
 
