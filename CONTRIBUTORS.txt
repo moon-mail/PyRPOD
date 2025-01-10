@@ -1,0 +1,24 @@
+# PyRPOD Contributors
+
+This document tracks the primary contributors to PyRPOD and their specific contributions, listed alphabetically by last name.
+
+---
+
+### Nicholas Palumbo
+- **Mission Design Analysis**: Development and refinement of mission planning and analysis tools.
+- **Trade Study Development**: Implementation and enhancement of trade study capabilities.
+- **Test Case Development**: Design and execution of comprehensive test cases to ensure system robustness.
+
+### Juan Roldan
+- **Plume Model Development**: Creation and refinement of plume simulation models.
+- **Design Constraint Developments**: Establishment and integration of design constraints within the framework.
+- **Trade Study Development**: Collaboration on trade study methodologies and applications.
+
+### Andy Torres
+- **Plume Strike Algorithm**: Design and implementation of algorithms for plume strike analysis.
+- **Library Architecture**: Development and organization of the PyRPOD library's core structure.
+- **Testing Harness**: Creation of testing infrastructure to maintain code quality and reliability.
+
+---
+
+Thank you to all contributors for their invaluable work and dedication to advancing PyRPOD!
