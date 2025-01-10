@@ -12,7 +12,8 @@
 import test_header
 import unittest
 
-from pyrpod import TargetVehicle, LogisticsModule, TradeStudy
+from pyrpod.vehicle import TargetVehicle, LogisticsModule
+from pyrpod.mdao import TradeStudy
 
 class MDAOTest(unittest.TestCase):
     def test_mdao(self):

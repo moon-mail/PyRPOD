@@ -10,7 +10,9 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
+
+from pyrpod.vehicle import LogisticsModule, TargetVehicle, VisitingVehicle
+from pyrpod.rpod import RPOD, JetFiringHistory
 
 class LoadJFHChecks(unittest.TestCase):
     def test_plume_constraints(self):

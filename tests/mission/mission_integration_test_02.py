@@ -10,7 +10,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule
+from pyrpod.vehicle import LogisticsModule
 
 class ThrusterGroupingChecks(unittest.TestCase):
     def test_performance_per_thruster_group(self):

@@ -10,7 +10,8 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, MissionPlanner
+from pyrpod.vehicle import LogisticsModule
+from pyrpod.mission import MissionPlanner
 
 class BurnTimeContourChecks(unittest.TestCase):
     def test_burn_time_contour_plots(self):

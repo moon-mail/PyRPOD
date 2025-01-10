@@ -10,8 +10,9 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule
 import numpy as np
+
+from pyrpod.vehicle import LogisticsModule
 
 def expected_normal_vector(index):
     # Define normal vectors for each thruster based on the repeating pattern in test_output.txt

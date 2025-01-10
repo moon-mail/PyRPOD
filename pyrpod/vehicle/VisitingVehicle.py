@@ -7,8 +7,8 @@ import numpy as np
 import math
 import os
 
-from pyrpod.Vehicle import Vehicle
-from pyrpod import SweepConfig
+from pyrpod.vehicle.Vehicle import Vehicle
+from pyrpod.mdao import SweepConfig
 
 # Adapted from
 # https://stackoverflow.com/questions/54616049/converting-a-rotation-matrix-to-euler-angles-and-back-special-case

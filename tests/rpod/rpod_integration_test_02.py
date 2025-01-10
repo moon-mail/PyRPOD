@@ -14,7 +14,9 @@ logging.basicConfig(filename='rpod_integration_test_02.log', level=logging.INFO,
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, JetFiringHistory, TargetVehicle, RPOD
+
+from pyrpod.vehicle import LogisticsModule, TargetVehicle
+from pyrpod.rpod import RPOD, JetFiringHistory
 
 class OneDimTransApproachChecks(unittest.TestCase):
     def test_1d_approach(self):

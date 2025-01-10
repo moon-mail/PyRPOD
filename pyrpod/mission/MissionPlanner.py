@@ -1,4 +1,4 @@
-from pyrpod.LogisticsModule import LogisticsModule
+from pyrpod.vehicle.LogisticsModule import LogisticsModule
 
 import os
 import numpy as np

@@ -1,5 +1,5 @@
 from stl import mesh
-from pyrpod.Vehicle import Vehicle
+from pyrpod.vehicle.Vehicle import Vehicle
 
 class TargetVehicle(Vehicle):
     """

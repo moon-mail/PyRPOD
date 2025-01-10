@@ -9,8 +9,11 @@
 # Axial + Cant Evaluator
 
 
-from pyrpod import JetFiringHistory, TargetVehicle, LogisticsModule, RPOD, SweepConfig, MissionPlanner
 import openmdao.api as om
+from pyrpod.rpod import JetFiringHistory, RPOD
+from pyrpod.vehicle import TargetVehicle, LogisticsModule
+from pyrpod.mdao import SweepConfig
+from pyrpod.mission import MissionPlanner
 
 
 class EvaluateImpingement(om.ExplicitComponent):

@@ -4,9 +4,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
-from pyrpod import RPOD
-from pyrpod import JetFiringHistory
-from pyrpod import SweepConfig
+from pyrpod.rpod import RPOD, JetFiringHistory
+from pyrpod.mdao import SweepConfig
 import configparser
 
 class TradeStudy():

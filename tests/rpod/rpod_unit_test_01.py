@@ -12,8 +12,8 @@ import test_header
 import unittest, os
 import numpy as np
 import meshio
-from pyrpod import Vehicle
-from pyrpod import MissionPlanner
+from pyrpod.vehicle import Vehicle
+from pyrpod.mission import MissionPlanner
 
 class STLtoVTKChecks(unittest.TestCase):
     def test_stl_to_vtk(self):

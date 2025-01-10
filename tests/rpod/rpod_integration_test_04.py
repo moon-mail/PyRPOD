@@ -12,7 +12,9 @@ logging.basicConfig(filename='rpod_integration_test_04.log', level=logging.INFO,
 import test_header
 import unittest, os, sys
 import pandas as pd
-from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
+
+from pyrpod.vehicle import LogisticsModule, TargetVehicle, VisitingVehicle
+from pyrpod.rpod import RPOD, JetFiringHistory
 
 class HollowCubeChecks(unittest.TestCase):
     def test_hollow_cube(self):

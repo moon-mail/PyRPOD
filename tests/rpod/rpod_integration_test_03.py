@@ -14,7 +14,9 @@ logging.basicConfig(filename='rpod_integration_test_03.log', level=logging.INFO,
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, MissionPlanner, JetFiringHistory, TargetVehicle, RPOD
+
+from pyrpod.vehicle import LogisticsModule, TargetVehicle
+from pyrpod.rpod import RPOD, JetFiringHistory
 
 class KeepOutZoneChecks(unittest.TestCase):
     def test_keep_out_zone(self):
@@ -106,7 +108,7 @@ class KeepOutZoneChecks(unittest.TestCase):
 
             # Sums the total amount of cell strikes per firing. Saves data to a dictionary.
             string = '\''+str(n_firing)+'\': ' + ' ' +str(strikes[n_firing]['cum_strikes'].sum()) +','
-            logging.info(string)
+            # logging.info(string)
 
             # Assert that each firing is striking the expected cells by comparing index values. 
             for i in range(len(strikes[n_firing]['strikes'])):
@@ -124,7 +126,6 @@ class KeepOutZoneChecks(unittest.TestCase):
             self.assertEqual(n_cum_strikes, expected_cum_strikes[n_firing])
 
         return
-
 
 if __name__ == '__main__':
     unittest.main()

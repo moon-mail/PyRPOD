@@ -10,7 +10,8 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, MissionPlanner
+from pyrpod.vehicle import LogisticsModule
+from pyrpod.mission import MissionPlanner
 
 class OneDimRotApproach(unittest.TestCase):
     def test_1d_rot_approach_performance(self):

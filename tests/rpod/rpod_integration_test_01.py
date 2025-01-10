@@ -1,5 +1,5 @@
 import logging
-logging.basicConfig(filename='rpod/rpod_integration_test_01.log', level=logging.INFO, format='%(message)s')
+logging.basicConfig(filename='rpod_integration_test_01.log', level=logging.INFO, format='%(message)s')
 
 # Andy Torres, Nicholas Palumbo
 # Last Changed: 11-17-24
@@ -14,7 +14,8 @@ logging.basicConfig(filename='rpod/rpod_integration_test_01.log', level=logging.
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, JetFiringHistory, TargetVehicle, RPOD
+from pyrpod.vehicle import LogisticsModule, TargetVehicle
+from pyrpod.rpod import RPOD, JetFiringHistory
 
 class BaseCaseChecks(unittest.TestCase):
     def test_base_case(self):
@@ -124,8 +125,8 @@ class BaseCaseChecks(unittest.TestCase):
                     # logging.info(str(i))
                     self.assertIn(i, expected_strike_ids[n_firing])
             # Development statements used to write comparison entries in expected_strikes
-            # string = '\''+str(n_firing)+'\': ' + ' ' +str(strikes[n_firing]['cum_strikes'].sum()) +','
-            # logging.info(string)
+            string = '\''+str(n_firing)+'\': ' + ' ' +str(strikes[n_firing]['cum_strikes'].sum()) +','
+            logging.info(string)
 
             # Number of strikes for a given time step.
             n_strikes = strikes[n_firing]['strikes'].sum()

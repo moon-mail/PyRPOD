@@ -2,7 +2,7 @@ import configparser
 import numpy as np
 import sympy as sp
 
-from pyrpod.file_print import print_JFH
+from pyrpod.io.file_print import print_JFH
 
 # Helper functions (move to util.py?)
 def rotation_matrix_from_vectors(vec1, vec2):

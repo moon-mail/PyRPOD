@@ -4,11 +4,11 @@ import math
 
 from stl import mesh
 
-from pyrpod.LogisticsModule import LogisticsModule
-from pyrpod.MissionPlanner import MissionPlanner
-from pyrpod.RarefiedPlumeGasKinetics import SimplifiedGasKinetics
+from pyrpod.vehicle.LogisticsModule import LogisticsModule
+from pyrpod.mission.MissionPlanner import MissionPlanner
+from pyrpod.plume.RarefiedPlumeGasKinetics import SimplifiedGasKinetics
 
-from pyrpod.file_print import print_1d_JFH
+from pyrpod.io.file_print import print_1d_JFH
 
 from tqdm import tqdm
 from queue import Queue

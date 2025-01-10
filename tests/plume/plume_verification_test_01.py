@@ -11,7 +11,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import IsentropicExpansion
+from pyrpod.plume import IsentropicExpansion
 
 class IsentropicExpansionCheck(unittest.TestCase):
     def test_temp_vs_radial_expansion(self):

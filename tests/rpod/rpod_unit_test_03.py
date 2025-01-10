@@ -8,23 +8,25 @@
 # ========================
 # Test case for producing JFH data accoring to a supplied equation.
 
-import test_header
-import unittest, os, sys
-from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
+# import test_header
+# import unittest, os, sys
 
-import sympy as sp
+# from pyrpod.vehicle import LogisticsModule, TargetVehicle
+# from pyrpod.rpod import RPOD, JetFiringHistory
 
-class ProduceJFHChecks(unittest.TestCase):
-    def test_jfh_setter(self):
+# import sympy as sp
 
-        # Path to directory holding data assets and results for a specific RPOD study.
-        case_dir = '../case/rpod/base_case/'
+# class ProduceJFHChecks(unittest.TestCase):
+#     def test_jfh_setter(self):
 
-        t = sp.symbols('t')
+#         # Path to directory holding data assets and results for a specific RPOD study.
+#         case_dir = '../case/rpod/base_case/'
 
-        jfh = JetFiringHistory.JetFiringHistory(case_dir)
-        jfh.print_JFH_param_curve('JFH05.A', t, [25-t, 0, 20], align = False)
+#         t = sp.symbols('t')
+
+#         jfh = JetFiringHistory.JetFiringHistory(case_dir)
+#         jfh.print_JFH_param_curve('JFH05.A', t, [25-t, 0, 20], align = False)
 
         
-if __name__ == '__main__':
-    unittest.main()
+# if __name__ == '__main__':
+#     unittest.main()

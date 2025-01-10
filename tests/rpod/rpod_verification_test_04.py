@@ -10,8 +10,9 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD
 
+from pyrpod.vehicle import LogisticsModule, TargetVehicle, VisitingVehicle
+from pyrpod.rpod import RPOD, JetFiringHistory
 class LoadSTLModels(unittest.TestCase):
     def test_decoupled_tcd(self):
 

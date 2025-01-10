@@ -19,7 +19,11 @@
 import test_header
 import unittest, os, sys
 import numpy as np
-from pyrpod import JetFiringHistory, TargetVehicle, VisitingVehicle, RPOD, SweepConfig
+
+from pyrpod.rpod import JetFiringHistory, RPOD
+from pyrpod.vehicle import TargetVehicle, VisitingVehicle
+from pyrpod.mdao import SweepConfig
+
 
 class CoordinateSweepCheck(unittest.TestCase):
     def test_cant_sweep(self):

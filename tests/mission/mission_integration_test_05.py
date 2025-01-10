@@ -22,7 +22,8 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import LogisticsModule, MissionPlanner
+from pyrpod.vehicle import LogisticsModule
+from pyrpod.mission import MissionPlanner
 
 class ThrustEnvelopeChecks(unittest.TestCase):
     def test_thrust_envelope_plot(self):

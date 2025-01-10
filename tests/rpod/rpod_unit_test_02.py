@@ -11,7 +11,7 @@
 
 import test_header
 import unittest, os, sys
-from pyrpod import JetFiringHistory
+from pyrpod.rpod import JetFiringHistory
 
 def assert_dictionary_content(data):
     for entry in data:
