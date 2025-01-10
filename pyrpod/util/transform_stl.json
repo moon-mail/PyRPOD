@@ -1,0 +1,6 @@
+{
+    "input_file": "cylinder.STL",
+    "output_file": "cylinder_transformed.STL",
+    "scale": 0.001,
+    "translate": [-7, -2, -2]
+}
