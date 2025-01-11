@@ -14,8 +14,10 @@ PyRPOD Future Goals:
 2. API Development:
    - Create and document APIs for seamless integration with external tools and systems.
 
-3. Model Parallelization:
+3. Assesment of Model and Parallelization:
+   - Assess runtime and memory usage of algorithm.
    - Optimize the PyRPOD codebase for parallel processing to enhance scalability and performance.
+
 
 4. Validation and Sensitivity Studies:
    - Perform validation studies using experimental and simulated data.
