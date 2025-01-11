@@ -650,6 +650,26 @@ class RPOD (MissionPlanner):
         for sub_dir in sub_dirs:
             os.makedirs(os.path.join(self.case_dir, sub_dir), exist_ok=True)
 
+    def set_strike_fields(self, target):
+        # Initiate array containing cummulative strikes. 
+        cum_strikes = np.zeros(len(target.vectors))
+
+        # using plume physics?
+        if self.config['pm']['kinetics'] != 'None':
+
+            # Initiate array containing max pressures induced on each element.
+            max_pressures = np.zeros(len(target.vectors))
+
+            # Initiate array containing max shears induced on each element.
+            max_shears = np.zeros(len(target.vectors))
+
+            # Initiate array containing cummulative heatflux.
+            cum_heat_flux_load = np.zeros(len(target.vectors))
+
+            return cum_strikes, max_pressures, max_shears, cum_heat_flux_load
+
+        return cum_strikes
+
     def jfh_plume_strikes(self):
         """
             Calculates number of plume strikes according to data provided for RPOD analysis.
@@ -677,63 +697,13 @@ class RPOD (MissionPlanner):
         target = self.target.mesh
         target_normals = target.get_unit_normals()
 
-        # Initiate array containing cummulative strikes. 
-        cum_strikes = np.zeros(len(target.vectors))
 
-        # using plume physics?
+        # set plume strike fields
         if self.config['pm']['kinetics'] != 'None':
+            cum_strikes, max_pressures, max_shears, cum_heat_flux_load = self.set_strike_fields(target)
+        else:
+            cum_strikes = self.set_strike_fields(target)
 
-            # Initiate array containing max pressures induced on each element. 
-            max_pressures = np.zeros(len(target.vectors))
-
-            # Initiate array containing max shears induced on each element. 
-            max_shears = np.zeros(len(target.vectors))
-
-            # Initiate array containing cummulative heatflux. 
-            cum_heat_flux_load = np.zeros(len(target.vectors))
-
-            checking_constraints = int(self.config['tv']['check_constraints'])
-
-            # if checking_constraints:
-            #     # grab constraint values from configuration file
-            #     pressure_constraint = float(self.config['tv']['normal_pressure'])
-            #     heat_flux_constraint = float(self.config['tv']['heat_flux'])
-            #     shear_constraint = float(self.config['tv']['shear_pressure'])
-
-            #     pressure_window_constraint = float(self.config['tv']['normal_pressure_load'])
-            #     heat_flux_window_constraint = float(self.config['tv']['heat_flux_load'])
-
-            #     # open an output file to record if constraints are passed or failed
-            #     report_dir = results_dir.replace('strikes', '')
-            #     constraint_file = open(report_dir + 'impingement_report.txt', 'w')
-            #     failed_constraints = 0
-
-            #     # Initiate array containing sum of pressures over a given window
-            #     pressure_window_sums = np.zeros(len(target.vectors))
-            #     # hold a queue of pressure values per cell
-            #     pressure_queues = np.empty(len(target.vectors), dtype=object)
-            #     for i in range(len(pressure_queues)):
-            #         pressure_queues[i] = Queue()
-            #     # save size of pressure window in seconds
-            #     pressure_window_size = float(self.config['tv']['normal_pressure_window_size'])
-            #     # save a queue of firing times for pressure
-            #     pressure_window_queue = Queue()
-            #     # keep track of current window size for pressure
-            #     pressure_cur_window = 0
-
-            #     # Initiate array containing sum of heat_flux over a given window
-            #     heat_flux_window_sums = np.zeros(len(target.vectors))
-            #     # Initialize an array of queues
-            #     heat_flux_queues = np.empty(len(target.vectors), dtype=object)
-            #     # Populate the array with a queue per cell
-            #     for i in range(len(heat_flux_queues)):
-            #         heat_flux_queues[i] = Queue()
-            #     # save size of heat_flux queue (s)
-            #     heat_flux_window_size = float(self.config['tv']['heat_flux_window_size'])
-            #     # save a queue of firing times for heat_flux
-            #     heat_flux_window_queue = Queue()
-            #     # keep track of current window size for heatflux
-            #     heat_flux_cur_window = 0
 
         firing_data = {}
 
