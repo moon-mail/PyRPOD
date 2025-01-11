@@ -641,21 +641,14 @@ class RPOD (MissionPlanner):
     #         param_window_sum -= old_param
     #     return param_queue, param_window_sum
 
+    # Helper functions for jfh_plume_strikes
     def create_results_dir(self):
         """
-            Creates a results directory if it doesn't already exist.
+            Creates a results directory and sub-directories if they don't already exist.
         """
-        results_dir = self.case_dir + 'results'
-        if not os.path.isdir(results_dir):
-            os.mkdir(results_dir)
-
-        strikes_dir = results_dir + "/strikes"
-        if not os.path.isdir(results_dir):
-            os.mkdir(results_dir)
-
-        jfh_dir = results_dir + "/jfh"
-        if not os.path.isdir(jfh_dir):
-            os.mkdir(jfh_dir)
+        sub_dirs = ['results', 'results/strikes', 'results/jfh']
+        for sub_dir in sub_dirs:
+            os.makedirs(os.path.join(self.case_dir, sub_dir), exist_ok=True)
 
     def jfh_plume_strikes(self):
         """
@@ -679,14 +672,6 @@ class RPOD (MissionPlanner):
             i = i + 1
 
         self.create_results_dir()
-
-        # # Create results directory if it doesn't already exist.
-        # results_dir = self.case_dir + 'results'
-        # if not os.path.isdir(results_dir):
-        #     #print("results dir doesn't exist")
-        #     os.mkdir(results_dir)
-
-
 
         # Save STL surface of target vehicle to local variable.
         target = self.target.mesh
