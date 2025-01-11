@@ -1,0 +1,32 @@
+PyRPOD Future Goals:
+
+1. Test Case Development:
+   - Complete "Swinging Corridor" test cases for RPOD.
+   - Develop plume model test cases and perform mesh sensitivity studies.
+
+2. API Development:
+   - Create and document APIs for seamless integration with external tools and systems.
+
+3. Model Parallelization:
+   - Optimize the PyRPOD codebase for parallel processing to enhance scalability and performance.
+
+4. Validation and Sensitivity Studies:
+   - Perform validation studies using experimental and simulated data.
+   - Conduct sensitivity analyses to identify critical factors affecting outcomes.
+
+5. Documentation and Tutorials:
+   - Enhance documentation for new and existing modules.
+   - Develop user tutorials for efficient adoption and implementation.
+
+6. Integration Testing:
+   - Expand and refine integration tests for core PyRPOD functionalities.
+   - Ensure interoperability between modules like plume analysis and RPOD workflows.
+
+7. Visualization and Reporting:
+   - Automate visualization of 3D models and plume interactions.
+   - Enhance reporting formats for better test case diagnostics.
+
+8. Trade Studies and Optimization:
+   - Perform trade studies to explore different mission configurations.
+   - Refine cant optimization methods to improve system performance.
+
