@@ -670,6 +670,19 @@ class RPOD (MissionPlanner):
 
         return cum_strikes
 
+    def extract_firing_data(self, firing):
+        # Save active thrusters for current firing.
+        thrusters = self.jfh.JFH[firing]['thrusters']
+        # print("thrusters", thrusters)
+
+        # Load visiting vehicle position and orientation
+        vv_pos = self.jfh.JFH[firing]['xyz']
+
+        vv_orientation = np.array(self.jfh.JFH[firing]['dcm']).transpose()
+
+        return thrusters, vv_pos, vv_orientation
+
+
     def jfh_plume_strikes(self):
         """
             Calculates number of plume strikes according to data provided for RPOD analysis.
@@ -713,6 +726,9 @@ class RPOD (MissionPlanner):
 
             # print('firing =', firing+1)
 
+            # Extract firing data
+            thrusters, vv_pos, vv_orientation = self.extract_firing_data(firing)
+
             # reset strikes for each firing
             strikes = np.zeros(len(target.vectors))
 
@@ -728,14 +744,6 @@ class RPOD (MissionPlanner):
                 heat_flux = np.zeros(len(target.vectors))
                 heat_flux_load = np.zeros(len(target.vectors))
 
-            # Save active thrusters for current firing. 
-            thrusters = self.jfh.JFH[firing]['thrusters']
-            # print("thrusters", thrusters)
-             
-            # Load visiting vehicle position and orientation
-            vv_pos = self.jfh.JFH[firing]['xyz']
-
-            vv_orientation = np.array(self.jfh.JFH[firing]['dcm']).transpose()
 
             # Calculate strikes for active thrusters. 
             for thruster in thrusters:
