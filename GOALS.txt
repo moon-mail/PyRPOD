@@ -2,7 +2,14 @@ PyRPOD Future Goals:
 
 1. Test Case Development:
    - Complete "Swinging Corridor" test cases for RPOD.
+   - Establish multi VV test cases.
    - Develop plume model test cases and perform mesh sensitivity studies.
+
+2. Plume Strike Development:
+   - Add tracer class to support plume shading.
+   - Track plume strikes for an individual thruster.
+   - Expand plume kinetic models (DSMC, LBM, CFD) 
+   - Develop plume model API
 
 2. API Development:
    - Create and document APIs for seamless integration with external tools and systems.
@@ -29,4 +36,5 @@ PyRPOD Future Goals:
 8. Trade Studies and Optimization:
    - Perform trade studies to explore different mission configurations.
    - Refine cant optimization methods to improve system performance.
+   - Add design veriables to include in the optimization study.
 
