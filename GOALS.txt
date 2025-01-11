@@ -18,7 +18,6 @@ PyRPOD Future Goals:
    - Assess runtime and memory usage of algorithm.
    - Optimize the PyRPOD codebase for parallel processing to enhance scalability and performance.
 
-
 5. Validation and Sensitivity Studies:
    - Perform validation studies using experimental and simulated data.
    - Conduct sensitivity analyses to identify critical factors affecting outcomes.
@@ -27,9 +26,10 @@ PyRPOD Future Goals:
    - Enhance documentation for new and existing modules.
    - Develop user tutorials for efficient adoption and implementation.
 
-7. Integration Testing:
+7. Testing Routines:
    - Expand and refine integration tests for core PyRPOD functionalities.
    - Ensure interoperability between modules like plume analysis and RPOD workflows.
+   - Establish a workflow for integration testing. 
 
 8. Visualization and Reporting:
    - Automate visualization of 3D models and plume interactions.
