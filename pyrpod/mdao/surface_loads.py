@@ -51,6 +51,32 @@ The auxiliary ``pressure_weighted_centroid``,
 ``sum(p_i A_i r_i) / sum(p_i A_i)``, is always defined for a non-zero
 pressure load and coincides with the classical center of pressure for a
 planar component under unidirectional pressure.
+
+Panel-local reporting
+---------------------
+The global-frame resultants above are also reported on the target's own
+surface-local basis ``(u_hat, v_hat, n_hat)``
+(:meth:`pyrpod.mdao.study_config.TargetSpec.local_basis`), which is what a
+panel study reads: a longitudinal axis ``u``, a transverse axis ``v``, and
+the normal ``n``, with ``u x v = n``. :func:`project_to_panel_frame` builds
+that projection, with these SIGN CONVENTIONS:
+
+* ``normal_force = -F . n_hat``. The target normal points TOWARD the plume
+  source, and the plume pushes into the surface, so a compressive
+  impingement load is POSITIVE. A positive normal force therefore always
+  means "pressed away from the source"; a negative one would mean the
+  resultant pulls the panel toward the source.
+* ``local_moment_u/v/n = M_ref . u_hat / v_hat / n_hat``, the components of
+  the SAME moment vector the global-frame fields report, about the same
+  reference point. Positive follows the right-hand rule about that axis.
+  Worked sign: a pressure patch centred at ``+u`` pushes along ``-n``, so
+  ``M = (u_off * u_hat) x (-F_n * n_hat) = +u_off * F_n * v_hat`` (using
+  ``u x n = -v`` and ``F_n < 0`` along n). A source displaced toward ``+u``
+  therefore produces a POSITIVE ``local_moment_v``, growing with the offset
+  until the patch starts leaving the panel.
+* ``center_of_pressure_u/v = (r_cop - r_ref) . u_hat / v_hat``, the
+  panel-local coordinates of the center of pressure MEASURED FROM the
+  moment reference point (the panel center for the ISS-panel studies).
 """
 
 from __future__ import annotations
@@ -65,9 +91,12 @@ from pyrpod.mdao.study_config import ComponentSpec, Normalization
 
 __all__ = [
     "ComponentLoads",
+    "PanelProjection",
     "face_areas",
     "flow_directions",
     "integrate_component_loads",
+    "panel_local_coordinates",
+    "project_to_panel_frame",
     "select_component_faces",
 ]
 
@@ -318,6 +347,102 @@ def integrate_component_loads(
         coefficients={},
     )
     return _with_coefficients(loads, normalization)
+
+
+@dataclass(frozen=True)
+class PanelProjection:
+    """Integrated loads projected onto a target's surface-local basis.
+
+    See the module docstring for the sign conventions. Every field is a
+    plain float (or None when the underlying quantity does not exist), so a
+    result record carries them as flat, directly plottable columns.
+    """
+
+    normal_force: float
+    local_force_u: float
+    local_force_v: float
+    local_moment_u: float
+    local_moment_v: float
+    local_moment_n: float
+    center_of_pressure_u: float | None
+    center_of_pressure_v: float | None
+
+
+def panel_local_coordinates(
+    points: NDArray[np.float64],
+    reference_point: Sequence[float] | NDArray[np.float64],
+    u_hat: Sequence[float] | NDArray[np.float64],
+    v_hat: Sequence[float] | NDArray[np.float64],
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Panel-local ``(u, v)`` coordinates of points, measured from a reference.
+
+    A pure projection of ``points - reference_point`` onto the two in-surface
+    axes; nothing is interpolated, fitted or flattened. For a planar target
+    whose points lie in the panel, ``(u, v)`` recovers the panel coordinates
+    exactly.
+
+    Parameters
+    ----------
+    points : np.ndarray
+        (N, 3) points in the case's global frame (face centroids, typically).
+    reference_point : array-like
+        Panel-local origin, normally the target reference point.
+    u_hat, v_hat : array-like
+        The in-surface axes (see
+        :meth:`pyrpod.mdao.study_config.TargetSpec.local_basis`).
+
+    Returns
+    -------
+    (np.ndarray, np.ndarray)
+        The ``u`` and ``v`` coordinate arrays, each of length N.
+    """
+    relative = (np.asarray(points, dtype=float)
+                - np.asarray(reference_point, dtype=float).reshape(3))
+    return (relative @ np.asarray(u_hat, dtype=float).reshape(3),
+            relative @ np.asarray(v_hat, dtype=float).reshape(3))
+
+
+def project_to_panel_frame(
+    loads: ComponentLoads,
+    u_hat: Sequence[float] | NDArray[np.float64],
+    v_hat: Sequence[float] | NDArray[np.float64],
+    n_hat: Sequence[float] | NDArray[np.float64],
+) -> PanelProjection:
+    """Project one component's resultants onto the surface-local basis.
+
+    The projection is exact and adds no physics: it re-expresses the force
+    and moment vectors this module already integrated, in the basis a panel
+    study reports. See the module docstring for the sign conventions, in
+    particular that ``normal_force`` is positive for a load pressing INTO
+    the panel (away from the plume source).
+    """
+    u = np.asarray(u_hat, dtype=float).reshape(3)
+    v = np.asarray(v_hat, dtype=float).reshape(3)
+    n = np.asarray(n_hat, dtype=float).reshape(3)
+
+    force = np.asarray(loads.force, dtype=float).reshape(3)
+    moment = np.asarray(loads.moment, dtype=float).reshape(3)
+
+    cop_u: float | None = None
+    cop_v: float | None = None
+    if loads.center_of_pressure is not None:
+        arm = (np.asarray(loads.center_of_pressure, dtype=float).reshape(3)
+               - np.asarray(loads.moment_reference_point,
+                            dtype=float).reshape(3))
+        cop_u = float(arm @ u)
+        cop_v = float(arm @ v)
+
+    return PanelProjection(
+        # Positive into the panel: the normal points at the plume source.
+        normal_force=float(-(force @ n)),
+        local_force_u=float(force @ u),
+        local_force_v=float(force @ v),
+        local_moment_u=float(moment @ u),
+        local_moment_v=float(moment @ v),
+        local_moment_n=float(moment @ n),
+        center_of_pressure_u=cop_u,
+        center_of_pressure_v=cop_v,
+    )
 
 
 def _center_of_pressure(

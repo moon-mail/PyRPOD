@@ -32,7 +32,7 @@ from typing import Any, Iterable, Sequence
 import numpy as np
 from numpy.typing import NDArray
 
-from pyrpod.mdao.surface_loads import ComponentLoads
+from pyrpod.mdao.surface_loads import ComponentLoads, PanelProjection
 
 __all__ = ["CaseResult", "StudyResults", "code_version"]
 
@@ -128,19 +128,85 @@ class CaseResult:
     coefficients: dict[str, float] = field(default_factory=dict)
     coefficients_available: bool = False
 
+    # --- panel-local pose (offset sweeps) --------------------------------
+    # Zero / 'aim_at_reference' for every study that does not sweep offsets,
+    # so an older result file round-trips unchanged.
+    source_offset_u: float = 0.0
+    source_offset_v: float = 0.0
+    source_axis_mode: str = "aim_at_reference"
+
+    # --- panel-local integrated loads ------------------------------------
+    # See pyrpod.mdao.surface_loads for the sign conventions: normal_force is
+    # POSITIVE for a load pressing into the panel (away from the source);
+    # the moments are the global moment vector projected on (u, v, n) about
+    # the same reference point; the centers of pressure are measured FROM
+    # that reference point along u and v.
+    normal_force: float | None = None
+    local_force_u: float | None = None
+    local_force_v: float | None = None
+    local_moment_u: float | None = None
+    local_moment_v: float | None = None
+    local_moment_n: float | None = None
+    center_of_pressure_u: float | None = None
+    center_of_pressure_v: float | None = None
+
+    # --- derived Knudsen metadata (never an input to the physics) --------
+    knudsen_number: float | None = None
+    mean_free_path: float | None = None
+    knudsen_reference_length: float | None = None
+    knudsen_definition: str | None = None
+
     # --- artifacts and provenance ----------------------------------------
     vtk_path: str | None = None
     jfh_path: str | None = None
+    surface_distribution_path: str | None = None
     config_path: str = ""
     case_dir: str = ""
     code_version: str = "unknown"
     generated_at: str = ""
 
+    # ------------------------------------------------------------ accessors
+    @property
+    def model_variant(self) -> str:
+        """Short label of the plume model that produced this record.
+
+        ``'Simplified'`` or ``'Collisionless'`` -- the ``GasKinetics`` suffix
+        of :attr:`plume_model` carries no information and makes a plot legend
+        or a grouped CSV column needlessly wide.
+        """
+        return self.plume_model.replace("GasKinetics", "") or self.plume_model
+
     # ------------------------------------------------------------ builders
     @classmethod
-    def from_loads(cls, loads: ComponentLoads, **metadata: Any) -> "CaseResult":
-        """Build a result record from integrated loads plus study metadata."""
+    def from_loads(cls, loads: ComponentLoads,
+                   panel: PanelProjection | None = None,
+                   **metadata: Any) -> "CaseResult":
+        """Build a result record from integrated loads plus study metadata.
+
+        Parameters
+        ----------
+        loads : ComponentLoads
+            Integrated global-frame loads for one component and firing.
+        panel : PanelProjection, optional
+            The same resultants projected on the target's surface-local
+            basis (see :func:`pyrpod.mdao.surface_loads.project_to_panel_frame`).
+            When omitted every panel-local field stays None, so a caller that
+            has no surface basis is never given invented numbers.
+        """
+        panel_fields: dict[str, Any] = {}
+        if panel is not None:
+            panel_fields = {
+                "normal_force": panel.normal_force,
+                "local_force_u": panel.local_force_u,
+                "local_force_v": panel.local_force_v,
+                "local_moment_u": panel.local_moment_u,
+                "local_moment_v": panel.local_moment_v,
+                "local_moment_n": panel.local_moment_n,
+                "center_of_pressure_u": panel.center_of_pressure_u,
+                "center_of_pressure_v": panel.center_of_pressure_v,
+            }
         return cls(
+            **panel_fields,
             component=loads.component,
             component_faces=loads.n_faces,
             component_area=loads.total_area,
@@ -192,9 +258,13 @@ class CaseResult:
             "coordinate_system": self.coordinate_system,
             "plate_angle_deg": self.plate_angle_deg,
             "source_distance": self.source_distance,
+            "source_offset_u": self.source_offset_u,
+            "source_offset_v": self.source_offset_v,
+            "source_axis_mode": self.source_axis_mode,
             "firing_duration_s": self.firing_duration_s,
             "thrusters": " ".join(str(t) for t in self.thrusters),
             "plume_model": self.plume_model,
+            "model_variant": self.model_variant,
         }
         _expand(row, "plume_source_position", self.plume_source_position)
         _expand(row, "target_normal", self.target_normal)
@@ -213,6 +283,13 @@ class CaseResult:
         row["residual_couple"] = self.residual_couple
         _expand(row, "pressure_weighted_centroid",
                 self.pressure_weighted_centroid)
+        # Panel-local resultants: flat, directly plottable columns. Empty
+        # rather than zero when the study supplied no surface basis.
+        for name in ("normal_force", "local_force_u", "local_force_v",
+                     "local_moment_u", "local_moment_v", "local_moment_n",
+                     "center_of_pressure_u", "center_of_pressure_v"):
+            value = getattr(self, name)
+            row[name] = "" if value is None else float(value)
         row.update({
             "max_pressure": self.max_pressure,
             "max_shear_stress": self.max_shear_stress,
@@ -224,9 +301,17 @@ class CaseResult:
         })
         for name, value in sorted(self.coefficients.items()):
             row[f"coeff_{name}"] = value
+        # Derived Knudsen metadata; empty columns when the study configured
+        # no knudsen block, never a fabricated value.
+        for name in ("knudsen_number", "mean_free_path",
+                     "knudsen_reference_length"):
+            value = getattr(self, name)
+            row[name] = "" if value is None else float(value)
+        row["knudsen_definition"] = self.knudsen_definition or ""
         row.update({
             "vtk_path": self.vtk_path or "",
             "jfh_path": self.jfh_path or "",
+            "surface_distribution_path": self.surface_distribution_path or "",
             "config_path": self.config_path,
             "case_dir": self.case_dir,
             "code_version": self.code_version,
@@ -255,6 +340,19 @@ class CaseResult:
             "max_heat_flux": self.max_heat_flux,
             "total_heat_load": self.total_heat_load,
             "affected_area": self.affected_area,
+            # Panel-local scalars; None when no surface basis was supplied,
+            # which quantity() already reports as "unavailable".
+            "normal_force": self.normal_force,
+            "local_force_u": self.local_force_u,
+            "local_force_v": self.local_force_v,
+            "local_moment_u": self.local_moment_u,
+            "local_moment_v": self.local_moment_v,
+            "local_moment_n": self.local_moment_n,
+            "center_of_pressure_u": self.center_of_pressure_u,
+            "center_of_pressure_v": self.center_of_pressure_v,
+            # Derived metadata, comparable across cases like any other
+            # scalar; it never participated in producing the loads.
+            "knudsen_number": self.knudsen_number,
         }
         if name in direct:
             return direct[name]

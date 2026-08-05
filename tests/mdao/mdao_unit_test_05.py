@@ -140,12 +140,27 @@ class Validation(unittest.TestCase):
         with pytest.raises(StudyConfigError):
             from_mapping(data)
 
-    def test_only_the_supported_plume_model_is_accepted(self):
+    def test_every_supported_plume_model_is_accepted(self):
+        # Both collisionless Cai variants may be selected by name; the model
+        # named here is the one that computes the plume field.
+        for name in ('SimplifiedGasKinetics', 'CollisionlessGasKinetics'):
+            with self.subTest(model=name):
+                data = baseline_mapping()
+                data['plume_model']['name'] = name
+                self.assertEqual(from_mapping(data).plume_model, name)
+
+    def test_unknown_plume_model_is_rejected(self):
         data = baseline_mapping()
-        data['plume_model']['name'] = 'CollisionlessGasKinetics'
+        data['plume_model']['name'] = 'DSMCGasKinetics'
         with pytest.raises(StudyConfigError) as excinfo:
             from_mapping(data)
+        self.assertIn('DSMCGasKinetics', str(excinfo.value))
         self.assertIn(SUPPORTED_PLUME_MODEL, str(excinfo.value))
+
+    def test_omitted_plume_model_keeps_the_historical_default(self):
+        data = baseline_mapping()
+        data.pop('plume_model')
+        self.assertEqual(from_mapping(data).plume_model, SUPPORTED_PLUME_MODEL)
 
     def test_invalid_firing_counts_are_rejected(self):
         for value in (0, -2, 1.5, 'many'):

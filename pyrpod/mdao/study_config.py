@@ -12,13 +12,17 @@ coefficient normalization, and output/plot/reference settings.
 The schema is deliberately explicit. Nothing is inferred that the caller
 did not write down:
 
-* the plume model is recorded by name and must be ``SimplifiedGasKinetics``
-  (this branch adds no plume-model registry);
+* the plume model is named explicitly and must be one of the collisionless
+  models in :data:`pyrpod.plume.gas_kinetics_models.PLUME_MODELS`; the name
+  SELECTS the model that computes the plume field, it is not just metadata;
 * coefficients are computed only when every normalization input is present
   (see :class:`Normalization`); otherwise they are reported as unavailable;
 * ``n_firings`` means the exact number of entries written to the Jet Firing
   History -- a mismatch against an explicitly prescribed firing list is an
-  error, never a silent truncation.
+  error, never a silent truncation;
+* the Knudsen number is DERIVED METADATA only (see :class:`KnudsenSpec`):
+  the mean free path must be supplied, is never inferred from gas
+  properties, and never changes the analytical plume solution.
 
 Example
 -------
@@ -37,12 +41,36 @@ import numpy as np
 import yaml
 from numpy.typing import NDArray
 
+from pyrpod.plume.gas_kinetics_models import (
+    DEFAULT_PLUME_MODEL,
+    PLUME_MODELS,
+    PlumeModelError,
+    resolve_model_name,
+)
 from pyrpod.rpod.approach_maneuvers import (
     validate_n_firings as _validate_n_firings,
 )
 
-#: The single plume model this study workflow supports (hard scope constraint).
-SUPPORTED_PLUME_MODEL = "SimplifiedGasKinetics"
+#: Plume model assumed when a configuration names none. Every configuration
+#: written before model dispatch existed therefore keeps its exact behavior.
+SUPPORTED_PLUME_MODEL = DEFAULT_PLUME_MODEL
+
+#: Collisionless plume models a study may select, by class name.
+SUPPORTED_PLUME_MODELS: tuple[str, ...] = tuple(sorted(PLUME_MODELS))
+
+#: How the plume axis is oriented at each generated pose.
+#:
+#: ``aim_at_reference``
+#:     The historical (and default) behavior: the source sits on an arc of
+#:     radius ``source_distance`` about the target reference point and its
+#:     axis points back at that point, so a swept ``plate_angles_deg``
+#:     changes the approach angle.
+#: ``parallel_to_normal``
+#:     The source is TRANSLATED parallel to the target surface and its axis
+#:     stays anti-parallel to the target normal, so the plume centerline
+#:     strikes the surface at the requested panel-local offset. This is the
+#:     ISS-panel convention; see :class:`SweepSpec`.
+SOURCE_AXIS_MODES = ("aim_at_reference", "parallel_to_normal")
 
 #: Default unit labels carried into the result metadata. PyRPOD works in SI
 #: throughout; recording them makes an exported result self-describing.
@@ -93,6 +121,26 @@ def _as_float_list(value: Any, context: str) -> list[float]:
     except (TypeError, ValueError) as exc:
         raise StudyConfigError(f"{context}: expected a list of numbers, "
                                f"got {value!r}") from exc
+
+
+def _as_offsets(value: Any, context: str) -> list[float]:
+    """Parse an optional panel-local offset list, defaulting to ``[0.0]``.
+
+    An omitted (or explicitly null) list means "no offset", which is the
+    behavior of every configuration written before offsets existed. Non-finite
+    values are rejected rather than propagated into a pose.
+    """
+    if value is None:
+        return [0.0]
+    offsets = _as_float_list(value, context)
+    if not offsets:
+        raise StudyConfigError(
+            f"{context} must not be empty; omit it for the default [0.0]")
+    for offset in offsets:
+        if not np.isfinite(offset):
+            raise StudyConfigError(
+                f"{context}: offsets must be finite, got {offset!r}")
+    return offsets
 
 
 @dataclass(frozen=True)
@@ -162,6 +210,10 @@ class TargetSpec:
     places the plume source on ``normal``, positive angles rotate it toward
     ``tangent``. They are geometry properties, not physics, so a curved
     target simply supplies the axes its sweep should use.
+
+    The same two vectors also define the SURFACE-LOCAL basis used by the
+    panel-local offsets, moments, center of pressure and distribution
+    exports (see :meth:`local_basis`); no separate axis keys are needed.
     """
 
     geometry_id: str
@@ -213,6 +265,26 @@ class TargetSpec:
             components=components,
         )
 
+    def local_basis(self) -> tuple[NDArray[np.float64], NDArray[np.float64],
+                                   NDArray[np.float64]]:
+        """Right-handed surface-local basis ``(u_hat, v_hat, n_hat)``.
+
+        * ``u_hat`` is the target tangent -- the LONGITUDINAL in-surface
+          axis, the 22 m dimension of the ISS-representative panel;
+        * ``v_hat = n_hat x u_hat`` is the TRANSVERSE in-surface axis, the
+          12 m dimension;
+        * ``n_hat`` is the target normal, pointing toward the plume source.
+
+        The triad satisfies ``u x v = n``, and ``v_hat`` is exactly the
+        binormal :func:`pyrpod.mdao.firing_plan.pose_for` already uses for
+        the second column of its DCM, so the pose convention and the
+        panel-local reporting convention are the same basis.
+        """
+        n_hat = self.normal / np.linalg.norm(self.normal)
+        u_hat = self.tangent / np.linalg.norm(self.tangent)
+        v_hat = np.cross(n_hat, u_hat)
+        return u_hat, v_hat / np.linalg.norm(v_hat), n_hat
+
 
 @dataclass(frozen=True)
 class PrescribedFiringSpec:
@@ -254,6 +326,29 @@ SWEEP_MODES = ("per_case", "single_jfh")
 
 
 @dataclass(frozen=True)
+class SweepPose:
+    """One swept plume-source pose: angle, distance and panel-local offsets.
+
+    The full parameterization of a generated pose, in the order
+    :meth:`SweepSpec.sweep_poses` enumerates them. ``source_offset_u`` and
+    ``source_offset_v`` are zero for every configuration written before the
+    offset sweep existed, so such a study's poses are exactly what they
+    always were.
+    """
+
+    plate_angle_deg: float
+    source_distance: float
+    source_offset_u: float = 0.0
+    source_offset_v: float = 0.0
+    axis_mode: str = "aim_at_reference"
+
+    @property
+    def key(self) -> tuple[float, float]:
+        """The legacy ``(angle, distance)`` pose key."""
+        return (self.plate_angle_deg, self.source_distance)
+
+
+@dataclass(frozen=True)
 class SweepSpec:
     """Parameter sweep and firing-count definition.
 
@@ -261,10 +356,20 @@ class SweepSpec:
     ----------
     plate_angles_deg : tuple of float
         Approach angles swept in the target's (normal, tangent) plane;
-        0 deg is head-on along the target normal.
+        0 deg is head-on along the target normal. Meaningful only in
+        ``aim_at_reference`` axis mode.
     source_distances : tuple of float
         Plume-source distances from ``TargetSpec.reference_point``, in the
         case's length units.
+    source_offsets_u, source_offsets_v : tuple of float
+        Panel-local translations of the plume source along the target's
+        longitudinal (``u``) and transverse (``v``) axes (see
+        :meth:`TargetSpec.local_basis`). Both default to ``(0.0,)``, which
+        reproduces the on-axis poses exactly. Requires
+        ``source_axis_mode: parallel_to_normal``.
+    source_axis_mode : str
+        ``'aim_at_reference'`` (default) or ``'parallel_to_normal'``; see
+        :data:`SOURCE_AXIS_MODES`.
     n_firings : int
         Number of Jet Firing History entries contributed by EACH pose. In
         ``per_case`` mode that is the exact length of every case's history;
@@ -290,22 +395,50 @@ class SweepSpec:
     thrusters: tuple[int, ...]
     firings: tuple[PrescribedFiringSpec, ...] = ()
     mode: str = "per_case"
+    source_offsets_u: tuple[float, ...] = (0.0,)
+    source_offsets_v: tuple[float, ...] = (0.0,)
+    source_axis_mode: str = "aim_at_reference"
+
+    @property
+    def sweep_poses(self) -> tuple[SweepPose, ...]:
+        """Fully parameterized poses in execution order.
+
+        Distance-major, matching the committed sweep-JFH generators, then
+        u offset, then v offset, then approach angle:
+
+            for distance: for u_offset: for v_offset: for angle
+
+        With the default single-element offset lists this collapses to the
+        historical "all angles at the first distance, then all angles at the
+        next", so an existing configuration's pose order is unchanged. For
+        an offset sweep (a single angle, as ``parallel_to_normal`` requires)
+        the length is exactly
+        ``n_distances * n_u_offsets * n_v_offsets``.
+        """
+        return tuple(
+            SweepPose(plate_angle_deg=angle, source_distance=distance,
+                      source_offset_u=u_offset, source_offset_v=v_offset,
+                      axis_mode=self.source_axis_mode)
+            for distance in self.source_distances
+            for u_offset in self.source_offsets_u
+            for v_offset in self.source_offsets_v
+            for angle in self.plate_angles_deg)
 
     @property
     def poses(self) -> tuple[tuple[float, float], ...]:
         """(plate angle, source distance) pairs in execution order.
 
-        Distance-major, matching the committed sweep-JFH generators: all
-        angles at the first distance, then all angles at the next.
+        The legacy projection of :attr:`sweep_poses`, kept unchanged for
+        callers that only key on the swept angle and distance. It has the
+        same length and order as ``sweep_poses``; when offsets are swept,
+        several entries share an ``(angle, distance)`` pair.
         """
-        return tuple((angle, distance)
-                     for distance in self.source_distances
-                     for angle in self.plate_angles_deg)
+        return tuple(pose.key for pose in self.sweep_poses)
 
     @property
     def total_firings(self) -> int:
         """Total JFH entries across the whole sweep."""
-        return len(self.poses) * self.n_firings
+        return len(self.sweep_poses) * self.n_firings
 
     @classmethod
     def from_mapping(cls, data: Mapping[str, Any]) -> "SweepSpec":
@@ -320,6 +453,35 @@ class SweepSpec:
         if any(d <= 0.0 for d in distances):
             raise StudyConfigError(
                 "sweep.source_distances must all be positive")
+
+        offsets_u = tuple(_as_offsets(data.get("source_offsets_u"),
+                                      "sweep.source_offsets_u"))
+        offsets_v = tuple(_as_offsets(data.get("source_offsets_v"),
+                                      "sweep.source_offsets_v"))
+
+        axis_mode = str(data.get("source_axis_mode", "aim_at_reference"))
+        if axis_mode not in SOURCE_AXIS_MODES:
+            raise StudyConfigError(
+                f"sweep.source_axis_mode must be one of "
+                f"{list(SOURCE_AXIS_MODES)}, got {axis_mode!r}")
+
+        # Pose definitions that mean different things are never silently
+        # combined: an aimed arc has no panel-local offset, and a fixed
+        # axis parallel to -n has no approach angle.
+        offsets_swept = (offsets_u != (0.0,) or offsets_v != (0.0,))
+        if axis_mode == "aim_at_reference" and offsets_swept:
+            raise StudyConfigError(
+                "sweep.source_offsets_u / source_offsets_v translate the "
+                "plume source parallel to the target surface, which is only "
+                "defined for sweep.source_axis_mode: 'parallel_to_normal'; "
+                f"got {axis_mode!r}")
+        if axis_mode == "parallel_to_normal" and angles != (0.0,):
+            raise StudyConfigError(
+                "sweep.source_axis_mode: 'parallel_to_normal' fixes the "
+                "plume axis anti-parallel to the target normal, so an "
+                "approach angle has no meaning; remove "
+                f"sweep.plate_angles_deg (got {list(angles)}) and sweep "
+                "source_offsets_u / source_offsets_v instead")
 
         mode = str(data.get("mode", "per_case"))
         if mode not in SWEEP_MODES:
@@ -341,7 +503,8 @@ class SweepSpec:
             firings = tuple(
                 PrescribedFiringSpec.from_mapping(entry, i, thrusters, duration)
                 for i, entry in enumerate(raw_firings))
-            n_poses = len(angles) * len(distances)
+            n_poses = (len(angles) * len(distances)
+                       * len(offsets_u) * len(offsets_v))
             expected = n_firings if mode == "per_case" else n_poses * n_firings
             if len(firings) != expected:
                 where = ("per case" if mode == "per_case"
@@ -353,7 +516,9 @@ class SweepSpec:
 
         return cls(plate_angles_deg=angles, source_distances=distances,
                    n_firings=n_firings, firing_duration_s=duration,
-                   thrusters=thrusters, firings=firings, mode=mode)
+                   thrusters=thrusters, firings=firings, mode=mode,
+                   source_offsets_u=offsets_u, source_offsets_v=offsets_v,
+                   source_axis_mode=axis_mode)
 
 
 def validate_n_firings(value: Any) -> int:
@@ -427,6 +592,150 @@ class Normalization:
                 "reference_heat_flux": self.reference_heat_flux}
 
 
+#: Reference-length mode names for :class:`KnudsenSpec`.
+KNUDSEN_REFERENCE_MODES = ("source_distance", "explicit")
+
+#: Definition label implied by each reference-length mode when the
+#: configuration does not supply one of its own.
+_KNUDSEN_DEFAULT_DEFINITIONS = {
+    "source_distance": "lambda_over_source_distance",
+    "explicit": "lambda_over_reference_length",
+}
+
+
+@dataclass(frozen=True)
+class KnudsenSpec:
+    """Derived Knudsen-number METADATA. Never an input to the physics.
+
+    PyRPOD's plume models are collisionless, and this block does not change
+    that: no solution, field value or surface load anywhere in the pipeline
+    depends on Kn. It exists so an analytical case can be LABELLED with the
+    rarefaction regime it is meant to represent, which is what a later,
+    entirely separate workflow needs in order to line PyRPOD cases up with
+    externally generated DSMC runs.
+
+    ``Kn = mean_free_path_m / reference_length``, with the reference length
+    chosen by exactly one of two mutually exclusive modes:
+
+    * ``reference_length: source_distance`` -- the case's own swept source
+      distance, so Kn varies across a distance sweep;
+    * ``reference_length_m: <number>`` -- a fixed length (a nozzle diameter,
+      a panel chord, ...), so Kn is the same for every case.
+
+    The mean free path is always supplied by the configuration. It is never
+    inferred from the gas properties in the thruster definition file, because
+    a free-molecular model carries no collision rate to infer it from.
+
+    Attributes
+    ----------
+    mean_free_path_m : float
+        Ambient/reference molecular mean free path (m); positive and finite.
+    reference_mode : str
+        ``'source_distance'`` or ``'explicit'``.
+    reference_length_m : float or None
+        The fixed reference length, in ``'explicit'`` mode only.
+    definition : str
+        Free-text label recorded with every result, e.g.
+        ``lambda_over_nozzle_diameter``.
+    """
+
+    mean_free_path_m: float
+    reference_mode: str
+    reference_length_m: float | None = None
+    definition: str = "lambda_over_source_distance"
+
+    @classmethod
+    def from_mapping(cls, data: Mapping[str, Any] | None
+                     ) -> "KnudsenSpec | None":
+        """Parse the optional ``knudsen`` block; None when it is absent."""
+        if not data:
+            return None
+        if not isinstance(data, Mapping):
+            raise StudyConfigError("'knudsen' section must be a mapping")
+
+        if "mean_free_path_m" not in data or data["mean_free_path_m"] is None:
+            raise StudyConfigError(
+                "knudsen.mean_free_path_m is required; PyRPOD never infers a "
+                "mean free path from gas properties (the plume models are "
+                "collisionless)")
+        try:
+            mean_free_path = float(data["mean_free_path_m"])
+        except (TypeError, ValueError) as exc:
+            raise StudyConfigError(
+                "knudsen.mean_free_path_m must be a positive finite number, "
+                f"got {data['mean_free_path_m']!r}") from exc
+        if not np.isfinite(mean_free_path) or mean_free_path <= 0.0:
+            raise StudyConfigError(
+                "knudsen.mean_free_path_m must be a positive finite number, "
+                f"got {data['mean_free_path_m']!r}")
+
+        symbolic = data.get("reference_length")
+        explicit = data.get("reference_length_m")
+        if (symbolic is None) == (explicit is None):
+            raise StudyConfigError(
+                "knudsen requires EXACTLY ONE reference-length mode: either "
+                "reference_length: source_distance (the swept distance) or "
+                "reference_length_m: <number> (a fixed length); got "
+                f"reference_length={symbolic!r}, "
+                f"reference_length_m={explicit!r}")
+
+        if symbolic is not None:
+            if str(symbolic) != "source_distance":
+                raise StudyConfigError(
+                    "knudsen.reference_length must be 'source_distance'; for "
+                    "any other reference length use reference_length_m: "
+                    f"<number>, got {symbolic!r}")
+            mode, reference_length = "source_distance", None
+        else:
+            # The XOR check above guarantees `explicit` is not None here.
+            try:
+                reference_length = float(explicit)  # type: ignore[arg-type]
+            except (TypeError, ValueError) as exc:
+                raise StudyConfigError(
+                    "knudsen.reference_length_m must be a positive finite "
+                    f"number, got {explicit!r}") from exc
+            if not np.isfinite(reference_length) or reference_length <= 0.0:
+                raise StudyConfigError(
+                    "knudsen.reference_length_m must be a positive finite "
+                    f"number, got {explicit!r}")
+            mode = "explicit"
+
+        definition = data.get("definition")
+        return cls(mean_free_path_m=mean_free_path, reference_mode=mode,
+                   reference_length_m=reference_length,
+                   definition=(str(definition) if definition
+                               else _KNUDSEN_DEFAULT_DEFINITIONS[mode]))
+
+    # ------------------------------------------------------------ evaluation
+    def reference_length_for(self, source_distance: float) -> float:
+        """Reference length used for one case, in this spec's mode."""
+        if self.reference_mode == "source_distance":
+            distance = float(source_distance)
+            if not np.isfinite(distance) or distance <= 0.0:
+                raise StudyConfigError(
+                    "knudsen.reference_length: source_distance needs a "
+                    f"positive finite source distance, got {source_distance!r}")
+            return distance
+        # 'explicit' mode validates reference_length_m at parse time.
+        return float(self.reference_length_m)  # type: ignore[arg-type]
+
+    def knudsen_number(self, source_distance: float) -> float:
+        """Derived ``Kn = lambda / L_ref`` for one case. Metadata only."""
+        return self.mean_free_path_m / self.reference_length_for(
+            source_distance)
+
+    def to_dict(self) -> dict[str, Any]:
+        """Plain-data form recorded in the study metadata."""
+        return {
+            "mean_free_path_m": self.mean_free_path_m,
+            "reference_mode": self.reference_mode,
+            "reference_length_m": self.reference_length_m,
+            "definition": self.definition,
+            "role": "derived metadata only; the plume models are "
+                    "collisionless and no solution depends on Kn",
+        }
+
+
 @dataclass(frozen=True)
 class LoadsSpec:
     """Surface-load integration settings."""
@@ -448,7 +757,14 @@ class LoadsSpec:
 
 @dataclass(frozen=True)
 class OutputSpec:
-    """Output artifact settings (VTK, machine-readable summary, plots)."""
+    """Output artifact settings (VTK, summary, panel distributions, plots).
+
+    The VTK export stays the PRIMARY full-resolution visualization output and
+    is enabled by default. The panel-local surface-distribution CSVs are an
+    ADDITIONAL, opt-in export of the same native per-face values in the
+    target's own (u, v) coordinates -- convenient for plotting and for a
+    later comparison workflow, never a replacement for the VTK files.
+    """
 
     write_vtk: bool = True
     vtk_subdir: str = "vtk"
@@ -456,6 +772,9 @@ class OutputSpec:
     summary_metadata: str = "study_metadata.json"
     write_plots: bool = False
     plots_subdir: str = "plots"
+    write_surface_distribution: bool = False
+    surface_distribution_subdir: str = "distributions"
+    write_distribution_plots: bool = False
 
     @classmethod
     def from_mapping(cls, data: Mapping[str, Any] | None) -> "OutputSpec":
@@ -463,6 +782,7 @@ class OutputSpec:
         vtk = data.get("vtk") or {}
         summary = data.get("summary") or {}
         plots = data.get("plots") or {}
+        distribution = data.get("surface_distribution") or {}
         return cls(
             write_vtk=bool(vtk.get("enabled", True)),
             vtk_subdir=str(vtk.get("subdir", "vtk")),
@@ -471,6 +791,14 @@ class OutputSpec:
                                              "study_metadata.json")),
             write_plots=bool(plots.get("enabled", False)),
             plots_subdir=str(plots.get("subdir", "plots")),
+            write_surface_distribution=bool(distribution.get("enabled",
+                                                             False)),
+            surface_distribution_subdir=str(distribution.get(
+                "subdir", "distributions")),
+            # Per-case panel-local pressure maps: only meaningful when the
+            # distributions they are drawn from are exported.
+            write_distribution_plots=bool(
+                plots.get("per_case_distribution", False)),
         )
 
 
@@ -504,7 +832,13 @@ class StudyConfig:
     output_dir : str
         Directory the study writes its artifacts to.
     plume_model : str
-        Always ``'SimplifiedGasKinetics'`` in this branch.
+        The collisionless model that COMPUTES the plume field, one of
+        :data:`SUPPORTED_PLUME_MODELS`. Defaults to
+        ``'SimplifiedGasKinetics'``.
+    knudsen : KnudsenSpec or None
+        Optional derived-Knudsen metadata (see :class:`KnudsenSpec`). None
+        when the configuration has no ``knudsen`` block, in which case every
+        Knudsen field is simply omitted from the results.
     source_path : str
         Path the configuration was read from (configuration provenance).
     """
@@ -521,6 +855,7 @@ class StudyConfig:
     thruster_id: str | None = None
     plume_model: str = SUPPORTED_PLUME_MODEL
     plume_model_parameters: dict[str, Any] = field(default_factory=dict)
+    knudsen: KnudsenSpec | None = None
     coordinate_system: str = "case global frame"
     units: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_UNITS))
     source_path: str = ""
@@ -566,12 +901,11 @@ class StudyConfig:
         output_dir = _resolve_dir(raw_output_dir, base_dir)
 
         plume = data.get("plume_model") or {}
-        model_name = str(plume.get("name", SUPPORTED_PLUME_MODEL))
-        if model_name != SUPPORTED_PLUME_MODEL:
-            raise StudyConfigError(
-                f"plume_model.name must be {SUPPORTED_PLUME_MODEL!r} "
-                f"(this study workflow supports exactly one model), got "
-                f"{model_name!r}")
+        try:
+            model_name = resolve_model_name(
+                plume.get("name", SUPPORTED_PLUME_MODEL))
+        except PlumeModelError as exc:
+            raise StudyConfigError(f"plume_model.name: {exc}") from exc
         model_parameters = dict(plume.get("parameters") or {})
 
         thruster = data.get("thruster") or {}
@@ -598,6 +932,7 @@ class StudyConfig:
             thruster_id=str(thruster_id) if thruster_id else None,
             plume_model=model_name,
             plume_model_parameters=model_parameters,
+            knudsen=KnudsenSpec.from_mapping(data.get("knudsen")),
             coordinate_system=str(metadata.get("coordinate_system",
                                                "case global frame")),
             units=units,
@@ -607,9 +942,13 @@ class StudyConfig:
     # ------------------------------------------------------------- accessors
     @property
     def n_cases(self) -> int:
-        """Number of angle x distance cases in this study."""
-        return (len(self.sweep.plate_angles_deg)
-                * len(self.sweep.source_distances))
+        """Number of swept cases: angles x distances x u offsets x v offsets.
+
+        With the default single-element offset lists this is the historical
+        angle x distance count; for an offset sweep (which fixes the angle)
+        it is ``n_distances * n_u_offsets * n_v_offsets``.
+        """
+        return len(self.sweep.sweep_poses)
 
     def with_output_dir(self, output_dir: str) -> "StudyConfig":
         """Copy of this configuration writing to a different directory."""
@@ -617,16 +956,20 @@ class StudyConfig:
 
     def provenance(self) -> dict[str, Any]:
         """Configuration provenance recorded in the study metadata."""
-        return {
+        provenance: dict[str, Any] = {
             "study_name": self.study_name,
             "config_path": self.source_path,
             "case_dir": os.path.abspath(self.case_dir),
             "output_dir": os.path.abspath(self.output_dir),
             "plume_model": self.plume_model,
             "plume_model_parameters": dict(self.plume_model_parameters),
+            "source_axis_mode": self.sweep.source_axis_mode,
             "coordinate_system": self.coordinate_system,
             "units": dict(self.units),
         }
+        if self.knudsen is not None:
+            provenance["knudsen"] = self.knudsen.to_dict()
+        return provenance
 
 
 def _resolve_dir(path: str, base_dir: str) -> str:

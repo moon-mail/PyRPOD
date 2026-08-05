@@ -159,6 +159,29 @@ tests:
     manual_command: null
     collection_ignore_reason: null
 
+  - path: tests/mdao/mdao_unit_test_07.py
+    description: >-
+      Unit tests for the ISS-panel study extensions: collisionless
+      plume-model dispatch (both Cai variants selectable by name, unknown
+      names rejected, both reduced to one common LocalFieldState feeding one
+      shared Maxwellian gas-surface implementation); panel-local pose
+      generation (parallel_to_normal translates the source without tilting
+      the plume axis, and coincides with aim_at_reference at zero offset);
+      offset-sweep enumeration and the refusal to combine incompatible pose
+      definitions; derived Knudsen metadata for both reference-length modes;
+      panel-local coordinate transforms and hand-computed normal-force and
+      moment projections; and the distribution-CSV schema.
+    subsystem: mdao
+    category: unit
+    execution_mode: automated
+    development_status: implemented
+    collection_status: collected
+    reference: >-
+      Cai & Wang 2012, J. Spacecraft and Rockets 49(2), 335-340,
+      doi:10.2514/1.A32046
+    manual_command: null
+    collection_ignore_reason: null
+
   - path: tests/mdao/mdao_integration_test_01.py
     description: >-
       Placeholder MDAO integration test; the test body returns immediately
@@ -320,6 +343,30 @@ tests:
     collection_status: collected
     reference: >-
       Cai 2016, Aerospace 3(4), 43, doi:10.3390/aerospace3040043, Eq. 15
+    manual_command: null
+    collection_ignore_reason: null
+
+  - path: tests/mdao/mdao_integration_test_05.py
+    description: >-
+      The committed ISS-representative solar-panel case (22 m x 12 m flat
+      panel, source translated parallel to the panel) run end to end through
+      TradeStudy.from_config().run(): panel-local resultants, derived
+      Knudsen metadata and distribution export on the committed baseline;
+      proof that selecting CollisionlessGasKinetics changes the ANSWER and
+      not merely the metadata; the pressure force re-integrated from the
+      exported per-face values matching the CaseResult; symmetry of a
+      centered source and the documented moment signs for offset sources;
+      offset-sweep case count, order and identifiers; headless plot
+      generation; and backward compatibility of the existing flat-plate
+      configurations, case identifiers and baseline results.
+    subsystem: mdao
+    category: integration
+    execution_mode: automated
+    development_status: implemented
+    collection_status: collected
+    reference: >-
+      Cai & Wang 2012, J. Spacecraft and Rockets 49(2), 335-340,
+      doi:10.2514/1.A32046
     manual_command: null
     collection_ignore_reason: null
 

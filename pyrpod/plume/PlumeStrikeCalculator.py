@@ -16,7 +16,7 @@ Implementation notes:
 - The vectorized core operates on plain serializable inputs (arrays, dicts,
   floats) so it can also run inside process-based workers.
 - Surface loads use the TRUE incidence angle: the positional off-axis angle
-  theta locates a face in the plume field (SimplifiedGasKinetics evaluates
+  theta locates a face in the plume field (the selected plume model evaluates
   n, U, T there, and the legacy 3.14-based theta still gates the wedge hit
   test, bit-for-bit unchanged), but the Shen/Maxwellian wall formulas
   receive the angle between the local flow direction (face centroid minus
@@ -24,6 +24,12 @@ Implementation notes:
   normal. Previously the positional theta was fed to the wall formulas as
   the incidence angle, so plate orientation never affected load magnitudes;
   _surface_loads_with_incidence() is the shared fix for both paths.
+- Which collisionless plume model evaluates the field is selected by the
+  case's [pm] kinetics key and dispatched through
+  pyrpod.plume.gas_kinetics_models (Simplified -> SimplifiedGasKinetics,
+  Collisionless -> CollisionlessGasKinetics). Both reduce to the same
+  LocalFieldState, so the surface-load logic is written once; omitting the
+  key keeps the historical SimplifiedGasKinetics behavior.
 
 Future work (no new dependencies planned):
 - Vectorize the SimplifiedGasKinetics evaluations for struck faces.
@@ -38,13 +44,14 @@ from concurrent.futures import ProcessPoolExecutor
 from typing import Any, Dict, List, Literal, Optional, Sequence, Tuple, overload
 
 import numpy as np
-from pyrpod.plume.RarefiedPlumeGasKinetics import (
-    AVOGADROS_NUMBER,
-    Scalar,
-    SimplifiedGasKinetics,
-    get_maxwellian_heat_transfer,
-    get_maxwellian_pressure,
-    get_maxwellian_shear_pressure,
+from pyrpod.plume.RarefiedPlumeGasKinetics import Scalar, SimplifiedGasKinetics
+from pyrpod.plume.gas_kinetics_models import (
+    DEFAULT_PLUME_MODEL,
+    KINETICS_DISABLED,
+    create_model,
+    local_field_state,
+    maxwellian_surface_loads,
+    model_name_for_kinetics,
 )
 
 
@@ -55,38 +62,26 @@ def _surface_loads_with_incidence(
 
     simple_plume carries the plume-field state at the face's position (its
     constructor theta is the positional off-axis angle -- a plume-field
-    coordinate); this helper extracts the same local field values the class's
-    own get_pressure/get_shear_pressure/get_heat_flux use (including their
-    exact-centerline branch at theta == 0) and feeds them to the Shen wall
+    coordinate); this helper reduces it to the model-independent
+    LocalFieldState (the same local field values the class's own
+    get_pressure/get_shear_pressure/get_heat_flux use, including their
+    exact-centerline branch at theta == 0) and feeds that to the Shen wall
     formulas with `incidence`, the angle between the local flow direction
     (radial from the thruster exit) and the face unit normal.
+
+    Any model in pyrpod.plume.gas_kinetics_models.PLUME_MODELS is accepted;
+    the reduction and the wall formulas both live in that module, so the
+    surface-load logic is written once for every model.
 
     Returns (pressure, shear, heat_flux) in SI units; shear is signed as
     returned by get_maxwellian_shear_pressure (callers take abs, matching
     the legacy accumulation).
     """
-    if simple_plume.theta != 0:  # not on plume centerline
-        n_inf = simple_plume.n_0 * simple_plume.get_num_density_ratio()
-        T = simple_plume.T_0 * simple_plume.get_temp_ratio()
-        u = simple_plume.get_U_normalized() / simple_plume.beta_0
-        w = simple_plume.get_W_normalized() / simple_plume.beta_0
-        U = np.sqrt(u ** 2 + w ** 2)
-    else:  # on plume centerline: exact closed forms
-        n_inf = simple_plume.n_0 * simple_plume.get_num_density_centerline()
-        T = simple_plume.T_0 * simple_plume.get_temp_centerline()
-        U = simple_plume.get_velocity_centerline() / simple_plume.beta_0
-    rho_inf = n_inf * simple_plume.molar_mass / AVOGADROS_NUMBER
-    S = U * simple_plume.get_beta(T)
-
-    sigma = simple_plume.sigma
-    T_w = simple_plume.T_w
-    pressure = get_maxwellian_pressure(rho_inf, U, S, sigma, incidence,
-                                       T, T_w)
-    shear = get_maxwellian_shear_pressure(rho_inf, U, S, sigma, incidence)
-    heat_flux = get_maxwellian_heat_transfer(rho_inf, S, sigma, incidence,
-                                             T, T_w, simple_plume.R,
-                                             simple_plume.gamma)
-    return pressure, shear, heat_flux
+    state = local_field_state(simple_plume)
+    return maxwellian_surface_loads(state, sigma=simple_plume.sigma,
+                                    T_w=simple_plume.T_w, R=simple_plume.R,
+                                    gamma=simple_plume.gamma,
+                                    incidence=incidence)
 
 
 def compute_face_centroids(vectors: np.ndarray) -> np.ndarray:
@@ -115,21 +110,29 @@ def extract_plume_params(environment: Any) -> Dict[str, Any]:
     """Extract the plain config values needed for strike computation.
 
     Returns a picklable dict (radius, wedge_theta, use_kinetics, and — only
-    when kinetics is enabled — surface_temp and sigma) so workers never need
-    the full environment object.
+    when kinetics is enabled — surface_temp, sigma and the selected
+    plume_model) so workers never need the full environment object.
+
+    The plume model is named by the case's ``[pm] kinetics`` key
+    (``Simplified`` -> SimplifiedGasKinetics, ``Collisionless`` ->
+    CollisionlessGasKinetics; see pyrpod.plume.gas_kinetics_models). An
+    unknown key is an error rather than a silent fall back to the default.
     """
     config = environment.config
-    use_kinetics = config['pm']['kinetics'] != 'None'
+    kinetics = config['pm']['kinetics']
+    use_kinetics = kinetics != KINETICS_DISABLED
     params: Dict[str, Any] = {
         'radius': float(config['plume']['radius']),
         'wedge_theta': float(config['plume']['wedge_theta']),
         'use_kinetics': use_kinetics,
         'surface_temp': None,
         'sigma': None,
+        'plume_model': None,
     }
     if use_kinetics:
         params['surface_temp'] = float(config['tv']['surface_temp'])
         params['sigma'] = float(config['tv']['sigma'])
+        params['plume_model'] = model_name_for_kinetics(kinetics)
     return params
 
 
@@ -144,7 +147,8 @@ def _compute_plume_strikes_core(
     """Vectorized strike computation on plain serializable inputs.
 
     Geometry is evaluated with NumPy over all faces per active thruster.
-    Gas-kinetics quantities remain scalar: SimplifiedGasKinetics is
+    Gas-kinetics quantities remain scalar: the selected plume model (see
+    plume_params['plume_model'], defaulting to SimplifiedGasKinetics) is
     instantiated only for struck face indices, exactly as in the scalar
     reference. Memory scales with the number of faces (a few (N,) and (N,3)
     temporaries), independent of the number of firings.
@@ -153,6 +157,9 @@ def _compute_plume_strikes_core(
     strikes = np.zeros(num_faces)
 
     use_kinetics = plume_params['use_kinetics']
+    # Absent for a plume_params dict built before model dispatch existed;
+    # the default is the model the pipeline has always used.
+    model_name = plume_params.get('plume_model') or DEFAULT_PLUME_MODEL
     if use_kinetics:
         pressures = np.zeros(num_faces)
         shear_stresses = np.zeros(num_faces)
@@ -229,8 +236,9 @@ def _compute_plume_strikes_core(
             incidence = np.arccos(np.clip(
                 (unit_distance * normals).sum(axis=1), -1.0, 1.0))
             for idx in np.nonzero(hit)[0]:
-                simple_plume = SimplifiedGasKinetics(
-                    norm_distance[idx], theta[idx], metrics, T_w, sigma
+                simple_plume = create_model(
+                    model_name, norm_distance[idx], theta[idx], metrics,
+                    T_w, sigma
                 )
                 p, shear, hf = _surface_loads_with_incidence(
                     simple_plume, incidence[idx])
@@ -303,13 +311,16 @@ def _compute_plume_strikes_scalar(
     debugging, and benchmarking against the vectorized path; the two must
     produce identical strike arrays, struck-face IDs, and load values.
     Surface loads use the true incidence angle via the shared
-    _surface_loads_with_incidence(), exactly as the vectorized core does.
+    _surface_loads_with_incidence(), and the plume model is selected through
+    the same factory, exactly as the vectorized core does.
     """
     num_faces = len(target_mesh.vectors)
     strikes = np.zeros(num_faces)
 
-    use_kinetics = environment.config['pm']['kinetics'] != 'None'
+    kinetics = environment.config['pm']['kinetics']
+    use_kinetics = kinetics != KINETICS_DISABLED
     if use_kinetics:
+        model_name = model_name_for_kinetics(kinetics)
         pressures = np.zeros(num_faces)
         shear_stresses = np.zeros(num_faces)
         heat_flux = np.zeros(num_faces)
@@ -369,7 +380,7 @@ def _compute_plume_strikes_scalar(
                     sigma = float(environment.config['tv']['sigma'])
                     t_type = vv.thruster_data[thruster_id]['type'][0]
                     thruster_metrics = vv.thruster_metrics[t_type]
-                    simple_plume = SimplifiedGasKinetics(norm_distance, theta, thruster_metrics, T_w, sigma)
+                    simple_plume = create_model(model_name, norm_distance, theta, thruster_metrics, T_w, sigma)
                     # True incidence angle (see module header): local flow
                     # direction -unit_distance vs the face unit normal.
                     incidence = np.arccos(np.clip(

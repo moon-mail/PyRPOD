@@ -1,0 +1,103 @@
+# ISS-panel BASELINE, simplified collisionless model.
+#
+# One firing of the argon round jet (D = 1 m, S0 = 2.0, T0 = 200 K,
+# Tw = 300 K, fully diffuse) against the 22 m x 12 m panel, with the source
+# centered on the panel and standing off at L = 4 m. The plume axis is fixed
+# anti-parallel to the panel normal (parallel_to_normal), so at zero offset
+# the centerline meets the panel exactly at its geometric center.
+#
+# This is the reference point of the offset/distance sweep, and the physical
+# and geometric twin of iss_panel_baseline_full_cai.yaml -- the ONLY
+# difference between the two files is plume_model.name, so the pair isolates
+# the far-field simplification.
+#
+# Run it:
+#     python case/plume/iss_panel_thesis/run.py baseline-simplified
+
+study:
+  name: iss_panel_baseline_simplified
+  description: >-
+    Centered, normal-incidence plume impingement on a 22 m x 12 m
+    ISS-representative panel at L = 4 m, SimplifiedGasKinetics.
+  case_dir: ..
+  output_dir: ../results/studies/baseline_simplified
+
+thruster:
+  id: T1
+
+plume_model:
+  # Cai & Wang 2012 far-field simplification (Q' of Eq. 13).
+  name: SimplifiedGasKinetics
+  parameters:
+    # Recorded for provenance; the values themselves are read from the
+    # case's thruster definition file (tcd/tdf.csv, thruster type ARG).
+    gas: argon
+    speed_ratio_S0: 2.0
+    stagnation_temperature_K: 200.0
+    nozzle_diameter_m: 1.0
+
+target:
+  geometry_id: iss_panel.stl
+  # Panel geometric center; also the moment reference point and the origin
+  # of the panel-local (u, v) coordinates.
+  reference_point: [0.0, 0.0, 0.0]
+  # n: panel normal, toward the plume source.
+  normal: [0.0, 0.0, 1.0]
+  # u: longitudinal axis, the 22 m dimension. The transverse axis
+  # v = n x u = +Y (the 12 m dimension) is derived, never configured.
+  tangent: [1.0, 0.0, 0.0]
+  components:
+    - name: panel
+      selector: all
+
+sweep:
+  # The source is TRANSLATED parallel to the panel; its axis stays fixed
+  # anti-parallel to n. plate_angles_deg has no meaning in this mode.
+  source_axis_mode: parallel_to_normal
+  source_distances: [4.0]
+  source_offsets_u: [0.0]
+  source_offsets_v: [0.0]
+  n_firings: 1
+  firing_duration_s: 1.0
+  thrusters: [1]
+  # Each model / distance / offset combination is an independent experiment.
+  mode: per_case
+
+loads:
+  moment_reference_point: [0.0, 0.0, 0.0]
+  normalization:
+    # Panel area 22 m x 12 m and semi-length 11 m.
+    reference_area: 264.0
+    reference_length: 11.0
+    # Cai's normalization, derived from the case's own TDF entry:
+    #   q_dyn  = n0*m*U0^2/2, q_heat = n0*m*U0^3/2, with n0 = 1e20 m^-3,
+    #   U0 = 577.0684534784414 m/s, R_specific = 208.13 J/kg/K.
+    dynamic_pressure: 1.1044652197738332
+    reference_heat_flux: 637.3520362956127
+
+knudsen:
+  # DERIVED METADATA ONLY. PyRPOD is collisionless: nothing in the solution
+  # reads Kn back. It exists so this analytical case can be labelled with
+  # the rarefaction regime it represents, for a later, separate comparison
+  # workflow. Kn = 1.0 m / 4.0 m = 0.25 here.
+  mean_free_path_m: 1.0
+  reference_length: source_distance
+  definition: lambda_over_source_distance
+
+output:
+  vtk:
+    enabled: true
+  surface_distribution:
+    enabled: true
+  summary:
+    csv: case_results.csv
+    metadata: study_metadata.json
+  plots:
+    enabled: true
+    per_case_distribution: true
+
+metadata:
+  coordinate_system: >-
+    case global frame; 22 m x 12 m panel in the X-Y plane centered at the
+    origin, plume source on the +Z side. Panel-local u = +X (longitudinal,
+    22 m), v = +Y (transverse, 12 m), n = +Z (normal, toward the source).

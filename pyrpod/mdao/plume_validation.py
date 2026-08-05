@@ -51,9 +51,13 @@ from pyrpod.mdao.reference_data import (
     compare_results,
     load_reference_dataset,
 )
-from pyrpod.mdao.study_config import StudyConfig
+from pyrpod.mdao.study_config import StudyConfig, SweepPose
 from pyrpod.mdao.study_results import StudyResults
-from pyrpod.mdao.study_runtime import CaseAssets, TargetGeometry
+from pyrpod.mdao.study_runtime import (
+    CaseAssets,
+    TargetGeometry,
+    study_plots_for,
+)
 from pyrpod.util.io.fs import ensure_dir
 
 logger = logging.getLogger(__name__)
@@ -61,12 +65,34 @@ logger = logging.getLogger(__name__)
 __all__ = ["PlumeValidationStudy", "case_id_for"]
 
 
-def case_id_for(index: int, plate_angle_deg: float,
-                source_distance: float) -> str:
-    """Stable, filesystem-safe case identifier."""
-    angle = f"{plate_angle_deg:.1f}".replace("-", "m").replace(".", "p")
-    distance = f"{source_distance:.4g}".replace("-", "m").replace(".", "p")
-    return f"case{index:03d}_alpha{angle}_d{distance}"
+def _token(value: float, spec: str = ".4g") -> str:
+    """Filesystem-safe number token: '-' -> 'm', '.' -> 'p'."""
+    return format(value, spec).replace("-", "m").replace(".", "p")
+
+
+def case_id_for(index: int, plate_angle_deg: float, source_distance: float,
+                pose: SweepPose | None = None,
+                model_variant: str | None = None) -> str:
+    """Stable, filesystem-safe case identifier.
+
+    The identifier names the parameters that actually vary in the study's
+    axis mode, so a case directory is self-describing:
+
+    * ``aim_at_reference`` (default) keeps the historical
+      ``case000_alpha0p0_d4`` form, byte-for-byte, so existing studies write
+      to exactly the paths they always did;
+    * ``parallel_to_normal`` names the model, stand-off and panel-local
+      offsets instead, e.g. ``case000_modelCollisionless_L4_u0_v0`` -- the
+      approach angle is fixed in that mode and would carry no information.
+    """
+    if pose is not None and pose.axis_mode == "parallel_to_normal":
+        model = f"_model{model_variant}" if model_variant else ""
+        return (f"case{index:03d}{model}"
+                f"_L{_token(pose.source_distance)}"
+                f"_u{_token(pose.source_offset_u)}"
+                f"_v{_token(pose.source_offset_v)}")
+    return (f"case{index:03d}_alpha{_token(plate_angle_deg, '.1f')}"
+            f"_d{_token(source_distance)}")
 
 
 class PlumeValidationStudy:
@@ -119,11 +145,14 @@ class PlumeValidationStudy:
                     config.sweep.n_firings, len(geometry.components),
                     geometry.n_faces)
 
-        for index, (angle, distance) in enumerate(config.sweep.poses):
-            self._run_case(case_id=case_id_for(index, angle, distance),
-                           pose_index=index, plate_angle_deg=angle,
-                           source_distance=distance, results=results,
-                           assets=assets, geometry=geometry)
+        model_variant = config.plume_model.replace("GasKinetics", "")
+        for index, pose in enumerate(config.sweep.sweep_poses):
+            self._run_case(
+                case_id=case_id_for(index, pose.plate_angle_deg,
+                                    pose.source_distance, pose=pose,
+                                    model_variant=model_variant),
+                pose_index=index, pose=pose, results=results,
+                assets=assets, geometry=geometry)
 
         if write_outputs:
             self.write_outputs(results)
@@ -144,14 +173,15 @@ class PlumeValidationStudy:
         return results
 
     # ------------------------------------------------------------ one case
-    def _run_case(self, *, case_id: str, pose_index: int,
-                  plate_angle_deg: float, source_distance: float,
+    def _run_case(self, *, case_id: str, pose_index: int, pose: SweepPose,
                   results: StudyResults, assets: CaseAssets,
                   geometry: TargetGeometry) -> None:
         config = self.config
+        plate_angle_deg = pose.plate_angle_deg
+        source_distance = pose.source_distance
         firings = firing_plan.build_case_firings(
             config.sweep, config.target, plate_angle_deg, source_distance,
-            pose_index=pose_index)
+            pose_index=pose_index, pose=pose)
 
         jfh_path = os.path.join(config.output_dir, "jfh", f"{case_id}.A")
         n_written = firing_plan.write_jfh_file(jfh_path, firings)
@@ -173,14 +203,25 @@ class PlumeValidationStudy:
         timestamp = study_runtime.utc_timestamp()
         version = str(results.provenance.get("code_version", "unknown"))
 
+        distribution_dir = os.path.join(
+            config.output_dir, "cases", case_id,
+            config.output.surface_distribution_subdir)
+
         for firing_index, firing in enumerate(firings):
+            per_face = firing_data[str(firing_index + 1)]
+            distributions = study_runtime.export_surface_distributions(
+                config, geometry, firing, per_face, case_id=case_id,
+                firing_id=firing_index + 1, plate_angle_deg=plate_angle_deg,
+                source_distance=source_distance,
+                output_dir=distribution_dir)
             results.cases.extend(study_runtime.build_case_results(
-                config, geometry, firing, firing_data[str(firing_index + 1)],
+                config, geometry, firing, per_face,
                 case_id=case_id, firing_id=firing_index + 1,
                 plate_angle_deg=plate_angle_deg,
                 source_distance=source_distance, jfh_path=jfh_path,
                 vtk_path=vtk_paths[firing_index] if vtk_paths else None,
-                code_version_id=version, timestamp=timestamp))
+                code_version_id=version, timestamp=timestamp,
+                surface_distribution_paths=distributions))
 
     # -------------------------------------------------------------- outputs
     def write_outputs(self, results: StudyResults) -> None:
@@ -210,18 +251,16 @@ class PlumeValidationStudy:
 
     # ---------------------------------------------------------------- plots
     def plot(self, results: StudyResults | None = None) -> list[str]:
-        """Generate the optional parameter-sweep trend plots.
+        """Generate the optional trend plots for this study.
 
         Plot generation is entirely optional -- automated tests never require
-        it -- and is imported lazily so a headless run pays no matplotlib
-        cost unless plots were asked for.
+        it -- and the plotting modules are imported lazily so a headless run
+        pays no matplotlib cost unless plots were asked for.
         """
-        from pyrpod.mdao import study_plots
-
         results = results or self.results
         if results is None:
             raise RuntimeError("run() the study before plotting results")
         plot_dir = os.path.join(self.config.output_dir,
                                 self.config.output.plots_subdir)
-        return study_plots.plot_sweep_trends(results, plot_dir,
-                                             comparison=self.comparison)
+        return study_plots_for(self.config, results, plot_dir,
+                               comparison=self.comparison)

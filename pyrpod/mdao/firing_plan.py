@@ -16,22 +16,44 @@ generated sequence is asserted to match it (:func:`build_case_firings`), and
 an explicitly prescribed firing list whose length disagrees is an error --
 never a silent truncation or extension.
 
-Pose convention
----------------
-For a target reference point ``C`` with outward normal ``n_hat`` (pointing
-toward the plume source side) and in-plane tangent ``t_hat``:
+Pose conventions
+----------------
+Two axis modes are available; a study picks one with
+``sweep.source_axis_mode`` (see
+:data:`pyrpod.mdao.study_config.SOURCE_AXIS_MODES`). Both use the target
+reference point ``C``, its outward normal ``n_hat`` (pointing toward the
+plume-source side) and its in-plane tangent ``u_hat``, together with the
+transverse axis ``v_hat = n_hat x u_hat``.
 
-    d_hat(alpha) = cos(alpha) * n_hat + sin(alpha) * t_hat
-    source position = C + L * d_hat(alpha)
-    thruster axis   = -d_hat(alpha)            (aimed at C)
+``aim_at_reference`` (default, unchanged)
+    The source sits on an arc about ``C`` and always aims back at it:
 
-``alpha = 0`` is head-on. The JFH DCM is built with the thruster axis as its
-first COLUMN, which is what the strike pipeline reads as the plume normal
-(``dcm.T`` rows, with an identity thruster DCM). This reproduces the pose
-convention of the committed sweep-JFH generators
-(``case/plume/plume_flat_plate_sweep/jfh/generate_sweep_jfh.py``) exactly,
-including the binormal choice ``cross(n_hat, t_hat)`` for the DCM's second
-column.
+        d_hat(alpha) = cos(alpha) * n_hat + sin(alpha) * u_hat
+        source position = C + L * d_hat(alpha)
+        thruster axis   = -d_hat(alpha)            (aimed at C)
+
+    ``alpha = 0`` is head-on. This reproduces the pose convention of the
+    committed sweep-JFH generators
+    (``case/plume/plume_flat_plate_sweep/jfh/generate_sweep_jfh.py``)
+    exactly, including the binormal choice ``cross(n_hat, u_hat)`` for the
+    DCM's second column.
+
+``parallel_to_normal`` (ISS-panel studies)
+    The source is TRANSLATED parallel to the surface and its axis stays
+    fixed, so the plume centerline strikes the panel at the requested
+    panel-local offset instead of always at ``C``:
+
+        source position = C + L * n_hat + u_off * u_hat + v_off * v_hat
+        thruster axis   = -n_hat
+
+    This is deliberately NOT the same experiment as moving the source while
+    continuously re-aiming it at the panel center. At zero offsets the two
+    modes coincide (``aim_at_reference`` at ``alpha = 0``), so the new mode
+    is a strict extension of the old convention rather than a redefinition.
+
+In both modes the JFH DCM is built with the thruster axis as its first
+COLUMN, which is what the strike pipeline reads as the plume normal
+(``dcm.T`` rows, with an identity thruster DCM).
 """
 
 from __future__ import annotations
@@ -46,6 +68,7 @@ from numpy.typing import NDArray
 from pyrpod.mdao.study_config import (
     PrescribedFiringSpec,
     StudyConfigError,
+    SweepPose,
     SweepSpec,
     TargetSpec,
     validate_n_firings,
@@ -56,6 +79,8 @@ __all__ = [
     "build_case_firings",
     "build_sweep_firings",
     "pose_for",
+    "pose_for_sweep_pose",
+    "translated_pose_for",
     "validate_n_firings",
     "write_jfh_file",
 ]
@@ -86,6 +111,12 @@ class Firing:
         without a sweep parameterization.
     pose_index : int or None
         Index of the firing's pose in the sweep's execution order.
+    source_offset_u, source_offset_v : float
+        Panel-local translation of the plume source along the target's
+        longitudinal and transverse axes. Zero unless the pose came from an
+        offset sweep.
+    source_axis_mode : str
+        Which pose convention built this firing (see the module docstring).
     """
 
     position: NDArray[np.float64]
@@ -96,6 +127,9 @@ class Firing:
     plate_angle_deg: float | None = None
     source_distance: float | None = None
     pose_index: int | None = None
+    source_offset_u: float = 0.0
+    source_offset_v: float = 0.0
+    source_axis_mode: str = "aim_at_reference"
 
 
 def pose_for(alpha_deg: float, distance: float,
@@ -141,21 +175,108 @@ def pose_for(alpha_deg: float, distance: float,
     return position, dcm
 
 
+def translated_pose_for(distance: float, offset_u: float, offset_v: float,
+                        reference_point: Sequence[float] | NDArray[np.float64],
+                        normal: Sequence[float] | NDArray[np.float64],
+                        tangent: Sequence[float] | NDArray[np.float64],
+                        ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Plume-source pose TRANSLATED parallel to the target surface.
+
+    The source stands off by ``distance`` along the target normal and is
+    then slid along the surface-local axes; its axis stays anti-parallel to
+    the normal, so the plume centerline intersects the surface at the
+    panel-local point ``(offset_u, offset_v)`` rather than at the reference
+    point:
+
+        position = C + L * n_hat + offset_u * u_hat + offset_v * v_hat
+        axis     = -n_hat
+
+    Parameters
+    ----------
+    distance : float
+        Stand-off distance L from the surface along ``normal``.
+    offset_u, offset_v : float
+        Panel-local translations along the longitudinal (``tangent``) and
+        transverse (``normal x tangent``) axes.
+    reference_point, normal, tangent : array-like
+        Target geometry axes (see
+        :meth:`pyrpod.mdao.study_config.TargetSpec.local_basis`).
+
+    Returns
+    -------
+    (np.ndarray, np.ndarray)
+        The source position and the 3x3 DCM whose FIRST COLUMN is the
+        thruster axis. The triad is the same one
+        :func:`pose_for` builds at ``alpha = 0``, so the two modes agree
+        exactly when both offsets are zero.
+    """
+    center = np.asarray(reference_point, dtype=float)
+    n_hat = np.asarray(normal, dtype=float)
+    u_hat = np.asarray(tangent, dtype=float)
+    n_hat = n_hat / np.linalg.norm(n_hat)
+    u_hat = u_hat / np.linalg.norm(u_hat)
+    v_hat = np.cross(n_hat, u_hat)
+    v_hat = v_hat / np.linalg.norm(v_hat)
+
+    position = (center + float(distance) * n_hat
+                + float(offset_u) * u_hat + float(offset_v) * v_hat)
+    axis = -n_hat                       # fixed: parallel to -n at every offset
+
+    # Same column convention as pose_for: [axis, binormal, axis x binormal],
+    # with the binormal cross(n_hat, u_hat) = v_hat.
+    dcm = np.column_stack([axis, v_hat, np.cross(axis, v_hat)])
+    return position, dcm
+
+
+def pose_for_sweep_pose(pose: SweepPose, target: TargetSpec,
+                        ) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """Plume-source pose for one :class:`SweepPose`, in its own axis mode.
+
+    The single place the axis mode is turned into geometry, so the per-case
+    and single-history engines cannot drift apart.
+
+    Raises
+    ------
+    StudyConfigError
+        If the pose carries an axis mode this module does not implement.
+    """
+    if pose.axis_mode == "parallel_to_normal":
+        return translated_pose_for(pose.source_distance, pose.source_offset_u,
+                                   pose.source_offset_v,
+                                   target.reference_point, target.normal,
+                                   target.tangent)
+    if pose.axis_mode == "aim_at_reference":
+        return pose_for(pose.plate_angle_deg, pose.source_distance,
+                        target.reference_point, target.normal, target.tangent)
+    raise StudyConfigError(
+        f"unknown sweep.source_axis_mode {pose.axis_mode!r}")
+
+
 def build_case_firings(sweep: SweepSpec, target: TargetSpec,
                        alpha_deg: float, distance: float,
                        pose_index: int = 0,
-                       start_time_s: float = 0.0) -> list[Firing]:
+                       start_time_s: float = 0.0,
+                       pose: SweepPose | None = None) -> list[Firing]:
     """Build EXACTLY ``sweep.n_firings`` firings for one sweep pose.
 
     When the configuration prescribes firings explicitly they are used
     verbatim (their count is validated against ``n_firings`` when the
-    configuration is parsed). Otherwise the swept pose is generated from
-    ``alpha_deg`` / ``distance`` and repeated for ``n_firings`` successive
-    firing intervals -- one JFH entry per requested firing.
+    configuration is parsed). Otherwise the swept pose is generated in the
+    sweep's own axis mode and repeated for ``n_firings`` successive firing
+    intervals -- one JFH entry per requested firing.
 
     ``pose_index`` and ``start_time_s`` place this pose inside a longer
     sequence; they matter only when many poses share one history (see
     :func:`build_sweep_firings`).
+
+    Parameters
+    ----------
+    pose : SweepPose, optional
+        The fully parameterized pose to realize, including its panel-local
+        offsets. When omitted, one is built from ``alpha_deg`` / ``distance``
+        with zero offsets in the sweep's axis mode, which is exactly the
+        historical behavior. When supplied it is authoritative and
+        ``alpha_deg`` / ``distance`` are ignored.
 
     Raises
     ------
@@ -163,6 +284,10 @@ def build_case_firings(sweep: SweepSpec, target: TargetSpec,
         If the generated sequence length would differ from ``n_firings``.
     """
     n_firings = validate_n_firings(sweep.n_firings)
+    if pose is None:
+        pose = SweepPose(plate_angle_deg=float(alpha_deg),
+                         source_distance=float(distance),
+                         axis_mode=sweep.source_axis_mode)
 
     if sweep.firings:
         specs = sweep.firings
@@ -172,22 +297,22 @@ def build_case_firings(sweep: SweepSpec, target: TargetSpec,
             offset = pose_index * n_firings
             specs = sweep.firings[offset:offset + n_firings]
         firings = [
-            _from_spec(spec, index, alpha_deg, distance, pose_index,
-                       start_time_s)
+            _from_spec(spec, index, pose, pose_index, start_time_s)
             for index, spec in enumerate(specs)
         ]
     else:
-        position, dcm = pose_for(alpha_deg, distance,
-                                 target.reference_point, target.normal,
-                                 target.tangent)
+        position, dcm = pose_for_sweep_pose(pose, target)
         firings = [
             Firing(position=position, dcm=dcm, thrusters=sweep.thrusters,
                    duration_s=sweep.firing_duration_s,
                    start_time_s=start_time_s
                    + index * sweep.firing_duration_s,
-                   plate_angle_deg=float(alpha_deg),
-                   source_distance=float(distance),
-                   pose_index=pose_index)
+                   plate_angle_deg=pose.plate_angle_deg,
+                   source_distance=pose.source_distance,
+                   pose_index=pose_index,
+                   source_offset_u=pose.source_offset_u,
+                   source_offset_v=pose.source_offset_v,
+                   source_axis_mode=pose.axis_mode)
             for index in range(n_firings)
         ]
 
@@ -202,10 +327,10 @@ def build_sweep_firings(sweep: SweepSpec,
                         target: TargetSpec) -> list[Firing]:
     """Build the WHOLE sweep as one firing sequence.
 
-    Every pose of ``sweep.poses`` contributes ``sweep.n_firings`` entries, in
-    execution order, with firing times running continuously across the
-    sequence. The result is the single Jet Firing History of a ``single_jfh``
-    study, and its length is exactly ``sweep.total_firings``.
+    Every pose of ``sweep.sweep_poses`` contributes ``sweep.n_firings``
+    entries, in execution order, with firing times running continuously
+    across the sequence. The result is the single Jet Firing History of a
+    ``single_jfh`` study, and its length is exactly ``sweep.total_firings``.
 
     Raises
     ------
@@ -214,24 +339,23 @@ def build_sweep_firings(sweep: SweepSpec,
     """
     firings: list[Firing] = []
     elapsed = 0.0
-    for pose_index, (angle, distance) in enumerate(sweep.poses):
-        pose_firings = build_case_firings(sweep, target, angle, distance,
-                                          pose_index=pose_index,
-                                          start_time_s=elapsed)
+    for pose_index, pose in enumerate(sweep.sweep_poses):
+        pose_firings = build_case_firings(
+            sweep, target, pose.plate_angle_deg, pose.source_distance,
+            pose_index=pose_index, start_time_s=elapsed, pose=pose)
         firings.extend(pose_firings)
         elapsed += sum(firing.duration_s for firing in pose_firings)
 
     if len(firings) != sweep.total_firings:
         raise StudyConfigError(
-            f"sweep of {len(sweep.poses)} poses x n_firings="
+            f"sweep of {len(sweep.sweep_poses)} poses x n_firings="
             f"{sweep.n_firings} must produce {sweep.total_firings} JFH "
             f"entries, built {len(firings)}")
     return firings
 
 
 def _from_spec(spec: PrescribedFiringSpec, index: int,
-               alpha_deg: float | None = None,
-               distance: float | None = None,
+               pose: SweepPose | None = None,
                pose_index: int | None = None,
                start_time_s: float = 0.0) -> Firing:
     return Firing(position=np.asarray(spec.position, dtype=float),
@@ -239,11 +363,17 @@ def _from_spec(spec: PrescribedFiringSpec, index: int,
                   thrusters=spec.thrusters,
                   duration_s=spec.duration_s,
                   start_time_s=start_time_s + index * spec.duration_s,
-                  plate_angle_deg=(None if alpha_deg is None
-                                   else float(alpha_deg)),
-                  source_distance=(None if distance is None
-                                   else float(distance)),
-                  pose_index=pose_index)
+                  plate_angle_deg=(None if pose is None
+                                   else pose.plate_angle_deg),
+                  source_distance=(None if pose is None
+                                   else pose.source_distance),
+                  pose_index=pose_index,
+                  source_offset_u=(0.0 if pose is None
+                                   else pose.source_offset_u),
+                  source_offset_v=(0.0 if pose is None
+                                   else pose.source_offset_v),
+                  source_axis_mode=("aim_at_reference" if pose is None
+                                    else pose.axis_mode))
 
 
 def write_jfh_file(path: str | os.PathLike[str],

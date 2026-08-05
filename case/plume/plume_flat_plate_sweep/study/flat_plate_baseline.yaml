@@ -27,7 +27,9 @@ study:
 thruster:
   id: T1
 
-# The only plume model this workflow supports.
+# The collisionless plume model that computes the field for this study.
+# CollisionlessGasKinetics (the full Cai & Wang 2012 model) is the other
+# supported value; Simplified is the paper-matching choice here.
 plume_model:
   name: SimplifiedGasKinetics
   parameters:

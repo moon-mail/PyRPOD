@@ -1,0 +1,99 @@
+# ISS-panel OFFSET x DISTANCE sweep.
+#
+# The plume source is translated parallel to the 22 m x 12 m panel and its
+# stand-off varied, with the plume axis fixed anti-parallel to the panel
+# normal throughout, so the centerline strikes the panel at the requested
+# panel-local (u, v) offset. This is deliberately NOT the same experiment as
+# moving the source while continuously re-aiming it at the panel center; for
+# that, use source_axis_mode: aim_at_reference and plate_angles_deg.
+#
+#   3 source distances x 5 u offsets x 1 v offset = 15 independent cases
+#
+# The u offsets walk the source from near the left edge, through half-span
+# and the center, to near the right edge (the panel half-length is 11 m).
+#
+# Run it:
+#     python case/plume/iss_panel_thesis/run.py sweep
+#
+# This committed sweep is sized to run locally in a couple of minutes. See
+# README.md for how to expand it: more offsets and distances, the full Cai
+# model, and one study per Knudsen label.
+
+study:
+  name: iss_panel_offset_distance_sweep
+  description: >-
+    Plume source translated parallel to a 22 m x 12 m ISS-representative
+    panel over 5 longitudinal offsets and 3 stand-off distances,
+    SimplifiedGasKinetics.
+  case_dir: ..
+  output_dir: ../results/studies/offset_distance_sweep
+
+thruster:
+  id: T1
+
+plume_model:
+  # Switch to CollisionlessGasKinetics for the full near-field model; the
+  # run is ~600x more expensive per struck face (see README.md).
+  name: SimplifiedGasKinetics
+  parameters:
+    gas: argon
+    speed_ratio_S0: 2.0
+    stagnation_temperature_K: 200.0
+    nozzle_diameter_m: 1.0
+
+target:
+  geometry_id: iss_panel.stl
+  reference_point: [0.0, 0.0, 0.0]
+  normal: [0.0, 0.0, 1.0]
+  tangent: [1.0, 0.0, 0.0]
+  components:
+    - name: panel
+      selector: all
+
+sweep:
+  source_axis_mode: parallel_to_normal
+  source_distances: [2.0, 4.0, 6.0]
+  # Near left edge, half-span, center, half-span, near right edge.
+  source_offsets_u: [-10.0, -5.5, 0.0, 5.5, 10.0]
+  source_offsets_v: [0.0]
+  n_firings: 1
+  firing_duration_s: 1.0
+  thrusters: [1]
+  # Each distance/offset combination is an independent experiment, so each
+  # gets its own Jet Firing History, strike run and artifacts.
+  mode: per_case
+
+loads:
+  moment_reference_point: [0.0, 0.0, 0.0]
+  normalization:
+    reference_area: 264.0
+    reference_length: 11.0
+    dynamic_pressure: 1.1044652197738332
+    reference_heat_flux: 637.3520362956127
+
+knudsen:
+  # DERIVED METADATA ONLY -- never an input to the collisionless solution.
+  # With reference_length: source_distance, Kn varies across the sweep:
+  # 0.5 at L = 2 m, 0.25 at L = 4 m, 0.1667 at L = 6 m.
+  mean_free_path_m: 1.0
+  reference_length: source_distance
+  definition: lambda_over_source_distance
+
+output:
+  vtk:
+    enabled: true
+  surface_distribution:
+    enabled: true
+  summary:
+    csv: sweep_results.csv
+    metadata: sweep_metadata.json
+  plots:
+    enabled: true
+    per_case_distribution: true
+
+metadata:
+  coordinate_system: >-
+    case global frame; 22 m x 12 m panel in the X-Y plane centered at the
+    origin, plume source on the +Z side translated parallel to the panel.
+    Panel-local u = +X (longitudinal, 22 m), v = +Y (transverse, 12 m),
+    n = +Z (normal, toward the source).
